@@ -1,0 +1,279 @@
+{
+  "linkId": 1,
+  "startDay": "Sunday",
+  "currentCrewIndex": 0,
+  "lastUpdated": "2025-08-09",
+  "crew": [
+    {
+      "crewLPId": "LP001",
+      "crewLPName": "",
+      "crewALPId": "ALP001",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "20645/20646",
+        "Tuesday": "",
+        "Wednesday": "12052/12051",
+        "Thursday": "",
+        "Friday": "REST",
+        "Saturday": "12201/22476"
+      }
+    },
+    {
+      "crewLPId": "LP002",
+      "crewLPName": "",
+      "crewALPId": "ALP002",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "16346/12201",
+        "Tuesday": "",
+        "Wednesday": "12431/22150",
+        "Thursday": "",
+        "Friday": "22629/12431",
+        "Saturday": "REST"
+      }
+    },
+    {
+      "crewLPId": "LP003",
+      "crewLPName": "",
+      "crewALPId": "ALP003",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "12284/16346",
+        "Tuesday": "",
+        "Wednesday": "12283/12133",
+        "Thursday": "",
+        "Friday": "22907/22656",
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "LP004",
+      "crewLPName": "",
+      "crewALPId": "ALP004",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "20645/12617",
+        "Monday": "",
+        "Tuesday": "REST",
+        "Wednesday": "22120/12618",
+        "Thursday": "",
+        "Friday": "12618/12134",
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "LP005",
+      "crewLPName": "",
+      "crewALPId": "ALP005",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "20909/20924",
+        "Tuesday": "REST",
+        "Wednesday": "12620/12218",
+        "Thursday": "",
+        "Friday": "20910/12217",
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "LP006",
+      "crewLPName": "",
+      "crewALPId": "ALP006",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "REST",
+        "Monday": "12052/12051",
+        "Tuesday": "",
+        "Wednesday": "20645/12134",
+        "Thursday": "",
+        "Friday": "REST",
+        "Saturday": "22656/20646"
+      }
+    },
+    {
+      "crewLPId": "LP007",
+      "crewLPName": "",
+      "crewALPId": "ALP007",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "12224/12450",
+        "Tuesday": "",
+        "Wednesday": "20932/12617",
+        "Thursday": "",
+        "Friday": "REST",
+        "Saturday": "16338/22414"
+      }
+    },
+    {
+      "crewLPId": "LP008",
+      "crewLPName": "",
+      "crewALPId": "ALP008",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "22150/11098",
+        "Tuesday": "",
+        "Wednesday": "19260/22114",
+        "Thursday": "",
+        "Friday": "REST",
+        "Saturday": "20931/16345"
+      }
+    },
+    {
+      "crewLPId": "LP009",
+      "crewLPName": "",
+      "crewALPId": "ALP009",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "12134/12484",
+        "Monday": "",
+        "Tuesday": "12620/20932",
+        "Wednesday": "",
+        "Thursday": "REST",
+        "Friday": "12431/22414",
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "LP010",
+      "crewLPName": "",
+      "crewALPId": "ALP010",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "16337/22114",
+        "Monday": "",
+        "Tuesday": "REST",
+        "Wednesday": "22113/22630",
+        "Thursday": "",
+        "Friday": "12133/16338",
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "LP011",
+      "crewLPName": "",
+      "crewALPId": "ALP011",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "22413/12133",
+        "Monday": "",
+        "Tuesday": "02197/12223",
+        "Wednesday": "",
+        "Thursday": "22150/12431",
+        "Friday": "REST",
+        "Saturday": "20645/12620"
+      }
+    },
+    {
+      "crewLPId": "LP012",
+      "crewLPName": "",
+      "crewALPId": "ALP012",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "12484/12617",
+        "Tuesday": "",
+        "Wednesday": "REST",
+        "Thursday": "22230/22229",
+        "Friday": "",
+        "Saturday": "19578/12202"
+      }
+    },
+    {
+      "crewLPId": "LP013",
+      "crewLPName": "",
+      "crewALPId": "ALP013",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "",
+        "Tuesday": "12133/20646",
+        "Wednesday": "REST",
+        "Thursday": "",
+        "Friday": "12202/16345",
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "LP014",
+      "crewLPName": "",
+      "crewALPId": "ALP014",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "12223/12224",
+        "Monday": "",
+        "Tuesday": "16337/12283",
+        "Wednesday": "",
+        "Thursday": "REST",
+        "Friday": "12617/20910",
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "LP015",
+      "crewLPName": "",
+      "crewALPId": "ALP015",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "16346/12284",
+        "Monday": "REST",
+        "Tuesday": "20645/12620",
+        "Wednesday": "",
+        "Thursday": "SP/56615/20646",
+        "Friday": "",
+        "Saturday": "REST"
+      }
+    },
+    {
+      "crewLPId": "LP016",
+      "crewLPName": "",
+      "crewALPId": "ALP016",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "12133/20646",
+        "Monday": "",
+        "Tuesday": "12449/12432",
+        "Wednesday": "",
+        "Thursday": "12432/19259",
+        "Friday": "",
+        "Saturday": "22230/12450"
+      }
+    },
+    {
+      "crewLPId": "LP017",
+      "crewLPName": "",
+      "crewALPId": "ALP017",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "REST",
+        "Tuesday": "12201/12431",
+        "Wednesday": "",
+        "Thursday": "22633/22629",
+        "Friday": "",
+        "Saturday": "12431/12223"
+      }
+    },
+    {
+      "crewLPId": "LP018",
+      "crewLPName": "",
+      "crewALPId": "ALP018",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "22413/16337",
+        "Tuesday": "",
+        "Wednesday": "12223/22633",
+        "Thursday": "REST",
+        "Friday": "20645/20646",
+        "Saturday": ""
+      }
+    }
+  ]
+}
+
