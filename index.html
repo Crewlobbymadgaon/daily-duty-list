@@ -1,173 +1,90 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Duty Details — CrewLink</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <title>LP/ALP Duty Viewer</title>
   <style>
-    /* subtle table styles */
-    .table-scroll { max-height: 64vh; overflow: auto; }
-    .sticky-head th { position: sticky; top: 0; z-index: 20; }
-    /* link colors (change any hex as you like) */
-    .link-1 { background: #f0f9ff; } /* light blue */
-    .link-2 { background: #f0fff4; } /* light green */
-    .link-3 { background: #fffce8; } /* light yellow */
-    .link-4 { background: #fff0f6; } /* light pink */
-    /* row hover */
-    tbody tr:hover { background: rgba(0,0,0,0.03); }
-    /* small screens: make cells wrap nicely */
-    td, th { white-space: nowrap; }
-    @media (max-width: 640px) {
-      td, th { font-size: 13px; padding: .35rem .5rem; white-space: normal; }
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+    th { background-color: #f2f2f2; }
+    select { padding: 5px; margin-bottom: 10px; }
+    .rest { background-color: #ffe0e0; }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-800">
-  <header class="bg-green-700 text-white py-4 shadow">
-    <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <div>
-        <h1 class="text-lg sm:text-2xl font-bold">Duty Details</h1>
-        <p id="headingDate" class="text-sm opacity-90 mt-0.5">—</p>
-      </div>
+<body>
+  <h2>LP/ALP Duty Viewer</h2>
 
-      <div class="flex items-center gap-3">
-        <label class="text-sm">Select date</label>
-        <input id="datePicker" type="date" class="px-3 py-2 rounded border" />
-        <button id="refreshBtn" class="bg-white text-green-700 px-3 py-2 rounded shadow-sm">Refresh</button>
-      </div>
-    </div>
-  </header>
+  <label for="daySelect">Select Day: </label>
+  <select id="daySelect">
+    <option>Sunday</option>
+    <option>Monday</option>
+    <option>Tuesday</option>
+    <option>Wednesday</option>
+    <option>Thursday</option>
+    <option>Friday</option>
+    <option>Saturday</option>
+  </select>
 
-  <main class="max-w-5xl mx-auto p-4">
-    <div class="bg-white rounded shadow-sm">
-      <div class="p-3 border-b">
-        <p class="text-sm text-gray-600">Combined duty list for all links. Rows are colored by Link Number.</p>
-      </div>
-
-      <div class="table-scroll p-3">
-        <table class="min-w-full border-collapse">
-          <thead class="bg-green-600 text-white sticky-head">
-            <tr>
-              <th class="px-3 py-2 text-left">LP Name</th>
-              <th class="px-3 py-2 text-left">ALP Name</th>
-              <th class="px-3 py-2 text-center">Train No</th>
-              <th class="px-3 py-2 text-center">Dep</th>
-              <th class="px-3 py-2 text-center">Link No</th>
-            </tr>
-          </thead>
-          <tbody id="dutyBody">
-            <!-- rows inserted by JS -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </main>
+  <table>
+    <thead>
+      <tr>
+        <th>LP Name</th>
+        <th>ALP Name</th>
+        <th>Train No</th>
+        <th>Dep Time</th>
+        <th>Link Number</th>
+      </tr>
+    </thead>
+    <tbody id="dutyTable">
+      <!-- Rows will be inserted here -->
+    </tbody>
+  </table>
 
   <script>
-  // Map link number to CSS class / color
-  const linkClassMap = {
-    1: "link-1",
-    2: "link-2",
-    3: "link-3",
-    4: "link-4"
-  };
+    let crewData = [];
 
-  // Utility to format date heading
-  function formatHeadingDate(d) {
-    const opts = { day: "2-digit", month: "short", year: "numeric", weekday: "long" };
-    return d.toLocaleDateString("en-GB", opts);
-  }
+    // Load JSON
+    fetch('link1.json')
+      .then(response => response.json())
+      .then(data => {
+        crewData = data.crew; // store the crew array
+        document.getElementById('daySelect').addEventListener('change', renderTable);
+        renderTable(); // show for default day
+      });
 
-  const datePicker = document.getElementById("datePicker");
-  function toYMD(d) {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth()+1).padStart(2,"0");
-    const dd = String(d.getDate()).padStart(2,"0");
-    return `${yyyy}-${mm}-${dd}`;
-  }
+    function renderTable() {
+      const day = document.getElementById('daySelect').value;
+      const tbody = document.getElementById('dutyTable');
+      tbody.innerHTML = '';
 
-  const today = new Date();
-  datePicker.value = toYMD(today);
-  document.getElementById("headingDate").textContent = formatHeadingDate(today);
+      crewData.forEach(c => {
+        const duty = c.duties[day] || '';
+        let trainNo = '';
+        let depTime = '';
 
-  // fetch all link JSON files and filter by date
-  async function loadAllLinks(selectedDate) {
-    const all = [];
-    const totalLinks = 4; // adjust if you have more
-    for (let linkNo = 1; linkNo <= totalLinks; linkNo++) {
-      try {
-        const resp = await fetch(`link${linkNo}.json`);
-        if (!resp.ok) continue;
-        const arr = await resp.json();
-        arr.forEach(item => {
-          if (item.date === selectedDate) {
-            all.push(Object.assign({}, item, { link: linkNo }));
-          }
-        });
-      } catch (err) {
-        console.error(`Error loading link${linkNo}.json`, err);
-      }
+        if (duty && duty.toUpperCase() !== 'REST') {
+          // Train numbers may be like "20645/20646" — split into trainNo only
+          trainNo = duty;
+          // Dep time not given in JSON, keep empty for now
+          depTime = '';
+        } else if (duty.toUpperCase() === 'REST') {
+          trainNo = 'REST';
+        }
+
+        const row = document.createElement('tr');
+        if (duty.toUpperCase() === 'REST') row.classList.add('rest');
+
+        row.innerHTML = `
+          <td>${c.crewLPName || c.crewLPId}</td>
+          <td>${c.crewALPName || c.crewALPId}</td>
+          <td>${trainNo}</td>
+          <td>${depTime}</td>
+          <td>${1}</td>
+        `;
+        tbody.appendChild(row);
+      });
     }
-    return all;
-  }
-
-  async function renderForDate(dateYMD) {
-    const dutyBody = document.getElementById("dutyBody");
-    dutyBody.innerHTML = "";
-    document.getElementById("headingDate").textContent = formatHeadingDate(new Date(dateYMD));
-
-    const entries = await loadAllLinks(dateYMD);
-
-    if (!entries.length) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `<td class="px-3 py-2 text-center" colspan="5">No duty records found for this date.</td>`;
-      dutyBody.appendChild(tr);
-      return;
-    }
-
-    entries.sort((a,b) => {
-      const ta = a.dep || "99:99";
-      const tb = b.dep || "99:99";
-      return ta.localeCompare(tb);
-    });
-
-    entries.forEach(item => {
-      const tr = document.createElement("tr");
-      const cls = linkClassMap[item.link] || "";
-      if (cls) tr.classList.add(cls);
-
-      tr.innerHTML = `
-        <td class="px-3 py-2 text-left">${escapeHtml(item.lp || "—")}</td>
-        <td class="px-3 py-2 text-left">${escapeHtml(item.alp || "—")}</td>
-        <td class="px-3 py-2 text-center font-mono">${escapeHtml(item.train || "—")}</td>
-        <td class="px-3 py-2 text-center">${escapeHtml(item.dep || "—")}</td>
-        <td class="px-3 py-2 text-center font-semibold">Link ${escapeHtml(String(item.link || "—"))}</td>
-      `;
-      dutyBody.appendChild(tr);
-    });
-  }
-
-  function escapeHtml(s) {
-    if (!s) return "";
-    return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
-  document.getElementById("refreshBtn").addEventListener("click", () => {
-    renderForDate(datePicker.value);
-  });
-
-  datePicker.addEventListener("change", () => {
-    renderForDate(datePicker.value);
-  });
-
-  renderForDate(datePicker.value);
-</script>
-
+  </script>
 </body>
 </html>
