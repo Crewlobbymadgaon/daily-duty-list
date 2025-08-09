@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>LP/ALP Duty Roster</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f9f9f9;
+            margin: 20px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background: white;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background: #004080;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #f2f2f2;
+        }
+        .day-header {
+            background: #0066cc;
+            color: white;
+            font-weight: bold;
+            text-align: left;
+            padding: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>LP / ALP Duty Roster - Link 1</h1>
+
+<div id="tableContainer"></div>
+
+<script>
+async function loadDutyData() {
+    try {
+        const response = await fetch('link1.json'); // Make sure link1.json is in the same folder
+        const data = await response.json();
+        createDutyTable(data);
+    } catch (error) {
+        console.error('Error loading duty data:', error);
+        document.getElementById('tableContainer').innerHTML = '<p style="color:red;">Error loading duty data.</p>';
+    }
+}
+
+function createDutyTable(data) {
+    const container = document.getElementById('tableContainer');
+    container.innerHTML = "";
+
+    for (const day of ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]) {
+        let tableHTML = `<div class="day-header">${day}</div>`;
+        tableHTML += `
+            <table>
+                <thead>
+                    <tr>
+                        <th>LP Name</th>
+                        <th>ALP Name</th>
+                        <th>Train No</th>
+                        <th>Departure Time</th>
+                        <th>Link Number</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        data.crew.forEach(crew => {
+            if (crew.duties[day]) {
+                const trainNumbers = crew.duties[day].split('/');
+                const depTime = "HH:MM"; // Placeholder, replace with real times if available
+
+                trainNumbers.forEach(trainNo => {
+                    tableHTML += `
+                        <tr>
+                            <td>${crew.crewLPName}</td>
+                            <td>${crew.crewALPName}</td>
+                            <td>${trainNo}</td>
+                            <td>${depTime}</td>
+                            <td>${data.linkId}</td>
+                        </tr>
+                    `;
+                });
+            }
+        });
+
+        tableHTML += "</tbody></table>";
+        container.innerHTML += tableHTML;
+    }
+}
+
+// Load the JSON data when page is ready
+loadDutyData();
+</script>
+
+</body>
+</html>
+
