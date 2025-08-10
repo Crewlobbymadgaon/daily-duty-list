@@ -94,99 +94,91 @@
     })
     .catch(err => console.error('Error loading JSON files:', err));
 
-  function renderTableCombined() {
-    if (!allCrewData.length) return;
+  function renderTable() {
+  if (!crewData.length) return;
 
-    const selectedDate = getSelectedDate();
-    const selectedDay = document.getElementById('daySelect').value;
+  const selectedDate = getSelectedDate();
+  const selectedDay = document.getElementById('daySelect').value;
 
-    updateDateHeading(selectedDate);
+  // Calculate weeks passed from lastUpdatedDate to selectedDate
+  const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const weeksPassed = Math.floor(diffDays / 7);
 
-    // For each link's crew group, calculate weeks passed & rotate crews accordingly
-    // Group allCrewData by linkId first
-    const crewsByLink = {};
-    allCrewData.forEach(c => {
-      if (!crewsByLink[c.linkId]) crewsByLink[c.linkId] = [];
-      crewsByLink[c.linkId].push(c);
-    });
+  updateDateHeading(selectedDate);
 
-    // Build combined duty rows array
-    const dutyRows = [];
+  // duties fixed per row (index)
+  const dutiesPerRow = crewData.map(crew => crew.duties);
 
-    Object.values(crewsByLink).forEach(crewList => {
-      if (crewList.length === 0) return;
+  // Build array of rows with depTime info for sorting
+  const rows = [];
 
-      // All share same linkId, lastUpdatedDate, currentCrewIndex
-      const { linkId, lastUpdatedDate, currentCrewIndex } = crewList[0];
+  for (let rowIndex = 0; rowIndex < crewData.length; rowIndex++) {
+    // Crew assigned to this row this week, shifted by weeksPassed
+    const crewIndex = (rowIndex - weeksPassed + crewData.length) % crewData.length;
+    const crew = crewData[crewIndex];
 
-      // Calculate weeks passed for this link
-      const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      const weeksPassed = Math.floor(diffDays / 7);
+    // Duties fixed by row (do NOT rotate duties, duties stay fixed per row)
+    const dutyForThisRow = dutiesPerRow[rowIndex][selectedDay] || '';
 
-      // Rotate crew for this week
-      // duty per row fixed, so duties array is fixed order, but crew moves by weeksPassed
-      for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
-        const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
-        const crew = crewList[crewIndex];
-        const dutyForRow = crewList[rowIndex].duties[selectedDay] || '';
+    let trainNo = '';
+    let depTime = null; // null means no departure time / REST
 
-        let trainNo = '';
-        let depTime = null;
+    if (typeof dutyForThisRow === 'object' && dutyForThisRow.outgoing) {
+      trainNo = `${dutyForThisRow.outgoing}/${dutyForThisRow.incoming || ''}`;
+      depTime = dutyForThisRow.depTime || null;
+    } else if (typeof dutyForThisRow === 'string') {
+      trainNo = dutyForThisRow.toUpperCase() === 'REST' ? 'REST' : dutyForThisRow;
+    }
 
-        if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-          trainNo = `${dutyForRow.outgoing}/${dutyForRow.incoming || ''}`;
-          depTime = dutyForRow.depTime || null;
-        } else if (typeof dutyForRow === 'string') {
-          trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
-        }
-
-        dutyRows.push({
-          crewLPId: crew.crewLPId,
-          crewALPId: crew.crewALPId,
-          trainNo,
-          depTime,
-          linkNumber: linkId,
-          isRest: trainNo === 'REST',
-        });
-      }
-    });
-
-    // Sort all duty rows by depTime ascending, REST last
-    dutyRows.sort((a, b) => {
-      if (a.isRest && !b.isRest) return 1;
-      if (!a.isRest && b.isRest) return -1;
-      if (a.depTime && b.depTime) return timeStringToMinutes(a.depTime) - timeStringToMinutes(b.depTime);
-      if (a.depTime && !b.depTime) return -1;
-      if (!a.depTime && b.depTime) return 1;
-      return 0;
-    });
-
-    const tbody = document.getElementById('dutyTable');
-    tbody.innerHTML = '';
-
-    dutyRows.forEach(row => {
-      const tr = document.createElement('tr');
-      if (row.isRest) tr.classList.add('rest');
-      tr.innerHTML = `
-        <td>${row.crewLPId}</td>
-        <td>${row.crewALPId}</td>
-        <td>${row.trainNo}</td>
-        <td>${row.depTime || ''}</td>
-        <td>${row.linkNumber}</td>
-      `;
-      tbody.appendChild(tr);
+    rows.push({
+      crewLPId: crew.crewLPId,
+      crewALPId: crew.crewALPId,
+      trainNo,
+      depTime,
+      isRest: trainNo === 'REST',
     });
   }
 
-  // Helpers from your original code:
+  // Sort rows by depTime ascending; REST or no depTime pushed to bottom
+  rows.sort((a, b) => {
+    if (a.isRest && !b.isRest) return 1;
+    if (!a.isRest && b.isRest) return -1;
+    if (a.depTime && b.depTime) {
+      return timeStringToMinutes(a.depTime) - timeStringToMinutes(b.depTime);
+    }
+    if (a.depTime && !b.depTime) return -1;
+    if (!a.depTime && b.depTime) return 1;
+    return 0;
+  });
 
-  function timeStringToMinutes(timeStr) {
-    if (!timeStr) return Infinity;
-    const [h, m] = timeStr.split(':').map(Number);
-    return h * 60 + m;
+  // Render sorted rows in table body
+  const tbody = document.getElementById('dutyTable');
+  tbody.innerHTML = '';
+
+  for (const row of rows) {
+    const tr = document.createElement('tr');
+    if (row.isRest) tr.classList.add('rest');
+
+    tr.innerHTML = `
+      <td>${row.crewLPId}</td>
+      <td>${row.crewALPId}</td>
+      <td>${row.trainNo}</td>
+      <td>${row.depTime || ''}</td>
+      <td>${linkNumber}</td>
+    `;
+    tbody.appendChild(tr);
   }
+}
 
+// Helper: Convert HH:MM string to minutes number for sorting
+function timeStringToMinutes(timeStr) {
+  if (!timeStr) return Infinity;
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
+}
+
+  
   function getSelectedDate() {
     const dateInput = document.getElementById('datePicker').value;
     return dateInput ? new Date(dateInput) : new Date();
