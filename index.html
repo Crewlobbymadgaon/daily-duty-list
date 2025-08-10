@@ -100,67 +100,66 @@
     document.getElementById('dutyTable').innerHTML = `<tr><td colspan="5" style="color:red;">Error loading data</td></tr>`;
   });
 
- function renderTableCombined() {
-  if (!allCrewData.length) return;
 
-  const selectedDate = getSelectedDate();
-  const selectedDay = document.getElementById('daySelect').value;
+  function renderTableCombined() {
+    if (!allCrewData.length) return;
 
-  updateDateHeading(selectedDate);
+    const selectedDate = getSelectedDate();
+    const selectedDay = document.getElementById('daySelect').value;
 
-  // Group crew by linkId
-  const crewsByLink = {};
-  allCrewData.forEach(crew => {
-    if (!crewsByLink[crew.linkId]) crewsByLink[crew.linkId] = [];
-    crewsByLink[crew.linkId].push(crew);
-  });
+    updateDateHeading(selectedDate);
 
-  const dutyRows = [];
+    // Group crew by linkId
+    const crewsByLink = {};
+    allCrewData.forEach(crew => {
+      if (!crewsByLink[crew.linkId]) crewsByLink[crew.linkId] = [];
+      crewsByLink[crew.linkId].push(crew);
+    });
 
-  Object.values(crewsByLink).forEach(crewList => {
-    if (!crewList.length) return;
+    const dutyRows = [];
 
-    const { linkId, lastUpdatedDate } = crewList[0];
-    const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const weeksPassed = Math.floor(diffDays / 7);
+    // For each link group, apply rotation and collect duties
+    Object.values(crewsByLink).forEach(crewList => {
+      if (!crewList.length) return;
 
-    const dutiesPerRow = crewList.map(crew => crew.duties);
+      const { linkId, lastUpdatedDate } = crewList[0];
 
-    for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
-      const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
-      const crew = crewList[crewIndex];
+      // Calculate weeks passed
+      const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const weeksPassed = Math.floor(diffDays / 7);
 
-      const dutyForRow = dutiesPerRow[rowIndex][selectedDay] || '';
+      // Duties fixed per row (index)
+      const dutiesPerRow = crewList.map(crew => crew.duties);
 
-      let trainNo = '';
-      let depTime = '';
-      let stops = '';
+      for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
+        // Rotate crew position for this week
+        const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
+        const crew = crewList[crewIndex];
 
-      if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-        trainNo = dutyForRow.incoming?.trim()
-          ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
-          : dutyForRow.outgoing;
-        depTime = dutyForRow.depTime || '';
-        stops = dutyForRow.stops || '';
-      } else if (typeof dutyForRow === 'string') {
-        trainNo = dutyForRow.trim();
-      }
+        // Duty fixed by row index
+        const dutyForRow = dutiesPerRow[rowIndex][selectedDay] || '';
 
-      // ✅ Only push if trainNo matches a real train pattern
-      const trainPattern = /^\d+(\/\d+)?$/;
-      if (trainPattern.test(trainNo)) {
+        let trainNo = '';
+        let depTime = '';
+
+        if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
+          trainNo = `${dutyForRow.outgoing}/${dutyForRow.incoming || ''}`;
+          depTime = dutyForRow.depTime || '';
+        } else if (typeof dutyForRow === 'string') {
+          trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
+        }
+
         dutyRows.push({
           crewLPId: crew.crewLPId,
           crewALPId: crew.crewALPId,
           trainNo,
           depTime,
-          stops,
-          linkNumber: linkId
+          linkNumber: linkId,
+          isRest: trainNo === 'REST',
         });
       }
-    }
-  });
+    });
 
   // Now render `dutyRows` into your table
   renderDutyTable(dutyRows);
