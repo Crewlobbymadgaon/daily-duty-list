@@ -154,17 +154,20 @@
           trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
         }
 
-        // Only include if they have a duty (trainNo) or rest
-if (trainNo || depTime) {
-  dutyRows.push({
-    crewLPId: crew.crewLPId,
-    crewALPId: crew.crewALPId,
-    trainNo,
-    depTime,
-    linkNumber: linkId,
-    isRest: trainNo === 'REST',
-  });
+if (trainNo && trainNo !== "") {
+  // Always include if it’s a rest or a real duty
+  if (trainNo === "REST" || depTime) {
+    dutyRows.push({
+      crewLPId: crew.crewLPId,
+      crewALPId: crew.crewALPId,
+      trainNo,
+      depTime,
+      linkNumber: linkId,
+      isRest: trainNo === "REST",
+    });
+  }
 }
+
 
 
     // Sort duties: non-REST by depTime ascending, REST last
