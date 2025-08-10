@@ -143,21 +143,24 @@ let trainNo = '';
 let depTime = '';
 
 if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-  trainNo = `${dutyForRow.outgoing}${dutyForRow.incoming ? '/' + dutyForRow.incoming : ''}`;
+  trainNo = dutyForRow.incoming?.trim()
+    ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
+    : dutyForRow.outgoing;
   depTime = dutyForRow.depTime || '';
 } else if (typeof dutyForRow === 'string') {
   trainNo = dutyForRow;
 }
 
-// ✅ Only add if trainNo is a valid train number (numeric, not REST)
-if (/^\d+$/.test(trainNo.trim())) {
+// ✅ Filter: only allow train numbers (numbers or number/number)
+const trainNumberPattern = /^\d+(\/\d+)?$/;
+
+if (trainNumberPattern.test(trainNo.trim())) {
   dutyRows.push({
     crewLPId: crew.crewLPId,
     crewALPId: crew.crewALPId,
     trainNo,
     depTime,
-    linkNumber: linkId,
-    isRest: false, // since we skip REST here
+    linkNumber: linkId
   });
 }
 
