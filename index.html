@@ -150,8 +150,8 @@ if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
   trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
 }
 
-// Only push if trainNo is not empty (and optionally not REST)
-if (trainNo && trainNo !== 'REST') {
+// ✅ Only add if there's a train number and it's not empty
+if (trainNo && trainNo.trim() !== '') {
   dutyRows.push({
     crewLPId: crew.crewLPId,
     crewALPId: crew.crewALPId,
@@ -161,6 +161,7 @@ if (trainNo && trainNo !== 'REST') {
     isRest: trainNo === 'REST',
   });
 }
+
 
 
 
