@@ -136,7 +136,7 @@
         const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
         const crew = crewList[crewIndex];
 
-      // Duty fixed by row index
+     // Duty fixed by row index
 const dutyForRow = dutiesPerRow[rowIndex][selectedDay] || '';
 
 let trainNo = '';
@@ -149,7 +149,7 @@ if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
   trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
 }
 
-// Only push if it's not empty and not REST
+// Skip if trainNo is empty or "REST"
 if (trainNo && trainNo !== 'REST') {
   dutyRows.push({
     crewLPId: crew.crewLPId,
