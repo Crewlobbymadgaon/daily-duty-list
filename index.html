@@ -101,65 +101,83 @@
   });
 
 
-  function renderTableCombined() {
-    if (!allCrewData.length) return;
+  function renderDutyTable(dutyRows) {
+  const tableBody = document.getElementById("dutyTable");
+  tableBody.innerHTML = ""; // Clear old rows
 
-    const selectedDate = getSelectedDate();
-    const selectedDay = document.getElementById('daySelect').value;
+  dutyRows.forEach(row => {
+    const tr = document.createElement("tr");
 
-    updateDateHeading(selectedDate);
+    tr.innerHTML = `
+      <td>${row.crewLPId}</td>
+      <td>${row.crewALPId}</td>
+      <td>${row.trainNo}</td>
+      <td>${row.depTime}</td>
+      <td>${row.linkNumber}</td>
+    `;
 
-    // Group crew by linkId
-    const crewsByLink = {};
-    allCrewData.forEach(crew => {
-      if (!crewsByLink[crew.linkId]) crewsByLink[crew.linkId] = [];
-      crewsByLink[crew.linkId].push(crew);
-    });
+    tableBody.appendChild(tr);
+  });
+}
 
-    const dutyRows = [];
+function renderTableCombined() {
+  if (!allCrewData.length) return;
 
-    // For each link group, apply rotation and collect duties
-    Object.values(crewsByLink).forEach(crewList => {
-      if (!crewList.length) return;
+  const selectedDate = getSelectedDate();
+  const selectedDay = document.getElementById('daySelect').value;
+  updateDateHeading(selectedDate);
 
-      const { linkId, lastUpdatedDate } = crewList[0];
+  const crewsByLink = {};
+  allCrewData.forEach(crew => {
+    if (!crewsByLink[crew.linkId]) crewsByLink[crew.linkId] = [];
+    crewsByLink[crew.linkId].push(crew);
+  });
 
-      // Calculate weeks passed
-      const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      const weeksPassed = Math.floor(diffDays / 7);
+  const dutyRows = [];
 
-      // Duties fixed per row (index)
-      const dutiesPerRow = crewList.map(crew => crew.duties);
+  Object.values(crewsByLink).forEach(crewList => {
+    if (!crewList.length) return;
 
-      for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
-        // Rotate crew position for this week
-        const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
-        const crew = crewList[crewIndex];
+    const { linkId, lastUpdatedDate } = crewList[0];
+    const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const weeksPassed = Math.floor(diffDays / 7);
 
-        // Duty fixed by row index
-        const dutyForRow = dutiesPerRow[rowIndex][selectedDay] || '';
+    const dutiesPerRow = crewList.map(crew => crew.duties);
 
-        let trainNo = '';
-        let depTime = '';
+    for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
+      const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
+      const crew = crewList[crewIndex];
 
-        if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-          trainNo = `${dutyForRow.outgoing}/${dutyForRow.incoming || ''}`;
-          depTime = dutyForRow.depTime || '';
-        } else if (typeof dutyForRow === 'string') {
-          trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
-        }
+      const dutyForRow = dutiesPerRow[rowIndex][selectedDay] || '';
 
+      let trainNo = '';
+      let depTime = '';
+
+      if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
+        trainNo = dutyForRow.incoming?.trim()
+          ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
+          : dutyForRow.outgoing;
+        depTime = dutyForRow.depTime || '';
+      } else if (typeof dutyForRow === 'string') {
+        trainNo = dutyForRow.trim();
+      }
+
+      // ✅ Only include numeric train numbers
+      if (/^\d+(\/\d+)?$/.test(trainNo)) {
         dutyRows.push({
           crewLPId: crew.crewLPId,
           crewALPId: crew.crewALPId,
           trainNo,
           depTime,
-          linkNumber: linkId,
-          isRest: trainNo === 'REST',
+          linkNumber: linkId
         });
       }
-    });
+    }
+  });
+
+  renderDutyTable(dutyRows);
+}
 
 
 
