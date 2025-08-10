@@ -91,7 +91,7 @@
         "Wednesday": "",
         "Thursday": "",
         "Friday": "",
-        "Saturday": { "outgoing": "SP/10104", "incoming": "", "depTime": "08:30" },
+        "Saturday": { "outgoing": "SP/10104", "incoming": "", "depTime": "08:30" }
       }
     },
     {
