@@ -135,36 +135,33 @@
         // Rotate crew position for this week
         const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
         const crew = crewList[crewIndex];
-
 // Duty fixed by row index
-        const dutyForRow = dutiesPerRow[rowIndex][selectedDay] || '';
+const dutyForRow = dutiesPerRow[rowIndex][selectedDay] || '';
 
-        let trainNo = '';
-        let depTime = '';
+let trainNo = '';
+let depTime = '';
 
-        if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-          if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
+if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
   trainNo = dutyForRow.incoming?.trim()
     ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
     : dutyForRow.outgoing;
   depTime = dutyForRow.depTime || '';
+} else if (typeof dutyForRow === 'string') {
+  trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
 }
 
-          depTime = dutyForRow.depTime || '';
-        } else if (typeof dutyForRow === 'string') {
-          trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
-        }
+// Only push if trainNo is not empty (and optionally not REST)
+if (trainNo && trainNo !== 'REST') {
+  dutyRows.push({
+    crewLPId: crew.crewLPId,
+    crewALPId: crew.crewALPId,
+    trainNo,
+    depTime,
+    linkNumber: linkId,
+    isRest: trainNo === 'REST',
+  });
+}
 
-        dutyRows.push({
-          crewLPId: crew.crewLPId,
-          crewALPId: crew.crewALPId,
-          trainNo,
-          depTime,
-          linkNumber: linkId,
-          isRest: trainNo === 'REST',
-        });
-      }
-    });
 
 
     // Sort duties: non-REST by depTime ascending, REST last
