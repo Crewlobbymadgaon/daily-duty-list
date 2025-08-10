@@ -154,7 +154,7 @@
           trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
         }
 
-if (trainNo?.trim() || depTime?.trim() || trainNo === 'REST') {
+
   dutyRows.push({
     crewLPId: crew.crewLPId,
     crewALPId: crew.crewALPId,
@@ -163,7 +163,7 @@ if (trainNo?.trim() || depTime?.trim() || trainNo === 'REST') {
     linkNumber: linkId,
     isRest: trainNo === 'REST',
   });
-}
+
 
 
 
