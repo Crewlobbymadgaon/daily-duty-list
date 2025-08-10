@@ -155,14 +155,16 @@
         }
 
 
-  dutyRows.push({
-    crewLPId: crew.crewLPId,
-    crewALPId: crew.crewALPId,
-    trainNo,
-    depTime,
-    linkNumber: linkId,
-    isRest: trainNo === 'REST',
-  });
+ dutyRows.push({
+          crewLPId: crew.crewLPId,
+          crewALPId: crew.crewALPId,
+          trainNo,
+          depTime,
+          linkNumber: linkId,
+          isRest: trainNo === 'REST',
+        });
+      }
+    });
 
 
 
