@@ -8,30 +8,41 @@
     table { border-collapse: collapse; width: 100%; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
     th { background-color: #f2f2f2; }
-    select { padding: 5px; margin-bottom: 10px; }
+    select, input[type="date"] { padding: 5px; margin-bottom: 10px; }
     .rest { background-color: #ffe0e0; }
+    #dateHeading { font-size: 18px; margin-bottom: 10px; font-weight: bold; }
+    .controls { margin-bottom: 15px; }
   </style>
 </head>
 <body>
   <h2>LP/ALP Duty Viewer</h2>
+  <div id="dateHeading"></div>
 
-  <label for="daySelect">Select Day: </label>
-  <select id="daySelect">
-    <option>Sunday</option>
-    <option>Monday</option>
-    <option>Tuesday</option>
-    <option>Wednesday</option>
-    <option>Thursday</option>
-    <option>Friday</option>
-    <option>Saturday</option>
-  </select>
+  <div class="controls">
+    <label for="daySelect">Select Day: </label>
+    <select id="daySelect">
+      <option>Sunday</option>
+      <option>Monday</option>
+      <option>Tuesday</option>
+      <option>Wednesday</option>
+      <option>Thursday</option>
+      <option>Friday</option>
+      <option>Saturday</option>
+    </select>
+
+    &nbsp;&nbsp;
+
+    <label for="datePicker">Select Date: </label>
+    <input type="date" id="datePicker">
+  </div>
 
   <table>
     <thead>
       <tr>
         <th>LP Name</th>
         <th>ALP Name</th>
-        <th>Train No</th>
+        <th>Outgoing Train</th>
+        <th>Incoming Train</th>
         <th>Dep Time</th>
         <th>Link Number</th>
       </tr>
@@ -41,63 +52,134 @@
     </tbody>
   </table>
 
- <script>
-  let crewData = [];
+  <script>
+    let crewData = [];
+    let linkNumber = 1;
 
-  fetch('link1.json')
-    .then(response => response.json())
-    .then(data => {
-      crewData = data.crew;
-      document.getElementById('daySelect').addEventListener('change', renderTable);
-      renderTable();
-    });
+    fetch('link1.json')
+      .then(response => response.json())
+      .then(data => {
+        const lastUpdated = new Date(data.lastUpdated);
+        const today = new Date();
+        const daysDiff = Math.floor((today - lastUpdated) / (1000 * 60 * 60 * 24));
+        const weeksPassed = Math.floor(daysDiff / 7);
 
-  function renderTable() {
-    const day = document.getElementById('daySelect').value;
-    const tbody = document.getElementById('dutyTable');
-    tbody.innerHTML = '';
+        const startIndex = (data.currentCrewIndex + weeksPassed) % data.crew.length;
 
-    // Sort by departure time for outgoing trains only
-    const sortedData = [...crewData].sort((a, b) => {
-      const timeA = a.duties[day]?.depTime || '';
-      const timeB = b.duties[day]?.depTime || '';
-      if (!timeA) return 1;
-      if (!timeB) return -1;
-      return timeA.localeCompare(timeB);
-    });
+        // Rotate crew
+        crewData = [...data.crew.slice(startIndex), ...data.crew.slice(0, startIndex)];
+        linkNumber = data.linkId;
 
-    sortedData.forEach(c => {
-      const duty = c.duties[day];
-      let trainNo = '';
-      let depTime = '';
-      
-      if (typeof duty === 'string') {
-        // REST or empty
-        if (duty.toUpperCase() === 'REST') {
-          trainNo = 'REST';
+        const todayDay = today.toLocaleString('en-US', { weekday: 'long' });
+        document.getElementById('daySelect').value = todayDay;
+        document.getElementById('datePicker').valueAsDate = today;
+
+        document.getElementById('daySelect').addEventListener('change', () => {
+          syncDatePickerToDay();
+          renderTable();
+        });
+
+        document.getElementById('datePicker').addEventListener('change', () => {
+          syncDaySelectToDate();
+          renderTable();
+        });
+
+        renderTable();
+      });
+
+    function renderTable() {
+      const day = document.getElementById('daySelect').value;
+      const tbody = document.getElementById('dutyTable');
+      tbody.innerHTML = '';
+
+      // Update date heading
+      const displayDate = getSelectedDate();
+      updateDateHeading(displayDate);
+
+      let dayData = crewData.map(c => {
+        const duty = c.duties[day] || '';
+        let outgoing = '';
+        let incoming = '';
+        let depTime = '';
+
+        if (typeof duty === 'object' && duty.outgoing) {
+          outgoing = duty.outgoing;
+          incoming = duty.incoming || '';
+          depTime = duty.depTime || '';
+        } else if (typeof duty === 'string') {
+          if (duty.toUpperCase() === 'REST') {
+            outgoing = 'REST';
+          } else if (duty.includes('/')) {
+            [outgoing, incoming] = duty.split('/');
+          } else {
+            outgoing = duty;
+          }
         }
-      } 
-      else if (duty && duty.outgoing) {
-        // Duty present with outgoing/incoming
-        trainNo = `${duty.outgoing}${duty.incoming ? ' / ' + duty.incoming : ''}`;
-        depTime = duty.depTime || '';
-      }
 
-      const row = document.createElement('tr');
-      if (trainNo === 'REST') row.classList.add('rest');
+        return {
+          lp: c.crewLPName || c.crewLPId,
+          alp: c.crewALPName || c.crewALPId,
+          outgoing,
+          incoming,
+          depTime,
+          link: linkNumber
+        };
+      });
 
-      row.innerHTML = `
-        <td>${c.crewLPName || c.crewLPId}</td>
-        <td>${c.crewALPName || c.crewALPId}</td>
-        <td>${trainNo}</td>
-        <td>${depTime}</td>
-        <td>${1}</td>
-      `;
-      tbody.appendChild(row);
-    });
-  }
-</script>
+      // Sort by depTime
+      dayData.sort((a, b) => {
+        if (!a.depTime) return 1;
+        if (!b.depTime) return -1;
+        return a.depTime.localeCompare(b.depTime);
+      });
 
+      // Create rows
+      dayData.forEach(d => {
+        const row = document.createElement('tr');
+        if (d.outgoing === 'REST') row.classList.add('rest');
 
+        row.innerHTML = `
+          <td>${d.lp}</td>
+          <td>${d.alp}</td>
+          <td>${d.outgoing}</td>
+          <td>${d.incoming}</td>
+          <td>${d.depTime}</td>
+          <td>${d.link}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function getSelectedDate() {
+      const dateInput = document.getElementById('datePicker').value;
+      return dateInput ? new Date(dateInput) : new Date();
+    }
+
+    function updateDateHeading(date) {
+      const formattedDate = date.toLocaleDateString('en-GB', {
+        day: '2-digit', month: 'short', year: 'numeric'
+      });
+      const dayName = date.toLocaleString('en-US', { weekday: 'long' });
+      document.getElementById('dateHeading').textContent = `${dayName}, ${formattedDate}`;
+    }
+
+    function syncDatePickerToDay() {
+      const selectedDay = document.getElementById('daySelect').value;
+      const today = new Date();
+      const todayIndex = today.getDay();
+      const targetIndex = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'].indexOf(selectedDay);
+      let dayDiff = targetIndex - todayIndex;
+      if (dayDiff < 0) dayDiff += 7;
+      const targetDate = new Date();
+      targetDate.setDate(today.getDate() + dayDiff);
+      document.getElementById('datePicker').valueAsDate = targetDate;
+    }
+
+    function syncDaySelectToDate() {
+      const selectedDate = getSelectedDate();
+      const dayName = selectedDate.toLocaleString('en-US', { weekday: 'long' });
+      document.getElementById('daySelect').value = dayName;
+    }
+  </script>
 </body>
 </html>
