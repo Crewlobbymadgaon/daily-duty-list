@@ -100,70 +100,71 @@
     document.getElementById('dutyTable').innerHTML = `<tr><td colspan="5" style="color:red;">Error loading data</td></tr>`;
   });
 
-  function renderTableCombined() {
-    if (!allCrewData.length) return;
+ function renderTableCombined() {
+  if (!allCrewData.length) return;
 
-    const selectedDate = getSelectedDate();
-    const selectedDay = document.getElementById('daySelect').value;
+  const selectedDate = getSelectedDate();
+  const selectedDay = document.getElementById('daySelect').value;
 
-    updateDateHeading(selectedDate);
+  updateDateHeading(selectedDate);
 
-    // Group crew by linkId
-    const crewsByLink = {};
-    allCrewData.forEach(crew => {
-      if (!crewsByLink[crew.linkId]) crewsByLink[crew.linkId] = [];
-      crewsByLink[crew.linkId].push(crew);
-    });
-
-    const dutyRows = [];
-
-    // For each link group, apply rotation and collect duties
-    Object.values(crewsByLink).forEach(crewList => {
-      if (!crewList.length) return;
-
-      const { linkId, lastUpdatedDate } = crewList[0];
-
-      // Calculate weeks passed
-      const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      const weeksPassed = Math.floor(diffDays / 7);
-
-      // Duties fixed per row (index)
-      const dutiesPerRow = crewList.map(crew => crew.duties);
-
-      for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
-        // Rotate crew position for this week
-        const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
-        const crew = crewList[crewIndex];
-
-// Duty fixed by row index
-const dutyForRow = dutiesPerRow[rowIndex][selectedDay] || '';
-
-let trainNo = '';
-let depTime = '';
-
-if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-  trainNo = dutyForRow.incoming?.trim()
-    ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
-    : dutyForRow.outgoing;
-  depTime = dutyForRow.depTime || '';
-} else if (typeof dutyForRow === 'string') {
-  trainNo = dutyForRow;
-}
-
-// ✅ Filter: only allow train numbers (numbers or number/number)
-const trainNumberPattern = /^\d+(\/\d+)?$/;
-
-if (trainNumberPattern.test(trainNo.trim())) {
-  dutyRows.push({
-    crewLPId: crew.crewLPId,
-    crewALPId: crew.crewALPId,
-    trainNo,
-    depTime,
-    linkNumber: linkId
+  // Group crew by linkId
+  const crewsByLink = {};
+  allCrewData.forEach(crew => {
+    if (!crewsByLink[crew.linkId]) crewsByLink[crew.linkId] = [];
+    crewsByLink[crew.linkId].push(crew);
   });
-}
 
+  const dutyRows = [];
+
+  Object.values(crewsByLink).forEach(crewList => {
+    if (!crewList.length) return;
+
+    const { linkId, lastUpdatedDate } = crewList[0];
+    const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const weeksPassed = Math.floor(diffDays / 7);
+
+    const dutiesPerRow = crewList.map(crew => crew.duties);
+
+    for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
+      const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
+      const crew = crewList[crewIndex];
+
+      const dutyForRow = dutiesPerRow[rowIndex][selectedDay] || '';
+
+      let trainNo = '';
+      let depTime = '';
+      let stops = '';
+
+      if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
+        trainNo = dutyForRow.incoming?.trim()
+          ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
+          : dutyForRow.outgoing;
+        depTime = dutyForRow.depTime || '';
+        stops = dutyForRow.stops || '';
+      } else if (typeof dutyForRow === 'string') {
+        trainNo = dutyForRow.trim();
+      }
+
+      // ✅ Only push if trainNo matches a real train pattern
+      const trainPattern = /^\d+(\/\d+)?$/;
+      if (trainPattern.test(trainNo)) {
+        dutyRows.push({
+          crewLPId: crew.crewLPId,
+          crewALPId: crew.crewALPId,
+          trainNo,
+          depTime,
+          stops,
+          linkNumber: linkId
+        });
+      }
+    }
+  });
+
+  // Now render `dutyRows` into your table
+  renderDutyTable(dutyRows);
+}
 
 
 
