@@ -84,88 +84,88 @@
         renderTable();
       });
 function renderTable() {
-  const selectedDate = getSelectedDate();
+  if (!crewData.length) return;
 
-  // Calculate weeks passed
+  const selectedDate = getSelectedDate();
+  const selectedDay = document.getElementById('daySelect').value;
+
+  // Calculate weeks passed from lastUpdatedDate to selectedDate
   const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   const weeksPassed = Math.floor(diffDays / 7);
 
-  // Calculate start index for crew rotation
-  const startIndex = (currentCrewIndex + weeksPassed) % crewData.length;
-
-  // Rotate crew array accordingly
-  const rotatedCrew = rotateArray(crewData, startIndex);
-
-  const day = document.getElementById('daySelect').value;
   updateDateHeading(selectedDate);
 
-  // Build duty rows
-  const dutyRows = rotatedCrew.map(c => {
-    const duty = c.duties[day] || '';
-    let trainNo = '';
-    let depTime = null;
+  // duties fixed per row (index)
+  const dutiesPerRow = crewData.map(crew => crew.duties);
 
-    if (typeof duty === 'object' && duty.outgoing) {
-      trainNo = `${duty.outgoing}/${duty.incoming || ''}`;
-      depTime = duty.depTime || null;
-    } else if (typeof duty === 'string') {
-      if (duty.toUpperCase() === 'REST') {
-        trainNo = 'REST';
-      } else {
-        trainNo = duty;
-      }
+  // Build array of rows with depTime info for sorting
+  const rows = [];
+
+  for (let rowIndex = 0; rowIndex < crewData.length; rowIndex++) {
+    // Crew assigned to this row this week, shifted by weeksPassed
+    const crewIndex = (rowIndex - weeksPassed + crewData.length) % crewData.length;
+    const crew = crewData[crewIndex];
+
+    // Duties fixed by row (do NOT rotate duties, duties stay fixed per row)
+    const dutyForThisRow = dutiesPerRow[rowIndex][selectedDay] || '';
+
+    let trainNo = '';
+    let depTime = null; // null means no departure time / REST
+
+    if (typeof dutyForThisRow === 'object' && dutyForThisRow.outgoing) {
+      trainNo = `${dutyForThisRow.outgoing}/${dutyForThisRow.incoming || ''}`;
+      depTime = dutyForThisRow.depTime || null;
+    } else if (typeof dutyForThisRow === 'string') {
+      trainNo = dutyForThisRow.toUpperCase() === 'REST' ? 'REST' : dutyForThisRow;
     }
 
-    return {
-      crewLPId: c.crewLPId,
-      crewLPName: c.crewLPName || c.crewLPId,
-      crewALPName: c.crewALPName || c.crewALPId,
+    rows.push({
+      crewLPId: crew.crewLPId,
+      crewALPId: crew.crewALPId,
       trainNo,
       depTime,
-      linkNumber,
-      isRest: trainNo === 'REST'
-    };
-  });
+      isRest: trainNo === 'REST',
+    });
+  }
 
-  console.log("Duty rows before sort:", dutyRows);
-
-  // Sort duties: REST last, then by depTime
-  dutyRows.sort((a, b) => {
+  // Sort rows by depTime ascending; REST or no depTime pushed to bottom
+  rows.sort((a, b) => {
     if (a.isRest && !b.isRest) return 1;
     if (!a.isRest && b.isRest) return -1;
     if (a.depTime && b.depTime) {
       return timeStringToMinutes(a.depTime) - timeStringToMinutes(b.depTime);
     }
+    if (a.depTime && !b.depTime) return -1;
+    if (!a.depTime && b.depTime) return 1;
     return 0;
   });
 
-  console.log("Duty rows after sort:", dutyRows);
-
+  // Render sorted rows in table body
   const tbody = document.getElementById('dutyTable');
   tbody.innerHTML = '';
 
-  dutyRows.forEach(row => {
+  for (const row of rows) {
     const tr = document.createElement('tr');
     if (row.isRest) tr.classList.add('rest');
+
     tr.innerHTML = `
-      <td>${row.crewLPName}</td>
-      <td>${row.crewALPName}</td>
+      <td>${row.crewLPId}</td>
+      <td>${row.crewALPId}</td>
       <td>${row.trainNo}</td>
       <td>${row.depTime || ''}</td>
-      <td>${row.linkNumber}</td>
+      <td>${linkNumber}</td>
     `;
     tbody.appendChild(tr);
-  });
+  }
 }
 
-// Helper: Convert HH:MM string to total minutes for sorting
+// Helper: Convert HH:MM string to minutes number for sorting
 function timeStringToMinutes(timeStr) {
-  if (!timeStr) return Infinity; // push no-time to end
+  if (!timeStr) return Infinity;
   const [h, m] = timeStr.split(':').map(Number);
   return h * 60 + m;
 }
-
 
     function getSelectedDate() {
       const dateInput = document.getElementById('datePicker').value;
