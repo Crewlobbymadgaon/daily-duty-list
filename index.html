@@ -143,10 +143,8 @@ function renderTableCombined() {
 
             if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
                 trainNo = dutyForRow.incoming?.trim()
-    ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
-    : dutyForRow.outgoing;
-  depTime = dutyForRow.depTime || '';
-}
+                    ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
+                    : dutyForRow.outgoing;
                 depTime = dutyForRow.depTime || '';
             } else if (typeof dutyForRow === 'string') {
                 trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
