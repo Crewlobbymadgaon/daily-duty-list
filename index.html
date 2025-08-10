@@ -49,7 +49,7 @@
     <tbody id="dutyTable"></tbody>
   </table>
 
-  <script>
+ <script>
   const linkFiles = ['link1.json', 'link2.json', 'link3.json', 'link4.json'];
   let allCrewData = [];
   const daysArray = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -102,7 +102,6 @@
 
     updateDateHeading(selectedDate);
 
-    // For each link's crew group, calculate weeks passed & rotate crews accordingly
     // Group allCrewData by linkId first
     const crewsByLink = {};
     allCrewData.forEach(c => {
@@ -125,11 +124,12 @@
       const weeksPassed = Math.floor(diffDays / 7);
 
       // Rotate crew for this week
-      // duty per row fixed, so duties array is fixed order, but crew moves by weeksPassed
       for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
         const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
         const crew = crewList[crewIndex];
-        const dutyForRow = crewList[rowIndex].duties[selectedDay] || '';
+
+        // Use duties from rotated crew (crew), not fixed rowIndex
+        const dutyForRow = crew.duties[selectedDay] || '';
 
         let trainNo = '';
         let depTime = null;
@@ -179,8 +179,7 @@
     });
   }
 
-  // Helpers from your original code:
-
+  // Helper: Convert HH:MM string to minutes number for sorting
   function timeStringToMinutes(timeStr) {
     if (!timeStr) return Infinity;
     const [h, m] = timeStr.split(':').map(Number);
@@ -218,6 +217,7 @@
     document.getElementById('daySelect').value = dayName;
   }
 </script>
+
 
 </body>
 </html>
