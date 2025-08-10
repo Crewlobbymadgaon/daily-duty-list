@@ -83,8 +83,7 @@
 
         renderTable();
       });
-
-    function renderTable() {
+function renderTable() {
   const selectedDate = getSelectedDate();
 
   // Calculate weeks passed from lastUpdatedDate to selectedDate
@@ -166,6 +165,7 @@ function timeStringToMinutes(timeStr) {
   const [h, m] = timeStr.split(':').map(Number);
   return h * 60 + m;
 }
+
 
     function getSelectedDate() {
       const dateInput = document.getElementById('datePicker').value;
