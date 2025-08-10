@@ -153,8 +153,13 @@ if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
     : dutyForRow.trim();
 }
 
-// Push only if trainNo is valid (not empty, not REST)
-if (trainNo && trainNo.toUpperCase() !== 'REST') {
+if (
+  trainNo &&
+  trainNo.trim() !== '' &&
+  trainNo.toUpperCase() !== 'REST' &&
+  stops &&
+  stops.trim() !== ''
+) {
   dutyRows.push({
     crewLPId: crew.crewLPId,
     crewALPId: crew.crewALPId,
@@ -164,6 +169,7 @@ if (trainNo && trainNo.toUpperCase() !== 'REST') {
     linkNumber: linkId
   });
 }
+
 
 
 
