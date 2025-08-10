@@ -1,0 +1,129 @@
+{
+  "linkId": 7,
+  "startDay": "Sunday",
+  "currentCrewIndex": 0,
+  "lastUpdated": "2025-08-09",
+  "crew": [
+    {
+      "crewLPId": "RN-LP025",
+      "crewLPName": "",
+      "crewALPId": "RN-ALP025",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "",
+        "Tuesday": "",
+        "Wednesday": "",
+        "Thursday": "",
+        "Friday": { "outgoing": "50108", "incoming": "", "depTime": "06:20" },
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "RN-LP026",
+      "crewLPName": "",
+      "crewALPId": "RN-ALP026",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "",
+        "Tuesday": "",
+        "Wednesday": "",
+        "Thursday": "",
+        "Friday": "",
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "RN-LP027",
+      "crewLPName": "",
+      "crewALPId": "RN-ALP027",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "",
+        "Tuesday": { "outgoing": "50108", "incoming": "", "depTime": "06:20" },
+        "Wednesday": "",
+        "Thursday": "",
+        "Friday": "",
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "RN-LP028",
+      "crewLPName": "",
+      "crewALPId": "RN-ALP028",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "",
+        "Tuesday": "",
+        "Wednesday": "",
+        "Thursday": { "outgoing": "50108", "incoming": "", "depTime": "06:20" },
+        "Friday": "",
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "RN-LP029",
+      "crewLPName": "",
+      "crewALPId": "RN-ALP029",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "",
+        "Tuesday": { "outgoing": "09058", "incoming": "", "depTime": "05:20" },
+        "Wednesday": "",
+        "Thursday": { "outgoing": "10116", "incoming": "", "depTime": "07:40" },
+        "Friday": "",
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "RN-LP030",
+      "crewLPName": "",
+      "crewALPId": "RN-ALP030",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "",
+        "Tuesday": "",
+        "Wednesday": "",
+        "Thursday": "",
+        "Friday": "",
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "RN-LP031",
+      "crewLPName": "",
+      "crewALPId": "RN-ALP031",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": { "outgoing": "50108", "incoming": "", "depTime": "06:20" },
+        "Tuesday": "",
+        "Wednesday": { "outgoing": "20112", "incoming": "", "depTime": "18:00" },
+        "Thursday": "",
+        "Friday": "",
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "RN-LP032",
+      "crewLPName": "",
+      "crewALPId": "RN-ALP032",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": { "outgoing": "10104", "incoming": "", "depTime": "08:30" },
+        "Tuesday": "",
+        "Wednesday": "",
+        "Thursday": "",
+        "Friday": "",
+        "Saturday": ""
+      }
+    }
+  ]
+}
+
