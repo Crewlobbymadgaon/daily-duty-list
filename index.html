@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+za<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8" />
@@ -193,33 +193,7 @@ function renderTableCombined() {
     });
 
 
-    // Sort duties: non-REST by depTime ascending, REST last
-    dutyRows.sort((a, b) => {
-      if (a.isRest && !b.isRest) return 1;
-      if (!a.isRest && b.isRest) return -1;
-      if (a.depTime && b.depTime) return timeStringToMinutes(a.depTime) - timeStringToMinutes(b.depTime);
-      if (a.depTime && !b.depTime) return -1;
-      if (!a.depTime && b.depTime) return 1;
-      return 0;
-    });
 
-    // Render sorted table rows
-    const tbody = document.getElementById('dutyTable');
-    tbody.innerHTML = '';
-
-    dutyRows.forEach(row => {
-      const tr = document.createElement('tr');
-      if (row.isRest) tr.classList.add('rest');
-      tr.innerHTML = `
-        <td>${row.crewLPId}</td>
-        <td>${row.crewALPId}</td>
-        <td>${row.trainNo}</td>
-        <td>${row.depTime || ''}</td>
-        <td>${row.linkNumber}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
 
   function timeStringToMinutes(timeStr) {
     if (!timeStr) return Infinity;
