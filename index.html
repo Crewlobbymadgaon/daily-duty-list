@@ -154,17 +154,16 @@
           trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
         }
 
-if (trainNo || trainNo === "REST") {
+if (trainNo === 'REST' || trainNo || depTime) {
   dutyRows.push({
     crewLPId: crew.crewLPId,
     crewALPId: crew.crewALPId,
     trainNo,
     depTime,
     linkNumber: linkId,
-    isRest: trainNo === "REST",
+    isRest: trainNo === 'REST',
   });
 }
-
 
 
 
