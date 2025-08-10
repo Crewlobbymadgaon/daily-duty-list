@@ -136,46 +136,29 @@
         const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
         const crew = crewList[crewIndex];
 
-       // Duty fixed by row index
-const dutyForRow = dutiesPerRow[rowIndex][selectedDay] || '';
+      // Duty fixed by row index
+        const dutyForRow = dutiesPerRow[rowIndex][selectedDay] || '';
 
-let trainNo = '';
-let depTime = '';
+        let trainNo = '';
+        let depTime = '';
 
-if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-  trainNo = dutyForRow.incoming?.trim()
-    ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
-    : dutyForRow.outgoing;
-  depTime = dutyForRow.depTime || '';
-} else if (typeof dutyForRow === 'string') {
-  trainNo = dutyForRow.trim().toUpperCase() === 'REST'
-    ? 'REST'
-    : dutyForRow.trim();
-}
+        if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
+          trainNo = `${dutyForRow.outgoing}/${dutyForRow.incoming || ''}`;
+          depTime = dutyForRow.depTime || '';
+        } else if (typeof dutyForRow === 'string') {
+          trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
+        }
 
-if (
-  trainNo &&
-  trainNo.trim() !== '' &&
-  trainNo.toUpperCase() !== 'REST' &&
-  stops &&
-  stops.trim() !== ''
-) {
-  dutyRows.push({
-    crewLPId: crew.crewLPId,
-    crewALPId: crew.crewALPId,
-    trainNo,
-    depTime,
-    stops, // now includes stops in the row
-    linkNumber: linkId
-  });
-}
-
-
-
-
-
-
-
+        dutyRows.push({
+          crewLPId: crew.crewLPId,
+          crewALPId: crew.crewALPId,
+          trainNo,
+          depTime,
+          linkNumber: linkId,
+          isRest: trainNo === 'REST',
+        });
+      }
+    });
 
     // Sort duties: non-REST by depTime ascending, REST last
     dutyRows.sort((a, b) => {
