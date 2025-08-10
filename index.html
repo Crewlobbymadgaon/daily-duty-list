@@ -154,21 +154,7 @@
           trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
         }
 
-let trainNo = '';
-let depTime = '';
-
-// Build trainNo and depTime without slash when incoming is empty
-if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-  trainNo = dutyForRow.incoming?.trim()
-    ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
-    : dutyForRow.outgoing;
-  depTime = dutyForRow.depTime || '';
-} else if (typeof dutyForRow === 'string') {
-  trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
-}
-
-// ✅ Filter: Only add if it's REST or a valid duty
-if (trainNo && (trainNo === 'REST' || depTime)) {
+if ((trainNo && trainNo.trim() !== '') || trainNo === 'REST') {
   dutyRows.push({
     crewLPId: crew.crewLPId,
     crewALPId: crew.crewALPId,
@@ -178,6 +164,7 @@ if (trainNo && (trainNo === 'REST' || depTime)) {
     isRest: trainNo === 'REST',
   });
 }
+
 
 
 
