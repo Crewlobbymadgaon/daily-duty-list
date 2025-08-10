@@ -85,55 +85,87 @@
       });
 
     function renderTable() {
-      if (!crewData.length) return;
+  const selectedDate = getSelectedDate();
 
-      const selectedDate = getSelectedDate();
-      const selectedDay = document.getElementById('daySelect').value;
+  // Calculate weeks passed from lastUpdatedDate to selectedDate
+  const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const weeksPassed = Math.floor(diffDays / 7);
 
-      // Calculate weeks passed from lastUpdatedDate to selectedDate
-      const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      const weeksPassed = Math.floor(diffDays / 7);
+  // Calculate rotated crew start index for this date's week
+  const startIndex = (currentCrewIndex + weeksPassed) % crewData.length;
 
-      updateDateHeading(selectedDate);
+  // Rotate crew array accordingly for this week
+  const rotatedCrew = rotateArray(crewData, startIndex);
 
-      const tbody = document.getElementById('dutyTable');
-      tbody.innerHTML = '';
+  // Get selected day from dropdown
+  const day = document.getElementById('daySelect').value;
 
-      // duties fixed per row (index)
-      const dutiesPerRow = crewData.map(crew => crew.duties);
+  // Update heading with date & day
+  updateDateHeading(selectedDate);
 
-      for (let rowIndex = 0; rowIndex < crewData.length; rowIndex++) {
-        // Crew assigned to this row this week, shifted by weeksPassed
-        const crewIndex = (rowIndex - weeksPassed + crewData.length) % crewData.length;
-        const crew = crewData[crewIndex];
+  // Prepare array with duty details including depTime for sorting
+  const dutyRows = rotatedCrew.map(c => {
+    const duty = c.duties[day] || '';
+    let trainNo = '';
+    let depTime = null;  // Use null for REST or no dep time
 
-        // Duties fixed by row (do NOT rotate duties, duties stay fixed per row)
-        const dutyForThisRow = dutiesPerRow[rowIndex][selectedDay] || '';
-
-        let trainNo = '';
-        let depTime = '';
-
-        if (typeof dutyForThisRow === 'object' && dutyForThisRow.outgoing) {
-          trainNo = `${dutyForThisRow.outgoing}/${dutyForThisRow.incoming || ''}`;
-          depTime = dutyForThisRow.depTime || '';
-        } else if (typeof dutyForThisRow === 'string') {
-          trainNo = dutyForThisRow.toUpperCase() === 'REST' ? 'REST' : dutyForThisRow;
-        }
-
-        const row = document.createElement('tr');
-        if (trainNo === 'REST') row.classList.add('rest');
-
-        row.innerHTML = `
-          <td>${crew.crewLPId}</td>
-          <td>${crew.crewALPId}</td>
-          <td>${trainNo}</td>
-          <td>${depTime}</td>
-          <td>${linkNumber}</td>
-        `;
-        tbody.appendChild(row);
+    if (typeof duty === 'object' && duty.outgoing) {
+      trainNo = `${duty.outgoing}/${duty.incoming || ''}`;
+      depTime = duty.depTime || null;
+    } else if (typeof duty === 'string') {
+      if (duty.toUpperCase() === 'REST') {
+        trainNo = 'REST';
+      } else {
+        trainNo = duty;
       }
     }
+
+    return {
+      crewLPId: c.crewLPId,
+      crewLPName: c.crewLPName || c.crewLPId,
+      crewALPName: c.crewALPName || c.crewALPId,
+      trainNo,
+      depTime,
+      linkNumber,
+      isRest: trainNo === 'REST'
+    };
+  });
+
+  // Sort duties: first by depTime ascending; REST (null depTime) go last
+  dutyRows.sort((a, b) => {
+    if (a.isRest && !b.isRest) return 1;   // REST last
+    if (!a.isRest && b.isRest) return -1;  // non-REST first
+    if (a.depTime && b.depTime) {
+      return timeStringToMinutes(a.depTime) - timeStringToMinutes(b.depTime);
+    }
+    return 0;
+  });
+
+  // Render sorted table rows
+  const tbody = document.getElementById('dutyTable');
+  tbody.innerHTML = '';
+
+  dutyRows.forEach(row => {
+    const tr = document.createElement('tr');
+    if (row.isRest) tr.classList.add('rest');
+    tr.innerHTML = `
+      <td>${row.crewLPName}</td>
+      <td>${row.crewALPName}</td>
+      <td>${row.trainNo}</td>
+      <td>${row.depTime || ''}</td>
+      <td>${row.linkNumber}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// Helper: Convert HH:MM string to total minutes for sorting
+function timeStringToMinutes(timeStr) {
+  if (!timeStr) return Infinity; // push no-time to end
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
+}
 
     function getSelectedDate() {
       const dateInput = document.getElementById('datePicker').value;
