@@ -154,16 +154,30 @@
           trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
         }
 
-dutyRows.push({
-          crewLPId: crew.crewLPId,
-          crewALPId: crew.crewALPId,
-          trainNo,
-          depTime,
-          linkNumber: linkId,
-          isRest: trainNo === 'REST',
-        });
-      }
-    });
+let trainNo = '';
+let depTime = '';
+
+// Build trainNo and depTime without slash when incoming is empty
+if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
+  trainNo = dutyForRow.incoming?.trim()
+    ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
+    : dutyForRow.outgoing;
+  depTime = dutyForRow.depTime || '';
+} else if (typeof dutyForRow === 'string') {
+  trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
+}
+
+// ✅ Filter: Only add if it's REST or a valid duty
+if (trainNo && (trainNo === 'REST' || depTime)) {
+  dutyRows.push({
+    crewLPId: crew.crewLPId,
+    crewALPId: crew.crewALPId,
+    trainNo,
+    depTime,
+    linkNumber: linkId,
+    isRest: trainNo === 'REST',
+  });
+}
 
 
 
