@@ -55,7 +55,6 @@
     let lastUpdatedDate;
     let currentCrewIndex;
 
-    // Days array to get index easily
     const daysArray = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
     fetch('link1.json')
@@ -64,24 +63,13 @@
         lastUpdatedDate = new Date(data.lastUpdated);
         currentCrewIndex = data.currentCrewIndex;
         linkNumber = data.linkId;
+        crewData = data.crew;
 
+        // Initialize controls to today
         const today = new Date();
-        // Calculate full days difference from lastUpdated to today
-        const diffDays = Math.floor((today - lastUpdatedDate) / (1000 * 60 * 60 * 24));
-
-        // Calculate how many full weeks passed since last update
-        const weeksPassed = Math.floor(diffDays / 7);
-
-        // Calculate rotated crew index (rotate by weeksPassed)
-        const rotatedIndex = (currentCrewIndex + weeksPassed) % data.crew.length;
-
-        // Rotate crew accordingly
-        crewData = [...data.crew.slice(rotatedIndex), ...data.crew.slice(0, rotatedIndex)];
-
-        // Set initial controls to today
+        document.getElementById('datePicker').valueAsDate = today;
         const todayDayName = today.toLocaleString('en-US', { weekday: 'long' });
         document.getElementById('daySelect').value = todayDayName;
-        document.getElementById('datePicker').valueAsDate = today;
 
         document.getElementById('daySelect').addEventListener('change', () => {
           syncDatePickerToDay();
@@ -97,16 +85,30 @@
       });
 
     function renderTable() {
+      const selectedDate = getSelectedDate();
+
+      // Calculate weeks passed from lastUpdatedDate to selectedDate
+      const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const weeksPassed = Math.floor(diffDays / 7);
+
+      // Calculate rotated crew start index for this date's week
+      const startIndex = (currentCrewIndex + weeksPassed) % crewData.length;
+
+      // Rotate crew array accordingly for this week
+      const rotatedCrew = rotateArray(crewData, startIndex);
+
+      // Get selected day from dropdown
       const day = document.getElementById('daySelect').value;
+
+      // Update heading with date & day
+      updateDateHeading(selectedDate);
+
+      // Build rows for each crew in rotated order
       const tbody = document.getElementById('dutyTable');
       tbody.innerHTML = '';
 
-      // Update heading with selected date & day
-      const selectedDate = getSelectedDate();
-      updateDateHeading(selectedDate);
-
-      // Map duties for selected day for all crew
-      let dayData = crewData.map(c => {
+      rotatedCrew.forEach(c => {
         const duty = c.duties[day] || '';
         let trainNo = '';
         let depTime = '';
@@ -122,35 +124,23 @@
           }
         }
 
-        return {
-          lp: c.crewLPName || c.crewLPId,
-          alp: c.crewALPName || c.crewALPId,
-          trainNo,
-          depTime,
-          link: linkNumber
-        };
-      });
-
-      // Sort by depTime (empty depTime goes last)
-      dayData.sort((a, b) => {
-        if (!a.depTime) return 1;
-        if (!b.depTime) return -1;
-        return a.depTime.localeCompare(b.depTime);
-      });
-
-      dayData.forEach(d => {
         const row = document.createElement('tr');
-        if (d.trainNo === 'REST') row.classList.add('rest');
+        if (trainNo === 'REST') row.classList.add('rest');
 
         row.innerHTML = `
-          <td>${d.lp}</td>
-          <td>${d.alp}</td>
-          <td>${d.trainNo}</td>
-          <td>${d.depTime}</td>
-          <td>${d.link}</td>
+          <td>${c.crewLPName || c.crewLPId}</td>
+          <td>${c.crewALPName || c.crewALPId}</td>
+          <td>${trainNo}</td>
+          <td>${depTime}</td>
+          <td>${linkNumber}</td>
         `;
         tbody.appendChild(row);
       });
+    }
+
+    // Helper: Rotate array by n positions
+    function rotateArray(arr, n) {
+      return arr.slice(n).concat(arr.slice(0, n));
     }
 
     function getSelectedDate() {
