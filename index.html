@@ -121,30 +121,32 @@
     const weeksPassed = Math.floor(diffDays / 7);
 
     for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
-      const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
-      const crew = crewList[crewIndex];
-      const dutyForRow = crew.duties[selectedDay] || '';
+  const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
+  const rotatedCrew = crewList[crewIndex];
+  
+  // Get duty fixed to rowIndex (not rotated crew)
+  const dutyForRow = crewList[rowIndex].duties[selectedDay] || '';
+  
+  let trainNo = '';
+  let depTime = null;
 
-      let trainNo = '';
-      let depTime = null;
+  if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
+    trainNo = `${dutyForRow.outgoing}/${dutyForRow.incoming || ''}`;
+    depTime = dutyForRow.depTime || null;
+  } else if (typeof dutyForRow === 'string') {
+    trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
+  }
 
-      if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-        trainNo = `${dutyForRow.outgoing}/${dutyForRow.incoming || ''}`;
-        depTime = dutyForRow.depTime || null;
-      } else if (typeof dutyForRow === 'string') {
-        trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
-      }
-
-      dutyRows.push({
-        crewLPId: crew.crewLPId,
-        crewALPId: crew.crewALPId,
-        trainNo,
-        depTime,
-        linkNumber: linkId,
-        isRest: trainNo === 'REST',
-      });
-    }
+  dutyRows.push({
+    crewLPId: rotatedCrew.crewLPId,
+    crewALPId: rotatedCrew.crewALPId,
+    trainNo,
+    depTime,
+    linkNumber: linkId,
+    isRest: trainNo === 'REST',
   });
+}
+
 
   dutyRows.sort((a, b) => {
     if (a.isRest && !b.isRest) return 1;
