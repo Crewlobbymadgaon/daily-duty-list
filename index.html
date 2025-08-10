@@ -155,26 +155,17 @@
         }
 
 
-if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-  trainNo = dutyForRow.incoming?.trim()
-    ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
-    : dutyForRow.outgoing;
-  depTime = dutyForRow.depTime || '';
-} else if (typeof dutyForRow === 'string') {
-  trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
-}
-
-// ✅ Push only if there's a duty or it's REST
-if (trainNo || depTime) {
+if (trainNo && trainNo !== 'REST') {
   dutyRows.push({
     crewLPId: crew.crewLPId,
     crewALPId: crew.crewALPId,
     trainNo,
     depTime,
-    linkNumber: linkId,
-    isRest: trainNo === 'REST',
+    stops, // now includes stops in the row
+    linkNumber: linkId
   });
 }
+
 
 
 
