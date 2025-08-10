@@ -41,50 +41,55 @@
     </tbody>
   </table>
 
-  <script>
-    let crewData = [];
+ <script>
+  let crewData = [];
 
-    // Load JSON
-    fetch('link1.json')
-      .then(response => response.json())
-      .then(data => {
-        crewData = data.crew; // store the crew array
-        document.getElementById('daySelect').addEventListener('change', renderTable);
-        renderTable(); // show for default day
-      });
+  // Load JSON
+  fetch('link1.json')
+    .then(response => response.json())
+    .then(data => {
+      crewData = data.crew; // store the crew array from JSON
+      document.getElementById('daySelect').addEventListener('change', renderTable);
+      renderTable(); // show for default day
+    });
 
-    function renderTable() {
-      const day = document.getElementById('daySelect').value;
-      const tbody = document.getElementById('dutyTable');
-      tbody.innerHTML = '';
+  function renderTable() {
+    const day = document.getElementById('daySelect').value;
+    const tbody = document.getElementById('dutyTable');
+    tbody.innerHTML = '';
 
-      crewData.forEach(c => {
-        const duty = c.duties[day] || '';
-        let trainNo = '';
-        let depTime = '';
+    crewData.forEach(c => {
+      const duty = c.duties[day] || '';
+      let outgoingTrain = '';
+      let incomingTrain = '';
+      let depTime = '';
 
-        if (duty && duty.toUpperCase() !== 'REST') {
-          // Train numbers may be like "20645/20646" — split into trainNo only
-          trainNo = duty;
-          // Dep time not given in JSON, keep empty for now
-          depTime = '';
-        } else if (duty.toUpperCase() === 'REST') {
-          trainNo = 'REST';
+      if (duty && duty.toUpperCase() !== 'REST') {
+        // If format is "12345/54321" split
+        if (duty.includes('/')) {
+          [outgoingTrain, incomingTrain] = duty.split('/');
+        } else {
+          outgoingTrain = duty;
         }
+        depTime = ''; // TODO: Fill from JSON later
+      } else if (duty.toUpperCase() === 'REST') {
+        outgoingTrain = 'REST';
+      }
 
-        const row = document.createElement('tr');
-        if (duty.toUpperCase() === 'REST') row.classList.add('rest');
+      const row = document.createElement('tr');
+      if (duty.toUpperCase() === 'REST') row.classList.add('rest');
 
-        row.innerHTML = `
-          <td>${c.crewLPName || c.crewLPId}</td>
-          <td>${c.crewALPName || c.crewALPId}</td>
-          <td>${trainNo}</td>
-          <td>${depTime}</td>
-          <td>${1}</td>
-        `;
-        tbody.appendChild(row);
-      });
-    }
-  </script>
+      row.innerHTML = `
+        <td>${c.crewLPName || c.crewLPId}</td>
+        <td>${c.crewALPName || c.crewALPId}</td>
+        <td>${outgoingTrain}${incomingTrain ? ' / ' + incomingTrain : ''}</td>
+        <td>${depTime}</td>
+        <td>1</td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+</script>
+
 </body>
 </html>
