@@ -1,4 +1,4 @@
-za<!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8" />
@@ -142,7 +142,11 @@ function renderTableCombined() {
             let depTime = '';
 
             if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-                trainNo = `${dutyForRow.outgoing}/${dutyForRow.incoming || ''}`;
+                trainNo = dutyForRow.incoming?.trim()
+    ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
+    : dutyForRow.outgoing;
+  depTime = dutyForRow.depTime || '';
+}
                 depTime = dutyForRow.depTime || '';
             } else if (typeof dutyForRow === 'string') {
                 trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
