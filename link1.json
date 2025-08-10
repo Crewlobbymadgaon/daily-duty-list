@@ -11,12 +11,12 @@
       "crewALPName": "",
       "duties": {
         "Sunday": "",
-        "Monday": "20645/20646",
+        "Monday": { "outgoing": "20645", "incoming": "20646", "depTime": "17:35" },
         "Tuesday": "",
-        "Wednesday": "12052/12051",
+        "Wednesday": { "outgoing": "12052", "incoming": "12051", "depTime": "12:00" },
         "Thursday": "",
         "Friday": "REST",
-        "Saturday": "12201/22476"
+        "Saturday": { "outgoing": "12201", "incoming": "22476", "depTime": "04:10" }
       }
     },
     {
@@ -26,11 +26,11 @@
       "crewALPName": "",
       "duties": {
         "Sunday": "",
-        "Monday": "16346/12201",
+        "Monday": { "outgoing": "16346", "incoming": "12201", "depTime": "04:00" },
         "Tuesday": "",
-        "Wednesday": "12431/22150",
+        "Wednesday": { "outgoing": "12431", "incoming": "22150", "depTime": "08:00" },
         "Thursday": "",
-        "Friday": "22629/12431",
+        "Friday": { "outgoing": "22629", "incoming": "12431", "depTime": "08:35" },
         "Saturday": "REST"
       }
     },
@@ -41,11 +41,11 @@
       "crewALPName": "",
       "duties": {
         "Sunday": "",
-        "Monday": "12284/16346",
+        "Monday": { "outgoing": "12284", "incoming": "16346", "depTime": "01:55" },
         "Tuesday": "",
-        "Wednesday": "12283/12133",
+        "Wednesday": { "outgoing": "12283", "incoming": "12133", "depTime": "11:35" },
         "Thursday": "",
-        "Friday": "22907/22656",
+        "Friday": { "outgoing": "22907", "incoming": "22656", "depTime": "10:00" },
         "Saturday": ""
       }
     },
@@ -55,12 +55,12 @@
       "crewALPId": "ALP004",
       "crewALPName": "",
       "duties": {
-        "Sunday": "20645/12617",
+        "Sunday": { "outgoing": "20645", "incoming": "12617", "depTime": "17:35" },
         "Monday": "",
         "Tuesday": "REST",
-        "Wednesday": "22120/12618",
+        "Wednesday": { "outgoing": "22120", "incoming": "12618", "depTime": "12:50" },
         "Thursday": "",
-        "Friday": "12618/12134",
+        "Friday": { "outgoing": "12618", "incoming": "12134", "depTime": "18:00" },
         "Saturday": ""
       }
     },
@@ -71,11 +71,11 @@
       "crewALPName": "",
       "duties": {
         "Sunday": "",
-        "Monday": "20909/20924",
+        "Monday": { "outgoing": "20909", "incoming": "20924", "depTime": "02:40" },
         "Tuesday": "REST",
-        "Wednesday": "12620/12218",
+        "Wednesday": { "outgoing": "12620", "incoming": "12218", "depTime": "19:40" },
         "Thursday": "",
-        "Friday": "20910/12217",
+        "Friday": { "outgoing": "20910", "incoming": "12217", "depTime": "23:00" },
         "Saturday": ""
       }
     },
@@ -86,12 +86,12 @@
       "crewALPName": "",
       "duties": {
         "Sunday": "REST",
-        "Monday": "12052/12051",
+        "Monday": { "outgoing": "12052", "incoming": "12051", "depTime": "12:00" },
         "Tuesday": "",
-        "Wednesday": "20645/12134",
+        "Wednesday": { "outgoing": "20645", "incoming": "12134", "depTime": "17:35" },
         "Thursday": "",
         "Friday": "REST",
-        "Saturday": "22656/20646"
+        "Saturday": { "outgoing": "22656", "incoming": "20646", "depTime": "12:40" }
       }
     },
     {
@@ -101,12 +101,12 @@
       "crewALPName": "",
       "duties": {
         "Sunday": "",
-        "Monday": "12224/12450",
+        "Monday": { "outgoing": "12224", "incoming": "12450", "depTime": "09:55" },
         "Tuesday": "",
-        "Wednesday": "20932/12617",
+        "Wednesday": { "outgoing": "20932", "incoming": "12617", "depTime": "23:00" },
         "Thursday": "",
         "Friday": "REST",
-        "Saturday": "16338/22414"
+        "Saturday": { "outgoing": "16338", "incoming": "22414", "depTime": "10:50" }
       }
     },
     {
@@ -116,12 +116,12 @@
       "crewALPName": "",
       "duties": {
         "Sunday": "",
-        "Monday": "22150/11098",
+        "Monday": { "outgoing": "22150", "incoming": "11098", "depTime": "06:55" },
         "Tuesday": "",
-        "Wednesday": "19260/22114",
+        "Wednesday": { "outgoing": "19260", "incoming": "22114", "depTime": "10:50" },
         "Thursday": "",
         "Friday": "REST",
-        "Saturday": "20931/16345"
+        "Saturday": { "outgoing": "20931", "incoming": "16345", "depTime": "02:40" }
       }
     },
     {
@@ -130,12 +130,12 @@
       "crewALPId": "ALP009",
       "crewALPName": "",
       "duties": {
-        "Sunday": "12134/12484",
+        "Sunday": { "outgoing": "12134", "incoming": "12484", "depTime": "22:10" },
         "Monday": "",
-        "Tuesday": "12620/20932",
+        "Tuesday": { "outgoing": "12620", "incoming": "20932", "depTime": "19:40" },
         "Wednesday": "",
         "Thursday": "REST",
-        "Friday": "12431/22414",
+        "Friday": { "outgoing": "12431", "incoming": "22414", "depTime": "08:00" },
         "Saturday": ""
       }
     },
@@ -145,12 +145,12 @@
       "crewALPId": "ALP010",
       "crewALPName": "",
       "duties": {
-        "Sunday": "16337/22114",
+        "Sunday": { "outgoing": "16337", "incoming": "22114", "depTime": "10:50" },
         "Monday": "",
         "Tuesday": "REST",
-        "Wednesday": "22113/22630",
+        "Wednesday": { "outgoing": "22113", "incoming": "22630", "depTime": "04:10" },
         "Thursday": "",
-        "Friday": "12133/16338",
+        "Friday": { "outgoing": "12133", "incoming": "16338", "depTime": "09:10" },
         "Saturday": ""
       }
     },
@@ -160,13 +160,13 @@
       "crewALPId": "ALP011",
       "crewALPName": "",
       "duties": {
-        "Sunday": "22413/12133",
+        "Sunday": { "outgoing": "22413", "incoming": "12133", "depTime": "08:00" },
         "Monday": "",
-        "Tuesday": "02197/12223",
+        "Tuesday": { "outgoing": "02197", "incoming": "12223", "depTime": "05:35" },
         "Wednesday": "",
-        "Thursday": "22150/12431",
+        "Thursday": { "outgoing": "22150", "incoming": "12431", "depTime": "06:55" },
         "Friday": "REST",
-        "Saturday": "20645/12620"
+        "Saturday": { "outgoing": "20645", "incoming": "12620", "depTime": "17:35" }
       }
     },
     {
@@ -176,12 +176,12 @@
       "crewALPName": "",
       "duties": {
         "Sunday": "",
-        "Monday": "12484/12617",
+        "Monday": { "outgoing": "12484", "incoming": "12617", "depTime": "18:35" },
         "Tuesday": "",
         "Wednesday": "REST",
-        "Thursday": "22230/22229",
+        "Thursday": { "outgoing": "22230", "incoming": "22229", "depTime": "12:20" },
         "Friday": "",
-        "Saturday": "19578/12202"
+        "Saturday": { "outgoing": "19578", "incoming": "12202", "depTime": "23:00" }
       }
     },
     {
@@ -192,10 +192,10 @@
       "duties": {
         "Sunday": "",
         "Monday": "",
-        "Tuesday": "12133/20646",
+        "Tuesday": { "outgoing": "12133", "incoming": "20646", "depTime": "09:10" },
         "Wednesday": "REST",
         "Thursday": "",
-        "Friday": "12202/16345",
+        "Friday": { "outgoing": "12202", "incoming": "16345", "depTime": "01:55" },
         "Saturday": ""
       }
     },
@@ -205,12 +205,12 @@
       "crewALPId": "ALP014",
       "crewALPName": "",
       "duties": {
-        "Sunday": "12223/12224",
+        "Sunday": { "outgoing": "12223", "incoming": "12224", "depTime": "06:30" },
         "Monday": "",
-        "Tuesday": "16337/12283",
+        "Tuesday": { "outgoing": "16337", "incoming": "12283", "depTime": "10:50" },
         "Wednesday": "",
         "Thursday": "REST",
-        "Friday": "12617/20910",
+        "Friday": { "outgoing": "12617", "incoming": "20910", "depTime": "01:20" },
         "Saturday": ""
       }
     },
@@ -220,11 +220,11 @@
       "crewALPId": "ALP015",
       "crewALPName": "",
       "duties": {
-        "Sunday": "16346/12284",
+        "Sunday": { "outgoing": "16346", "incoming": "12284", "depTime": "04:00" },
         "Monday": "REST",
-        "Tuesday": "20645/12620",
+        "Tuesday": { "outgoing": "20645", "incoming": "12620", "depTime": "17:35" },
         "Wednesday": "",
-        "Thursday": "SP/56615/20646",
+        "Thursday": { "outgoing": "SP/56615", "incoming": "20646", "depTime": "14:15" },
         "Friday": "",
         "Saturday": "REST"
       }
@@ -235,13 +235,13 @@
       "crewALPId": "ALP016",
       "crewALPName": "",
       "duties": {
-        "Sunday": "12133/20646",
+        "Sunday": { "outgoing": "12133", "incoming": "20646", "depTime": "09:10" },
         "Monday": "",
-        "Tuesday": "12449/12432",
+        "Tuesday": { "outgoing": "12449", "incoming": "12432", "depTime": "10:00" },
         "Wednesday": "",
-        "Thursday": "12432/19259",
+        "Thursday": { "outgoing": "12432", "incoming": "19259", "depTime": "08:35" },
         "Friday": "",
-        "Saturday": "22230/12450"
+        "Saturday": { "outgoing": "22230", "incoming": "12450", "depTime": "12:20" }
       }
     },
     {
@@ -252,11 +252,11 @@
       "duties": {
         "Sunday": "",
         "Monday": "REST",
-        "Tuesday": "12201/12431",
+        "Tuesday": { "outgoing": "12201", "incoming": "12431", "depTime": "04:10" },
         "Wednesday": "",
-        "Thursday": "22633/22629",
+        "Thursday": { "outgoing": "22633", "incoming": "22629", "depTime": "08:00" },
         "Friday": "",
-        "Saturday": "12431/12223"
+        "Saturday": { "outgoing": "12431", "incoming": "12223", "depTime": "08:00" }
       }
     },
     {
@@ -266,14 +266,13 @@
       "crewALPName": "",
       "duties": {
         "Sunday": "",
-        "Monday": "22413/16337",
+        "Monday": { "outgoing": "22413", "incoming": "16337", "depTime": "08:00" },
         "Tuesday": "",
-        "Wednesday": "12223/22633",
+        "Wednesday": { "outgoing": "12223", "incoming": "22633", "depTime": "06:30" },
         "Thursday": "REST",
-        "Friday": "20645/20646",
+        "Friday": { "outgoing": "20645", "incoming": "20646", "depTime": "17:35" },
         "Saturday": ""
       }
     }
   ]
 }
-
