@@ -1,0 +1,130 @@
+{
+  "linkId": 3,
+  "startDay": "Sunday",
+  "currentCrewIndex": 0,
+  "lastUpdated": "2025-08-09",
+  "crew": [
+    {
+      "crewLPId": "LP035",
+      "crewLPName": "",
+      "crewALPId": "ALP035",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": { "outgoing": "12618", "incoming": "12217", "depTime": "18:00" },
+        "Monday": "",
+        "Tuesday": "REST",
+        "Wednesday": { "outgoing": "12133", "incoming": "16338", "depTime": "09:10" },
+        "Thursday": "",
+        "Friday": { "outgoing": "12620", "incoming": "12618", "depTime": "19:40" },
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "LP036",
+      "crewLPName": "",
+      "crewALPId": "ALP036",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "REST",
+        "Monday": { "outgoing": "12977", "incoming": "22654", "depTime": "09:20" },
+        "Tuesday": "",
+        "Wednesday": { "outgoing": "16345", "incoming": "20923", "depTime": "23:55" },
+        "Thursday": "",
+        "Friday": "REST",
+        "Saturday": { "outgoing": "11100", "incoming": "20111", "depTime": "11:30" }
+      }
+    },
+    {
+      "crewLPId": "LP037",
+      "crewLPName": "",
+      "crewALPId": "ALP037",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": { "outgoing": "16596", "incoming": "12620", "depTime": "16:30" },
+        "Tuesday": "",
+        "Wednesday": "REST",
+        "Thursday": { "outgoing": "09057", "incoming": "12134", "depTime": "12:30" },
+        "Friday": "",
+        "Saturday": { "outgoing": "20112", "incoming": "12618", "depTime": "18:00" }
+      }
+    },
+    {
+      "crewLPId": "LP038",
+      "crewLPName": "",
+      "crewALPId": "ALP038",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": { "outgoing": "12620", "incoming": "10103", "depTime": "19:40" },
+        "Tuesday": "",
+        "Wednesday": "REST",
+        "Thursday": { "outgoing": "16596", "incoming": "12620", "depTime": "16:30" },
+        "Friday": "",
+        "Saturday": { "outgoing": "16596", "incoming": "SP/20646", "depTime": "16:30" }
+      }
+    },
+    {
+      "crewLPId": "LP039",
+      "crewLPName": "",
+      "crewALPId": "ALP039",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": "",
+        "Monday": "REST",
+        "Tuesday": { "outgoing": "SP/10107/16586", "incoming": "12789/SP", "depTime": "04:40" },
+        "Wednesday": "",
+        "Thursday": { "outgoing": "16345", "incoming": "20931", "depTime": "23:55" },
+        "Friday": "",
+        "Saturday": ""
+      }
+    },
+    {
+      "crewLPId": "LP040",
+      "crewLPName": "",
+      "crewALPId": "ALP040",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": { "outgoing": "22634", "incoming": "16346", "depTime": "03:20" },
+        "Monday": "REST",
+        "Tuesday": { "outgoing": "16334", "incoming": "19260", "depTime": "10:50" },
+        "Wednesday": "",
+        "Thursday": { "outgoing": "16338", "incoming": "16333", "depTime": "10:50" },
+        "Friday": "",
+        "Saturday": "REST"
+      }
+    },
+    {
+      "crewLPId": "LP041",
+      "crewLPName": "",
+      "crewALPId": "ALP041",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": { "outgoing": "12619", "incoming": "16595", "depTime": "02:35" },
+        "Monday": "",
+        "Tuesday": { "outgoing": "12618", "incoming": "12483", "depTime": "18:00" },
+        "Wednesday": "",
+        "Thursday": "",
+        "Friday": { "outgoing": "20923", "incoming": "12619", "depTime": "02:40" },
+        "Saturday": "REST"
+      }
+    },
+    {
+      "crewLPId": "LP042",
+      "crewLPName": "",
+      "crewALPId": "ALP042",
+      "crewALPName": "",
+      "duties": {
+        "Sunday": { "outgoing": "16596", "incoming": "12620", "depTime": "16:30" },
+        "Monday": "",
+        "Tuesday": { "outgoing": "20112", "incoming": "10103", "depTime": "18:00" },
+        "Wednesday": "",
+        "Thursday": "REST",
+        "Friday": { "outgoing": "SP/20645", "incoming": "12620", "depTime": "17:35" },
+        "Saturday": ""
+      }
+    }
+   
+  ]
+}
+
