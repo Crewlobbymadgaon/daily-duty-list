@@ -143,7 +143,12 @@
         let depTime = '';
 
         if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-          trainNo = `${dutyForRow.outgoing}/${dutyForRow.incoming || ''}`;
+          if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
+  trainNo = dutyForRow.incoming?.trim()
+    ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
+    : dutyForRow.outgoing;
+  depTime = dutyForRow.depTime || '';
+}
           depTime = dutyForRow.depTime || '';
         } else if (typeof dutyForRow === 'string') {
           trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
