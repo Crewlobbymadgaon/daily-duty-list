@@ -70,44 +70,48 @@
   });
 
   // Load all link JSON files in parallel
-  Promise.all(linkFiles.map(f => fetch(f).then(r => r.json())))
-    .then(allLinksData => {
-      allCrewData = [];
-      allLinksData.forEach(linkData => {
-        const linkId = linkData.linkId || 0;
-        const lastUpdatedDate = new Date(linkData.lastUpdated);
-        const currentCrewIndex = linkData.currentCrewIndex || 0;
+ Promise.all(linkFiles.map(f => fetch(f).then(r => r.json())))
+  .then(allLinksData => {
+    allCrewData = [];
+    allLinksData.forEach(linkData => {
+      console.log('Link data loaded:', linkData);
+      const linkId = linkData.linkId || 0;
+      const lastUpdatedDate = new Date(linkData.lastUpdated);
+      const currentCrewIndex = linkData.currentCrewIndex || 0;
 
-        // Add linkId, lastUpdatedDate, currentCrewIndex to each crew member for later use
-        const crewWithExtras = linkData.crew.map((c, index) => ({
-          ...c,
-          linkId,
-          lastUpdatedDate,
-          currentCrewIndex,
-          crewIndex: index, // position in this link's crew list
-        }));
+      const crewWithExtras = linkData.crew.map((c, index) => ({
+        ...c,
+        linkId,
+        lastUpdatedDate,
+        currentCrewIndex,
+        crewIndex: index,
+      }));
 
-        allCrewData.push(...crewWithExtras);
-      });
+      allCrewData.push(...crewWithExtras);
+    });
+    console.log('All crew data:', allCrewData);
+    renderTableCombined();
+  })
+  .catch(err => console.error('Error loading JSON files:', err));
 
-      renderTableCombined();
-    })
-    .catch(err => console.error('Error loading JSON files:', err));
 
-  function renderTableCombined() {
-  if (!allCrewData.length) return;
+function renderTableCombined() {
+  if (!allCrewData.length) {
+    console.log('No crew data');
+    return;
+  }
 
   const selectedDate = getSelectedDate();
   const selectedDay = document.getElementById('daySelect').value;
 
   updateDateHeading(selectedDate);
 
-  // Group allCrewData by linkId
   const crewsByLink = {};
   allCrewData.forEach(c => {
     if (!crewsByLink[c.linkId]) crewsByLink[c.linkId] = [];
     crewsByLink[c.linkId].push(c);
   });
+  console.log('Grouped crews by link:', crewsByLink);
 
   const dutyRows = [];
 
@@ -119,34 +123,35 @@
     const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const weeksPassed = Math.floor(diffDays / 7);
+    console.log(`Link ${linkId}: weeksPassed =`, weeksPassed);
 
     for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
-  const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
-  const rotatedCrew = crewList[crewIndex];
-  
-  // Get duty fixed to rowIndex (not rotated crew)
-  const dutyForRow = crewList[rowIndex].duties[selectedDay] || '';
-  
-  let trainNo = '';
-  let depTime = null;
+      const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
+      const rotatedCrew = crewList[crewIndex];
+      const dutyForRow = crewList[rowIndex].duties ? crewList[rowIndex].duties[selectedDay] : '';
 
-  if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-    trainNo = `${dutyForRow.outgoing}/${dutyForRow.incoming || ''}`;
-    depTime = dutyForRow.depTime || null;
-  } else if (typeof dutyForRow === 'string') {
-    trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
-  }
+      let trainNo = '';
+      let depTime = null;
 
-  dutyRows.push({
-    crewLPId: rotatedCrew.crewLPId,
-    crewALPId: rotatedCrew.crewALPId,
-    trainNo,
-    depTime,
-    linkNumber: linkId,
-    isRest: trainNo === 'REST',
+      if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
+        trainNo = `${dutyForRow.outgoing}/${dutyForRow.incoming || ''}`;
+        depTime = dutyForRow.depTime || null;
+      } else if (typeof dutyForRow === 'string') {
+        trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
+      }
+
+      dutyRows.push({
+        crewLPId: rotatedCrew.crewLPId,
+        crewALPId: rotatedCrew.crewALPId,
+        trainNo,
+        depTime,
+        linkNumber: linkId,
+        isRest: trainNo === 'REST',
+      });
+    }
   });
-}
 
+  console.log('Duty rows to render:', dutyRows.length);
 
   dutyRows.sort((a, b) => {
     if (a.isRest && !b.isRest) return 1;
@@ -173,7 +178,6 @@
     tbody.appendChild(tr);
   });
 }
-
 
   // Helper: Convert HH:MM string to minutes number for sorting
   function timeStringToMinutes(timeStr) {
