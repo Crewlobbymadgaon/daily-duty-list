@@ -86,28 +86,25 @@
 function renderTable() {
   const selectedDate = getSelectedDate();
 
-  // Calculate weeks passed from lastUpdatedDate to selectedDate
+  // Calculate weeks passed
   const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   const weeksPassed = Math.floor(diffDays / 7);
 
-  // Calculate rotated crew start index for this date's week
+  // Calculate start index for crew rotation
   const startIndex = (currentCrewIndex + weeksPassed) % crewData.length;
 
-  // Rotate crew array accordingly for this week
+  // Rotate crew array accordingly
   const rotatedCrew = rotateArray(crewData, startIndex);
 
-  // Get selected day from dropdown
   const day = document.getElementById('daySelect').value;
-
-  // Update heading with date & day
   updateDateHeading(selectedDate);
 
-  // Prepare array with duty details including depTime for sorting
+  // Build duty rows
   const dutyRows = rotatedCrew.map(c => {
     const duty = c.duties[day] || '';
     let trainNo = '';
-    let depTime = null;  // Use null for REST or no dep time
+    let depTime = null;
 
     if (typeof duty === 'object' && duty.outgoing) {
       trainNo = `${duty.outgoing}/${duty.incoming || ''}`;
@@ -131,17 +128,20 @@ function renderTable() {
     };
   });
 
-  // Sort duties: first by depTime ascending; REST (null depTime) go last
+  console.log("Duty rows before sort:", dutyRows);
+
+  // Sort duties: REST last, then by depTime
   dutyRows.sort((a, b) => {
-    if (a.isRest && !b.isRest) return 1;   // REST last
-    if (!a.isRest && b.isRest) return -1;  // non-REST first
+    if (a.isRest && !b.isRest) return 1;
+    if (!a.isRest && b.isRest) return -1;
     if (a.depTime && b.depTime) {
       return timeStringToMinutes(a.depTime) - timeStringToMinutes(b.depTime);
     }
     return 0;
   });
 
-  // Render sorted table rows
+  console.log("Duty rows after sort:", dutyRows);
+
   const tbody = document.getElementById('dutyTable');
   tbody.innerHTML = '';
 
