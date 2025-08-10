@@ -136,30 +136,21 @@
         const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
         const crew = crewList[crewIndex];
 
-// Duty fixed by row index
-const dutyForRow = dutiesPerRow[rowIndex][selectedDay] || '';
+// Collect duty rows first
+dutyRows.push({
+  crewLPId: crew.crewLPId,
+  crewALPId: crew.crewALPId,
+  trainNo,
+  depTime,
+  linkNumber: linkId,
+  isRest: trainNo === 'REST',
+});
 
-let trainNo = '';
-let depTime = '';
+// Later, after all duties are collected:
+dutyRows = dutyRows.filter(row => {
+  return !(row.trainNo === '' && row.depTime === '') && row.trainNo !== 'REST';
+});
 
-if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-  trainNo = `${dutyForRow.outgoing}/${dutyForRow.incoming || ''}`;
-  depTime = dutyForRow.depTime || '';
-} else if (typeof dutyForRow === 'string') {
-  trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
-}
-
-// ✅ Only push if it's REST or if there is a trainNo/depTime
-if (trainNo === 'REST' || trainNo || depTime) {
-  dutyRows.push({
-    crewLPId: crew.crewLPId,
-    crewALPId: crew.crewALPId,
-    trainNo,
-    depTime,
-    linkNumber: linkId,
-    isRest: trainNo === 'REST',
-  });
-}
 
 
 
