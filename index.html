@@ -102,75 +102,52 @@
       daySelect.value = dayName;
     }
 
-    function renderTable() {
-      if (!crewData.length) return;
+   function renderTable() {
+  if (!crewData.length) return;
 
-      const selectedDate = getSelectedDate();
-      const selectedDay = daySelect.value;
+  const selectedDate = getSelectedDate();
+  const selectedDay = daySelect.value;
 
-      // Calculate weeks passed from lastUpdatedDate to selectedDate
-      const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      const weeksPassed = Math.floor(diffDays / 7);
+  // Calculate weeks passed from lastUpdatedDate to selectedDate
+  const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const weeksPassed = Math.floor(diffDays / 7);
 
-      // Calculate rotated crew start index for this date's week
-      const startIndex = (currentCrewIndex + weeksPassed) % crewData.length;
+  updateDateHeading(selectedDate);
 
-      // Rotate crew array accordingly for this week
-      const rotatedCrew = rotateArray(crewData, startIndex);
+  const tbody = document.getElementById('dutyTable');
+  tbody.innerHTML = '';
 
-      // Sort by depTime ascending, REST last
-      rotatedCrew.sort((a, b) => {
-        const dutyA = a.duties[selectedDay];
-        const dutyB = b.duties[selectedDay];
+  for (let rowIndex = 0; rowIndex < crewData.length; rowIndex++) {
+    // Calculate which crew duties to show for this row after shifting
+    const crewIndex = (rowIndex + weeksPassed) % crewData.length;
+    const crew = crewData[crewIndex];
 
-        if (dutyA === 'REST' && dutyB !== 'REST') return 1;
-        if (dutyB === 'REST' && dutyA !== 'REST') return -1;
-        if (!dutyA) return 1;
-        if (!dutyB) return -1;
+    const duty = crew.duties[selectedDay] || '';
+    let trainNo = '';
+    let depTime = '';
 
-        const timeA = dutyA.depTime || null;
-        const timeB = dutyB.depTime || null;
-
-        if (!timeA) return 1;
-        if (!timeB) return -1;
-
-        const [hA, mA] = timeA.split(':').map(Number);
-        const [hB, mB] = timeB.split(':').map(Number);
-
-        return (hA * 60 + mA) - (hB * 60 + mB);
-      });
-
-      updateDateHeading(selectedDate);
-
-      const tbody = document.getElementById('dutyTable');
-      tbody.innerHTML = '';
-
-      rotatedCrew.forEach(c => {
-        const duty = c.duties[selectedDay] || '';
-        let trainNo = '';
-        let depTime = '';
-
-        if (typeof duty === 'object' && duty.outgoing) {
-          trainNo = `${duty.outgoing}/${duty.incoming || ''}`;
-          depTime = duty.depTime || '';
-        } else if (typeof duty === 'string') {
-          trainNo = duty.toUpperCase() === 'REST' ? 'REST' : duty;
-        }
-
-        const row = document.createElement('tr');
-        if (trainNo === 'REST') row.classList.add('rest');
-
-        row.innerHTML = `
-          <td>${c.crewLPId}</td>
-          <td>${c.crewALPId}</td>
-          <td>${trainNo}</td>
-          <td>${depTime}</td>
-          <td>${linkNumber}</td>
-        `;
-        tbody.appendChild(row);
-      });
+    if (typeof duty === 'object' && duty.outgoing) {
+      trainNo = `${duty.outgoing}/${duty.incoming || ''}`;
+      depTime = duty.depTime || '';
+    } else if (typeof duty === 'string') {
+      trainNo = duty.toUpperCase() === 'REST' ? 'REST' : duty;
     }
+
+    const row = document.createElement('tr');
+    if (trainNo === 'REST') row.classList.add('rest');
+
+    row.innerHTML = `
+      <td>${crew.crewLPId}</td>
+      <td>${crew.crewALPId}</td>
+      <td>${trainNo}</td>
+      <td>${depTime}</td>
+      <td>${linkNumber}</td>
+    `;
+    tbody.appendChild(row);
+  }
+}
+
 
     // Event listeners
     daySelect.addEventListener('change', () => {
