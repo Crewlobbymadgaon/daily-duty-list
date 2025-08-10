@@ -87,7 +87,6 @@
    function renderTable() {
   const selectedDate = getSelectedDate();
 
-  // Normalize dates to avoid time issues
   function normalizeDate(date) {
     return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   }
@@ -99,7 +98,7 @@
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   const weeksPassed = Math.floor(diffDays / 7);
 
-  const weekOffset = ((currentCrewIndex + weeksPassed) % crewData.length + crewData.length) % crewData.length; // positive modulo
+  const weekOffset = ((currentCrewIndex + weeksPassed) % crewData.length + crewData.length) % crewData.length;
 
   const day = document.getElementById('daySelect').value;
 
@@ -108,7 +107,9 @@
   const tbody = document.getElementById('dutyTable');
   tbody.innerHTML = '';
 
-  // For each row i, find crew index to show duties of
+  // Prepare an array of crew with their duty info for the selected day
+  let crewsWithDuty = [];
+
   for (let i = 0; i < crewData.length; i++) {
     const crewIndex = (i + weekOffset) % crewData.length;
     const c = crewData[crewIndex];
@@ -123,24 +124,51 @@
     } else if (typeof duty === 'string') {
       if (duty.toUpperCase() === 'REST') {
         trainNo = 'REST';
+        depTime = ''; // no dep time for REST
       } else {
         trainNo = duty;
+        depTime = ''; // no dep time given
       }
     }
 
+    crewsWithDuty.push({
+      crew: c,
+      trainNo,
+      depTime
+    });
+  }
+
+  // Sort by depTime ascending — for missing or REST, put at bottom
+  crewsWithDuty.sort((a, b) => {
+    if (!a.depTime && !b.depTime) return 0;
+    if (!a.depTime) return 1;
+    if (!b.depTime) return -1;
+
+    // Convert "HH:MM" to minutes for comparison
+    const timeToMinutes = t => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    return timeToMinutes(a.depTime) - timeToMinutes(b.depTime);
+  });
+
+  // Build rows after sorting
+  crewsWithDuty.forEach(({ crew, trainNo, depTime }) => {
     const row = document.createElement('tr');
     if (trainNo === 'REST') row.classList.add('rest');
 
     row.innerHTML = `
-      <td>${c.crewLPName || c.crewLPId}</td>
-      <td>${c.crewALPName || c.crewALPId}</td>
+      <td>${crew.crewLPName || crew.crewLPId}</td>
+      <td>${crew.crewALPName || crew.crewALPId}</td>
       <td>${trainNo}</td>
       <td>${depTime}</td>
       <td>${linkNumber}</td>
     `;
     tbody.appendChild(row);
-  }
+  });
 }
+
 
     // Helper: Rotate array by n positions
     function rotateArray(arr, n) {
