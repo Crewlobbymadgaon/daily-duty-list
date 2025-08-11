@@ -72,7 +72,7 @@
       "duties": {
         "Sunday": "",
         "Monday": "",
-        "Tuesday": "",
+        "Tuesday": { "outgoing": "10116", "incoming": "", "depTime": "07:40" },
         "Wednesday": "",
         "Thursday": "",
         "Friday": "",
