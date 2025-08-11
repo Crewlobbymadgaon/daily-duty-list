@@ -13,6 +13,47 @@
     .rest { background-color: #ffe0e0; }
     #dateHeading { font-size: 18px; margin-bottom: 10px; font-weight: bold; }
     .controls { margin-bottom: 15px; }
+      @media (max-width: 600px) {
+    header h1 {
+      font-size: 2rem !important;
+      text-align: center !important;
+      width: 100%;
+      padding: 0;
+    }
+    header p {
+      font-size: 1.5rem !important;
+      text-align: center !important;
+      width: 100%;
+    }
+    label[for="datePicker"] {
+      max-width: 100% !important;
+      font-size: 1.1rem !important;
+      padding: 12px 16px !important;
+    }
+      }
+    @media (max-width: 600px) {
+    header h1 {
+      font-size: 2rem !important;
+    }
+    header p {
+      font-size: 1.4rem !important;
+    }
+    header #dateHeading {
+      font-size: 1.1rem !important;
+    }
+    header .controls {
+      gap: 12px !important;
+      font-size: 1rem !important;
+    }
+    header .controls label {
+      min-width: 100%;
+      justify-content: center;
+    }
+    header .controls select,
+    header .controls input[type="date"] {
+      min-width: 100% !important;
+    }
+    }
   </style>
 </head>
 <body>
@@ -68,84 +109,9 @@
 
 </header>
 
-<script>
-  const datePicker = document.getElementById('datePicker');
-  const selectedDateText = document.getElementById('selectedDateText');
 
-  // Format date like: "Mon, 11 Aug 2025"
-  function formatDateWithDay(date) {
-    if (!date) return '';
-    const options = { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' };
-    return date.toLocaleDateString('en-GB', options);
-  }
 
-  // Initialize with today
-  let selectedDate = new Date();
-  datePicker.valueAsDate = selectedDate;
-  selectedDateText.textContent = formatDateWithDay(selectedDate);
 
-  // Clicking the label opens date picker
-  document.querySelector('label[for="datePicker"]').addEventListener('click', () => {
-    datePicker.showPicker?.() || datePicker.focus();
-  });
-
-  // Update displayed date and your custom logic when date changes
-  datePicker.addEventListener('change', (e) => {
-    selectedDate = new Date(e.target.value);
-    selectedDateText.textContent = formatDateWithDay(selectedDate);
-    // Call your existing table update or other logic here:
-    if (typeof renderTableCombined === 'function') {
-      renderTableCombined();
-    }
-  });
-</script>
-
-<style>
-  @media (max-width: 600px) {
-    header h1 {
-      font-size: 2rem !important;
-      text-align: center !important;
-      width: 100%;
-      padding: 0;
-    }
-    header p {
-      font-size: 1.5rem !important;
-      text-align: center !important;
-      width: 100%;
-    }
-    label[for="datePicker"] {
-      max-width: 100% !important;
-      font-size: 1.1rem !important;
-      padding: 12px 16px !important;
-    }
-  }
-</style>
-
-<style>
-  @media (max-width: 600px) {
-    header h1 {
-      font-size: 2rem !important;
-    }
-    header p {
-      font-size: 1.4rem !important;
-    }
-    header #dateHeading {
-      font-size: 1.1rem !important;
-    }
-    header .controls {
-      gap: 12px !important;
-      font-size: 1rem !important;
-    }
-    header .controls label {
-      min-width: 100%;
-      justify-content: center;
-    }
-    header .controls select,
-    header .controls input[type="date"] {
-      min-width: 100% !important;
-    }
-  }
-</style>
   
 
   <table>
@@ -341,6 +307,36 @@ function renderTableCombined() {
     const dayName = selectedDate.toLocaleString('en-US', { weekday: 'long' });
     document.getElementById('daySelect').value = dayName;
   }
+
+  const datePicker = document.getElementById('datePicker');
+  const selectedDateText = document.getElementById('selectedDateText');
+
+  // Format date like: "Mon, 11 Aug 2025"
+  function formatDateWithDay(date) {
+    if (!date) return '';
+    const options = { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' };
+    return date.toLocaleDateString('en-GB', options);
+  }
+
+  // Initialize with today
+  let selectedDate = new Date();
+  datePicker.valueAsDate = selectedDate;
+  selectedDateText.textContent = formatDateWithDay(selectedDate);
+
+  // Clicking the label opens date picker
+  document.querySelector('label[for="datePicker"]').addEventListener('click', () => {
+    datePicker.showPicker?.() || datePicker.focus();
+  });
+
+  // Update displayed date and your custom logic when date changes
+  datePicker.addEventListener('change', (e) => {
+    selectedDate = new Date(e.target.value);
+    selectedDateText.textContent = formatDateWithDay(selectedDate);
+    // Call your existing table update or other logic here:
+    if (typeof renderTableCombined === 'function') {
+      renderTableCombined();
+    }
+  });
 </script>
 </body>
 </html>
