@@ -30,10 +30,10 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 ">
   <!-- Heading -->
-  <h1 style="font-size: 2.2rem; font-weight: 700; margin: 0 0 0.3rem;">
+  <h1 style="font-size: clamp(1.8rem, 5vw, 2.5rem); font-weight: 700; margin: 0 0 0.3rem;">
     Combined Crew Lobby Madgaon
   </h1>
-  <p style="font-size: 1.5rem; opacity: 0.9; margin: 0 0 1rem;">
+  <p style="font-size: clamp(1.2rem, 4vw, 1.6rem); opacity: 0.9; margin: 0 0 1rem;">
     Crew Duty List
   </p>
 
@@ -67,9 +67,9 @@
   const datePicker = document.getElementById("datePicker");
 
   function formatDate(date) {
-    return date.toLocaleDateString("en-US", {
+    return date.toLocaleDateString("en-GB", {
       weekday: "long",
-      day: "numeric",
+      day: "2-digit",
       month: "short",
       year: "numeric"
     });
@@ -84,7 +84,12 @@
   datePicker.addEventListener("change", () => {
     const selectedDate = new Date(datePicker.value);
     dateDisplay.textContent = formatDate(selectedDate);
+    renderTableCombined();
   });
+
+  function getSelectedDate() {
+    return datePicker.value ? new Date(datePicker.value) : new Date();
+  }
 </script>
 
   <table>
