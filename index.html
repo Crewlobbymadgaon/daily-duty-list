@@ -22,96 +22,72 @@
 <header style="
   background: linear-gradient(90deg, #2563eb, #4f46e5);
   color: white;
-  padding: 1.5rem 1.75rem;
+  padding: 1.5rem;
   box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
   border-radius: 0 0 12px 12px;
-  max-width: 800px;
-  margin: 0 auto 1.5rem auto;
+  width: 100%;
   text-align: center;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 ">
+  <!-- Heading -->
+  <h1 style="font-size: 2.2rem; font-weight: 700; margin: 0 0 0.3rem;">
+    Combined Crew Lobby Madgaon
+  </h1>
+  <p style="font-size: 1.5rem; opacity: 0.9; margin: 0 0 1rem;">
+    Crew Duty List
+  </p>
 
-  <h1 style="font-size: 2.5rem; font-weight: 700; margin: 0 0 0.3rem;">Combined Crew Lobby Madgaon</h1>
-  <p style="font-size: 1.9rem; opacity: 0.9; margin: 0 0 1rem;">Crew Duty List</p>
-
-  <div id="dateHeading" style="font-weight: 700; font-size: 1.25rem; margin-bottom: 16px; color: #c7d2fe;"></div>
-
-  <div class="controls" style="
+  <!-- Date Display + Calendar Icon -->
+  <div style="
     display: flex;
-    flex-wrap: wrap;
     justify-content: center;
     align-items: center;
-    gap: 16px;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: #e0e7ff;
+    gap: 10px;
+    font-size: 1.2rem;
     font-weight: 600;
-    font-size: 1.1rem;
+    background: rgba(255,255,255,0.15);
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1.5px solid #a5b4fc;
+    width: fit-content;
+    margin: 0 auto;
   ">
-    <label for="daySelect" style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: rgba(255 255 255 / 0.15); padding: 8px 12px; border-radius: 8px; border: 1.5px solid #a5b4fc;">
-      <span>Select Day:</span>
-      <select id="daySelect" style="
-        padding: 7px 10px;
-        border-radius: 6px;
-        border: none;
-        font-weight: 700;
-        cursor: pointer;
-        background: #818cf8;
-        color: white;
-        min-width: 130px;
-        box-shadow: 0 0 5px #6366f1a0;
-      ">
-        <option>Sunday</option>
-        <option>Monday</option>
-        <option>Tuesday</option>
-        <option>Wednesday</option>
-        <option>Thursday</option>
-        <option>Friday</option>
-        <option>Saturday</option>
-      </select>
+    <span id="dateDisplay">Loading...</span>
+    <label for="datePicker" style="cursor: pointer;">
+      <svg xmlns="http://www.w3.org/2000/svg" style="width: 28px; height: 28px; fill: white;" viewBox="0 0 24 24">
+        <path d="M7 10h5v5H7v-5zm-5 9V7a2 2 0 0 1 2-2h1V3h2v2h6V3h2v2h1a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm2 0h14V8H4v11z"/>
+      </svg>
     </label>
-
-    <label for="datePicker" style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: rgba(255 255 255 / 0.15); padding: 8px 12px; border-radius: 8px; border: 1.5px solid #a5b4fc;">
-      <span>Select Date:</span>
-      <input type="date" id="datePicker" style="
-        padding: 7px 14px;
-        border-radius: 6px;
-        border: none;
-        font-weight: 700;
-        cursor: pointer;
-        color: white;
-        background: #818cf8;
-        min-width: 140px;
-        box-shadow: 0 0 5px #6366f1a0;
-      " />
-    </label>
+    <input type="date" id="datePicker" style="display: none;" />
   </div>
 </header>
 
-<style>
-  @media (max-width: 600px) {
-    header h1 {
-      font-size: 2rem !important;
-    }
-    header p {
-      font-size: 1.4rem !important;
-    }
-    header #dateHeading {
-      font-size: 1.1rem !important;
-    }
-    header .controls {
-      gap: 12px !important;
-      font-size: 1rem !important;
-    }
-    header .controls label {
-      min-width: 100%;
-      justify-content: center;
-    }
-    header .controls select,
-    header .controls input[type="date"] {
-      min-width: 100% !important;
-    }
+<script>
+  const dateDisplay = document.getElementById("dateDisplay");
+  const datePicker = document.getElementById("datePicker");
+
+  function formatDate(date) {
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    });
   }
-</style>
+
+  // Set today as default
+  const today = new Date();
+  datePicker.valueAsDate = today;
+  dateDisplay.textContent = formatDate(today);
+
+  // Update on date change
+  datePicker.addEventListener("change", () => {
+    const selectedDate = new Date(datePicker.value);
+    dateDisplay.textContent = formatDate(selectedDate);
+  });
+</script>
+
+
 
 
 
