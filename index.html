@@ -121,7 +121,6 @@
         if (!crewList.length) return;
 
         const { linkId, lastUpdatedDate } = crewList[0];
-
         const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         const weeksPassed = Math.floor(diffDays / 7);
@@ -142,7 +141,7 @@
                     : dutyForRow.outgoing;
                 depTime = dutyForRow.depTime || '';
             } else if (typeof dutyForRow === 'string') {
-                trainNo = dutyForRow;
+                trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
             }
 
             dutyRows.push({
@@ -156,34 +155,76 @@
         }
     });
 
-    // Sort: duties with time first, REST last
-    dutyRows.sort((a, b) => {
-        if (a.isRest && !b.isRest) return 1;  // move REST to bottom
-        if (!a.isRest && b.isRest) return -1;
+    const filteredRows = dutyRows.filter(row =>
+        row.trainNo && row.trainNo.trim() !== '' && row.trainNo.toUpperCase() !== 'REST'
+    );
+
+    filteredRows.sort((a, b) => {
         if (a.depTime && b.depTime) return timeStringToMinutes(a.depTime) - timeStringToMinutes(b.depTime);
         if (a.depTime && !b.depTime) return -1;
         if (!a.depTime && b.depTime) return 1;
         return 0;
     });
 
-    // Render
     const tbody = document.getElementById('dutyTable');
     tbody.innerHTML = '';
 
-    dutyRows.forEach(row => {
+    filteredRows.forEach(row => {
         const tr = document.createElement('tr');
-        if (row.isRest) tr.classList.add('rest');
+
+        const linkColor = linkColors[row.linkNumber] || "#555";
+        const linkTag = `
+            <span style="
+                position:absolute;
+                top:2px;
+                right:4px;
+                background:${linkColor};
+                color:white;
+                font-weight:bold;
+                font-size:0.7em;
+                padding:2px 6px;
+                border-radius:10px;
+                line-height:1;
+            ">
+                ${formatLinkCode(row.linkNumber)}
+            </span>
+        `;
+
         tr.innerHTML = `
             <td>${row.crewLPId}</td>
             <td>${row.crewALPId}</td>
-            <td>${row.trainNo}</td>
+            <td style="position:relative; padding-right:30px;">
+                ${row.trainNo}
+                ${linkTag}
+            </td>
             <td>${row.depTime || ''}</td>
-            <td>${row.linkNumber}</td>
         `;
         tbody.appendChild(tr);
     });
 }
 
+// Mapping for link codes
+function formatLinkCode(linkNumber) {
+    const map = {
+        1: "M1", 2: "M2", 3: "M3", 4: "M4",
+        5: "R1", 6: "R2", 7: "R3",
+        8: "OL", 9: "S1"
+    };
+    return map[linkNumber] || linkNumber;
+}
+
+// Colors for link badges
+const linkColors = {
+    1: "#ff5733",
+    2: "#33b5ff",
+    3: "#33ff57",
+    4: "#f39c12",
+    5: "#9b59b6",
+    6: "#e91e63",
+    7: "#34495e",
+    8: "#16a085",
+    9: "#795548"
+};
 
 
   function timeStringToMinutes(timeStr) {
