@@ -12,39 +12,29 @@
     .rest { background-color: #ffe0e0; }
     #dateHeading { font-size: 18px; margin-bottom: 10px; font-weight: bold; }
     .controls { margin-bottom: 15px; }
-    .train-number {
-    font-weight: bold;
-    position: relative;
-    display: inline-block;
-    padding-right: 18px; /* space for badge */
-}
-
-.link-badge {
-    position: absolute;
-    top: -6px;
-    right: 0;
-    font-size: 0.65em;
-    padding: 1px 4px;
-    border-radius: 8px;
-    background-color: transparent;
-    font-weight: bold;
-    opacity: 0.8;
-}
   </style>
 </head>
 <body>
-  
+  <h2>LP/ALP Duty Viewer</h2>
   <div id="dateHeading"></div>
 
-<h1 id="mainHeading" class="text-center text-2xl font-bold mb-1">Crew Duty Table</h1>
-<div class="flex justify-center items-center gap-2 mb-4">
-    <span id="formattedDate" class="text-lg font-medium"></span>
-    <button id="calendarIcon" class="text-gray-600 hover:text-blue-500 text-xl">📅</button>
-    <input type="date" id="datePicker" class="hidden">
-</div>
-<select id="daySelect" class="border px-2 py-1 rounded"></select>
+  <div class="controls">
+    <label for="daySelect">Select Day: </label>
+    <select id="daySelect">
+      <option>Sunday</option>
+      <option>Monday</option>
+      <option>Tuesday</option>
+      <option>Wednesday</option>
+      <option>Thursday</option>
+      <option>Friday</option>
+      <option>Saturday</option>
+    </select>
 
+    &nbsp;&nbsp;
 
+    <label for="datePicker">Select Date: </label>
+    <input type="date" id="datePicker" />
+  </div>
 
   <table>
     <thead>
@@ -109,8 +99,8 @@
     console.error('Error loading JSON files:', err);
     document.getElementById('dutyTable').innerHTML = `<tr><td colspan="5" style="color:red;">Error loading data</td></tr>`;
   });
-
-  function renderTableCombined() {
+function renderTableCombined() {
+function renderTableCombined() {
     if (!allCrewData.length) return;
 
     const selectedDate = getSelectedDate();
@@ -212,29 +202,6 @@
     });
 }
 
-// Mapping for link codes
-function formatLinkCode(linkNumber) {
-    const map = {
-        1: "M1", 2: "M2", 3: "M3", 4: "M4",
-        5: "R1", 6: "R2", 7: "R3",
-        8: "OL", 9: "S1"
-    };
-    return map[linkNumber] || linkNumber;
-}
-
-// Colors for link badges
-const linkColors = {
-    1: "#ff5733",
-    2: "#33b5ff",
-    3: "#33ff57",
-    4: "#f39c12",
-    5: "#9b59b6",
-    6: "#e91e63",
-    7: "#34495e",
-    8: "#16a085",
-    9: "#795548"
-};
-
 
   function timeStringToMinutes(timeStr) {
     if (!timeStr) return Infinity;
@@ -267,56 +234,11 @@ const linkColors = {
     document.getElementById('datePicker').valueAsDate = targetDate;
   }
 
-  
-
-// === DATE SETUP ===
-const datePicker = document.getElementById("datePicker");
-const daySelect = document.getElementById("daySelect");
-const formattedDateEl = document.getElementById("formattedDate");
-const calendarIcon = document.getElementById("calendarIcon");
-
-// Function to format date as "12 Aug 2025"
-function formatDateDisplay(date) {
-    return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
-}
-
-// Set date on load
-const today = new Date();
-datePicker.valueAsDate = today;
-formattedDateEl.textContent = formatDateDisplay(today);
-syncDaySelectToDate(today);
-
-// Sync dropdown with date
-function syncDaySelectToDate(date) {
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    daySelect.innerHTML = days.map((day, idx) =>
-        `<option value="${day}" ${idx === date.getDay() ? "selected" : ""}>${day}</option>`
-    ).join("");
-}
-
-// When date changes → update display, dropdown, and table
-datePicker.addEventListener("change", () => {
-    const selectedDate = new Date(datePicker.value);
-    formattedDateEl.textContent = formatDateDisplay(selectedDate);
-    syncDaySelectToDate(selectedDate);
-    renderTableCombined();
-});
-
-// When dropdown changes → update date & table
-daySelect.addEventListener("change", () => {
-    const selectedDate = new Date(datePicker.value);
-    const currentDay = selectedDate.getDay();
-    const targetDay = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
-        .indexOf(daySelect.value);
-    const diff = targetDay - currentDay;
-    selectedDate.setDate(selectedDate.getDate() + diff);
-    datePicker.valueAsDate = selectedDate;
-    formattedDateEl.textContent = formatDateDisplay(selectedDate);
-    renderTableCombined();
-});
-
-// Calendar icon opens date picker
-calendarIcon.addEventListener("click", () => datePicker.showPicker());
+  function syncDaySelectToDate() {
+    const selectedDate = getSelectedDate();
+    const dayName = selectedDate.toLocaleString('en-US', { weekday: 'long' });
+    document.getElementById('daySelect').value = dayName;
+  }
 </script>
 </body>
 </html>
