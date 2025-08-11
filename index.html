@@ -12,24 +12,6 @@
     .rest { background-color: #ffe0e0; }
     #dateHeading { font-size: 18px; margin-bottom: 10px; font-weight: bold; }
     .controls { margin-bottom: 15px; }
-    .train-number {
-    font-weight: bold;
-    position: relative;
-    display: inline-block;
-    padding-right: 18px; /* space for badge */
-}
-
-.link-badge {
-    position: absolute;
-    top: -6px;
-    right: 0;
-    font-size: 0.65em;
-    padding: 1px 4px;
-    border-radius: 8px;
-    background-color: transparent;
-    font-weight: bold;
-    opacity: 0.8;
-}
   </style>
 </head>
 <body>
@@ -61,7 +43,7 @@
         <th>ALP ID</th>
         <th>Train No</th>
         <th>Dep Time</th>
-        
+        <th>Link Number</th>
       </tr>
     </thead>
     <tbody id="dutyTable"></tbody>
@@ -118,7 +100,6 @@
     document.getElementById('dutyTable').innerHTML = `<tr><td colspan="5" style="color:red;">Error loading data</td></tr>`;
   });
 function renderTableCombined() {
-function renderTableCombined() {
     if (!allCrewData.length) return;
 
     const selectedDate = getSelectedDate();
@@ -126,6 +107,7 @@ function renderTableCombined() {
 
     updateDateHeading(selectedDate);
 
+    // Group crew by linkId
     const crewsByLink = {};
     allCrewData.forEach(crew => {
         if (!crewsByLink[crew.linkId]) crewsByLink[crew.linkId] = [];
@@ -134,19 +116,26 @@ function renderTableCombined() {
 
     const dutyRows = [];
 
+    // For each link group, apply rotation and collect duties
     Object.values(crewsByLink).forEach(crewList => {
         if (!crewList.length) return;
 
         const { linkId, lastUpdatedDate } = crewList[0];
+
+        // Calculate weeks passed
         const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         const weeksPassed = Math.floor(diffDays / 7);
 
+        // Duties fixed per row (index)
         const dutiesPerRow = crewList.map(crew => crew.duties);
 
         for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
+            // Rotate crew position for this week
             const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
             const crew = crewList[crewIndex];
+
+            // Duty fixed by row index
             const dutyForRow = dutiesPerRow[rowIndex][selectedDay] || '';
 
             let trainNo = '';
@@ -172,10 +161,12 @@ function renderTableCombined() {
         }
     });
 
+    // ✅ Keep only rows with a valid train number (exclude empty and REST)
     const filteredRows = dutyRows.filter(row =>
         row.trainNo && row.trainNo.trim() !== '' && row.trainNo.toUpperCase() !== 'REST'
     );
 
+    // Sort duties by depTime
     filteredRows.sort((a, b) => {
         if (a.depTime && b.depTime) return timeStringToMinutes(a.depTime) - timeStringToMinutes(b.depTime);
         if (a.depTime && !b.depTime) return -1;
@@ -183,42 +174,23 @@ function renderTableCombined() {
         return 0;
     });
 
+    // Render filtered table rows
     const tbody = document.getElementById('dutyTable');
     tbody.innerHTML = '';
 
     filteredRows.forEach(row => {
         const tr = document.createElement('tr');
-
-        const linkTag = `
-            <span style="
-                position:absolute;
-                top:-4px;
-                right:0;
-                font-size:0.65em;
-                padding:1px 4px;
-                border-radius:8px;
-                background-color:rgba(255,255,255,0.2);
-                color:${linkColors[row.linkNumber] || "#555"};
-                font-weight:bold;
-                opacity:0.85;
-            ">
-                ${formatLinkCode(row.linkNumber)}
-            </span>
-        `;
-
         tr.innerHTML = `
             <td>${row.crewLPId}</td>
             <td>${row.crewALPId}</td>
-            <td style="position:relative; font-weight:bold; padding-right:20px;">
-                ${row.trainNo}
-                ${linkTag}
-            </td>
+            <td>${row.trainNo}</td>
             <td>${row.depTime || ''}</td>
+            <td>${row.linkNumber}</td>
         `;
-
         tbody.appendChild(tr);
     });
 }
+
 
 
   function timeStringToMinutes(timeStr) {
