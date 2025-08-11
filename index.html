@@ -62,35 +62,7 @@
   </div>
 </header>
 
-<script>
-  const dateDisplay = document.getElementById("dateDisplay");
-  const datePicker = document.getElementById("datePicker");
 
-  function formatDate(date) {
-    return date.toLocaleDateString("en-GB", {
-      weekday: "long",
-      day: "2-digit",
-      month: "short",
-      year: "numeric"
-    });
-  }
-
-  // Set today as default
-  const today = new Date();
-  datePicker.valueAsDate = today;
-  dateDisplay.textContent = formatDate(today);
-
-  // Update on date change
-  datePicker.addEventListener("change", () => {
-    const selectedDate = new Date(datePicker.value);
-    dateDisplay.textContent = formatDate(selectedDate);
-    renderTableCombined();
-  });
-
-  function getSelectedDate() {
-    return datePicker.value ? new Date(datePicker.value) : new Date();
-  }
-</script>
 
   <table>
     <thead>
@@ -104,158 +76,174 @@
     </thead>
     <tbody id="dutyTable"></tbody>
   </table>
-
 <script>
-  const linkFiles = [
-    'link1.json', 'link2.json', 'link3.json', 'link4.json',
-    'rnlink1.json', 'rnlink2.json', 'rnlink3.json',
-    'ollink1.json', 'sllink1.json'
-  ];
+const linkFiles = [
+  'link1.json', 'link2.json', 'link3.json', 'link4.json',
+  'rnlink1.json', 'rnlink2.json', 'rnlink3.json',
+  'ollink1.json', 'sllink1.json'
+];
 
-  let allCrewData = [];
+let allCrewData = [];
 
-  // Initialize date picker with today
-  const today = new Date();
-  document.getElementById('datePicker').valueAsDate = today;
-  updateDateHeading(today);
+// ----------------------
+// DATE PICKER + HEADER
+// ----------------------
+const datePicker = document.getElementById("datePicker");
+const dateDisplay = document.getElementById("dateDisplay");
+const calendarIcon = document.getElementById("calendarIcon");
 
-  document.getElementById('datePicker').addEventListener('change', () => {
-    renderTableCombined();
+function formatDateDisplay(date) {
+  const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+function setDate(date) {
+  datePicker.valueAsDate = date;
+  dateDisplay.textContent = formatDateDisplay(date);
+  renderTableCombined();
+}
+
+// Open date picker from icon
+calendarIcon.addEventListener("click", () => datePicker.showPicker());
+
+// On date change
+datePicker.addEventListener("change", () => {
+  const selected = datePicker.valueAsDate || new Date();
+  setDate(selected);
+});
+
+// ----------------------
+// LOAD CREW DATA
+// ----------------------
+Promise.all(linkFiles.map(file =>
+  fetch(file).then(res => {
+    if (!res.ok) throw new Error(`Failed to load ${file}`);
+    return res.json();
+  })
+)).then(allLinksData => {
+  allCrewData = [];
+  allLinksData.forEach(linkData => {
+    const linkId = linkData.linkId || 0;
+    const lastUpdatedDate = new Date(linkData.lastUpdated);
+    const currentCrewIndex = linkData.currentCrewIndex || 0;
+
+    const crewWithExtras = (linkData.crew || []).map((crewMember, index) => ({
+      ...crewMember,
+      linkId,
+      lastUpdatedDate,
+      currentCrewIndex,
+      crewIndex: index
+    }));
+
+    allCrewData.push(...crewWithExtras);
   });
 
-  // Load JSON data in parallel
-  Promise.all(linkFiles.map(file =>
-    fetch(file).then(res => {
-      if (!res.ok) throw new Error(`Failed to load ${file}`);
-      return res.json();
-    })
-  )).then(allLinksData => {
-    allCrewData = [];
-    allLinksData.forEach(linkData => {
-      const linkId = linkData.linkId || 0;
-      const lastUpdatedDate = new Date(linkData.lastUpdated);
-      const currentCrewIndex = linkData.currentCrewIndex || 0;
+  renderTableCombined();
+}).catch(err => {
+  console.error('Error loading JSON files:', err);
+  document.getElementById('dutyTable').innerHTML =
+    `<tr><td colspan="5" style="color:red;">Error loading data</td></tr>`;
+});
 
-      const crewWithExtras = (linkData.crew || []).map((crewMember, index) => ({
-        ...crewMember,
-        linkId,
-        lastUpdatedDate,
-        currentCrewIndex,
-        crewIndex: index
-      }));
+// ----------------------
+// RENDER TABLE
+// ----------------------
+function renderTableCombined() {
+  if (!allCrewData.length) return;
 
-      allCrewData.push(...crewWithExtras);
-    });
+  const selectedDate = getSelectedDate();
 
-    renderTableCombined();
-  }).catch(err => {
-    console.error('Error loading JSON files:', err);
-    document.getElementById('dutyTable').innerHTML =
-      `<tr><td colspan="5" style="color:red;">Error loading data</td></tr>`;
+  // Group crew by linkId
+  const crewsByLink = {};
+  allCrewData.forEach(crew => {
+    if (!crewsByLink[crew.linkId]) crewsByLink[crew.linkId] = [];
+    crewsByLink[crew.linkId].push(crew);
   });
 
-  function renderTableCombined() {
-    if (!allCrewData.length) return;
+  const dutyRows = [];
 
-    const selectedDate = getSelectedDate();
-    updateDateHeading(selectedDate);
+  Object.values(crewsByLink).forEach(crewList => {
+    if (!crewList.length) return;
 
-    // Group crew by linkId
-    const crewsByLink = {};
-    allCrewData.forEach(crew => {
-      if (!crewsByLink[crew.linkId]) crewsByLink[crew.linkId] = [];
-      crewsByLink[crew.linkId].push(crew);
-    });
+    const { linkId, lastUpdatedDate } = crewList[0];
+    const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const weeksPassed = Math.floor(diffDays / 7);
 
-    const dutyRows = [];
+    const dutiesPerRow = crewList.map(crew => crew.duties);
+    const dayName = selectedDate.toLocaleString('en-US', { weekday: 'long' });
 
-    // For each link group
-    Object.values(crewsByLink).forEach(crewList => {
-      if (!crewList.length) return;
+    for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
+      const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
+      const crew = crewList[crewIndex];
+      const dutyForRow = dutiesPerRow[rowIndex][dayName] || '';
 
-      const { linkId, lastUpdatedDate } = crewList[0];
+      let trainNo = '';
+      let depTime = '';
 
-      const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
-      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      const weeksPassed = Math.floor(diffDays / 7);
-
-      const dutiesPerRow = crewList.map(crew => crew.duties);
-      const dayName = selectedDate.toLocaleString('en-US', { weekday: 'long' });
-
-      for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
-        const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
-        const crew = crewList[crewIndex];
-        const dutyForRow = dutiesPerRow[rowIndex][dayName] || '';
-
-        let trainNo = '';
-        let depTime = '';
-
-        if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-          trainNo = dutyForRow.incoming?.trim()
-            ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
-            : dutyForRow.outgoing;
-          depTime = dutyForRow.depTime || '';
-        } else if (typeof dutyForRow === 'string') {
-          trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
-        }
-
-        dutyRows.push({
-          crewLPId: crew.crewLPId,
-          crewALPId: crew.crewALPId,
-          trainNo,
-          depTime,
-          linkNumber: linkId,
-          isRest: trainNo.toUpperCase() === 'REST',
-        });
+      if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
+        trainNo = dutyForRow.incoming?.trim()
+          ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
+          : dutyForRow.outgoing;
+        depTime = dutyForRow.depTime || '';
+      } else if (typeof dutyForRow === 'string') {
+        trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
       }
-    });
 
-    // Filter & sort
-    const filteredRows = dutyRows.filter(row =>
-      row.trainNo && row.trainNo.trim() !== '' && row.trainNo.toUpperCase() !== 'REST'
-    );
+      dutyRows.push({
+        crewLPId: crew.crewLPId,
+        crewALPId: crew.crewALPId,
+        trainNo,
+        depTime,
+        linkNumber: linkId,
+        isRest: trainNo.toUpperCase() === 'REST',
+      });
+    }
+  });
 
-    filteredRows.sort((a, b) => {
-      if (a.depTime && b.depTime) return timeStringToMinutes(a.depTime) - timeStringToMinutes(b.depTime);
-      if (a.depTime && !b.depTime) return -1;
-      if (!a.depTime && b.depTime) return 1;
-      return 0;
-    });
+  // Filter + Sort
+  const filteredRows = dutyRows.filter(row =>
+    row.trainNo && row.trainNo.trim() !== '' && row.trainNo.toUpperCase() !== 'REST'
+  );
 
-    // Render
-    const tbody = document.getElementById('dutyTable');
-    tbody.innerHTML = '';
-    filteredRows.forEach(row => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${row.crewLPId}</td>
-        <td>${row.crewALPId}</td>
-        <td>${row.trainNo}</td>
-        <td>${row.depTime || ''}</td>
-        <td>${row.linkNumber}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
+  filteredRows.sort((a, b) => {
+    if (a.depTime && b.depTime) return timeStringToMinutes(a.depTime) - timeStringToMinutes(b.depTime);
+    if (a.depTime && !b.depTime) return -1;
+    if (!a.depTime && b.depTime) return 1;
+    return 0;
+  });
 
-  function timeStringToMinutes(timeStr) {
-    if (!timeStr) return Infinity;
-    const [h, m] = timeStr.split(':').map(Number);
-    return h * 60 + m;
-  }
+  // Render table
+  const tbody = document.getElementById('dutyTable');
+  tbody.innerHTML = '';
+  filteredRows.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${row.crewLPId}</td>
+      <td>${row.crewALPId}</td>
+      <td>${row.trainNo}</td>
+      <td>${row.depTime || ''}</td>
+      <td>${row.linkNumber}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
 
-  function getSelectedDate() {
-    const dateInput = document.getElementById('datePicker').value;
-    return dateInput ? new Date(dateInput) : new Date();
-  }
+function timeStringToMinutes(timeStr) {
+  if (!timeStr) return Infinity;
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
+}
 
-  function updateDateHeading(date) {
-    const formattedDate = date.toLocaleDateString('en-GB', {
-      day: '2-digit', month: 'short', year: 'numeric',
-    });
-    const dayName = date.toLocaleString('en-US', { weekday: 'long' });
-    document.getElementById('dateHeading').textContent = `${dayName}, ${formattedDate}`;
-  }
+function getSelectedDate() {
+  return datePicker.valueAsDate || new Date();
+}
+
+// ----------------------
+// INIT
+// ----------------------
+setDate(new Date());
 </script>
 </body>
 </html>
