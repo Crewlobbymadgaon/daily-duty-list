@@ -308,35 +308,7 @@ function renderTableCombined() {
     document.getElementById('daySelect').value = dayName;
   }
 
-  const datePicker = document.getElementById('datePicker');
-  const selectedDateText = document.getElementById('selectedDateText');
-
-  // Format date like: "Mon, 11 Aug 2025"
-  function formatDateWithDay(date) {
-    if (!date) return '';
-    const options = { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' };
-    return date.toLocaleDateString('en-GB', options);
-  }
-
-  // Initialize with today
-  let selectedDate = new Date();
-  datePicker.valueAsDate = selectedDate;
-  selectedDateText.textContent = formatDateWithDay(selectedDate);
-
-  // Clicking the label opens date picker
-  document.querySelector('label[for="datePicker"]').addEventListener('click', () => {
-    datePicker.showPicker?.() || datePicker.focus();
-  });
-
-  // Update displayed date and your custom logic when date changes
-  datePicker.addEventListener('change', (e) => {
-    selectedDate = new Date(e.target.value);
-    selectedDateText.textContent = formatDateWithDay(selectedDate);
-    // Call your existing table update or other logic here:
-    if (typeof renderTableCombined === 'function') {
-      renderTableCombined();
-    }
-  });
+  
 </script>
 </body>
 </html>
