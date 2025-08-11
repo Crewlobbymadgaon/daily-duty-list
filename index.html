@@ -19,66 +19,99 @@
   <body class="bg-gray-50 text-gray-900">
 
   <!-- HEADER -->
-  <header style="background: linear-gradient(90deg, #2563eb, #4f46e5);
-               color: white;
-               padding: 1rem 1.5rem;
-               box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
-               border-radius: 0 0 12px 12px;
-               max-width: 800px;
-               margin: 0 auto 1.5rem auto;
-               text-align: center;
-               font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-  <h1 style="font-size: 2rem; font-weight: 700; margin: 0 0 0.25rem;">Combined Crew Lobby Madgaon</h1>
-  <p style="font-size: 1.75rem; opacity: 0.85; margin: 0;">Crew Duty List</p>
-    <div id="dateHeading" style="font-weight: 600; font-size: 1.1rem; margin-bottom: 8px; text-align: center; color: #1e40af;"></div>
-
-<div class="controls" style="
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  <header style="
+  background: linear-gradient(90deg, #2563eb, #4f46e5);
+  color: white;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+  border-radius: 0 0 12px 12px;
+  max-width: 800px;
+  margin: 0 auto 1.5rem auto;
+  text-align: center;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #334155;
-  font-weight: 500;
-  font-size: 0.95rem;
 ">
-  <label for="daySelect" style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-    <span>Select Day:</span>
-    <select id="daySelect" style="
-      padding: 6px 8px;
-      border-radius: 6px;
-      border: 1.5px solid #3b82f6;
-      font-weight: 600;
-      cursor: pointer;
-      background: white;
-      color: #1e3a8a;
-    ">
-      <option>Sunday</option>
-      <option>Monday</option>
-      <option>Tuesday</option>
-      <option>Wednesday</option>
-      <option>Thursday</option>
-      <option>Friday</option>
-      <option>Saturday</option>
-    </select>
-  </label>
 
-  <label for="datePicker" style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-    <span>Select Date:</span>
-    <input type="date" id="datePicker" style="
-      padding: 6px 10px;
-      border-radius: 6px;
-      border: 1.5px solid #3b82f6;
-      font-weight: 600;
-      cursor: pointer;
-      color: #1e3a8a;
-      background: white;
-    " />
-  </label>
-</div>
+  <h1 style="font-size: 2.5rem; font-weight: 700; margin: 0 0 0.3rem;">Combined Crew Lobby Madgaon</h1>
+  <p style="font-size: 1.9rem; opacity: 0.9; margin: 0 0 1rem;">Crew Duty List</p>
+
+  <div id="dateHeading" style="font-weight: 700; font-size: 1.25rem; margin-bottom: 16px; color: #c7d2fe;"></div>
+
+  <div class="controls" style="
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #e0e7ff;
+    font-weight: 600;
+    font-size: 1.1rem;
+  ">
+    <label for="daySelect" style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: rgba(255 255 255 / 0.15); padding: 8px 12px; border-radius: 8px; border: 1.5px solid #a5b4fc;">
+      <span>Select Day:</span>
+      <select id="daySelect" style="
+        padding: 7px 10px;
+        border-radius: 6px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+        background: #818cf8;
+        color: white;
+        min-width: 130px;
+        box-shadow: 0 0 5px #6366f1a0;
+      ">
+        <option>Sunday</option>
+        <option>Monday</option>
+        <option>Tuesday</option>
+        <option>Wednesday</option>
+        <option>Thursday</option>
+        <option>Friday</option>
+        <option>Saturday</option>
+      </select>
+    </label>
+
+    <label for="datePicker" style="display: flex; align-items: center; gap: 10px; cursor: pointer; background: rgba(255 255 255 / 0.15); padding: 8px 12px; border-radius: 8px; border: 1.5px solid #a5b4fc;">
+      <span>Select Date:</span>
+      <input type="date" id="datePicker" style="
+        padding: 7px 14px;
+        border-radius: 6px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+        color: white;
+        background: #818cf8;
+        min-width: 140px;
+        box-shadow: 0 0 5px #6366f1a0;
+      " />
+    </label>
+  </div>
 </header>
+
+<style>
+  @media (max-width: 600px) {
+    header h1 {
+      font-size: 2rem !important;
+    }
+    header p {
+      font-size: 1.4rem !important;
+    }
+    header #dateHeading {
+      font-size: 1.1rem !important;
+    }
+    header .controls {
+      gap: 12px !important;
+      font-size: 1rem !important;
+    }
+    header .controls label {
+      min-width: 100%;
+      justify-content: center;
+    }
+    header .controls select,
+    header .controls input[type="date"] {
+      min-width: 100% !important;
+    }
+  }
+</style>
   
 
   <table>
