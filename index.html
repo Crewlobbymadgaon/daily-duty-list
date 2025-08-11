@@ -28,14 +28,33 @@
                margin: 0 auto 1.5rem auto;
                text-align: center;
                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-  <h1 style="font-size: 1.75rem; font-weight: 700; margin: 0 0 0.25rem;">Combined Crew Lobby Madgaon</h1>
-  <p style="font-size: 1.125rem; opacity: 0.85; margin: 0;">Crew Duty List</p>
-</header>
-  <div id="dateHeading"></div>
+  <h1 style="font-size: 2rem; font-weight: 700; margin: 0 0 0.25rem;">Combined Crew Lobby Madgaon</h1>
+  <p style="font-size: 1.75rem; opacity: 0.85; margin: 0;">Crew Duty List</p>
+    <div id="dateHeading" style="font-weight: 600; font-size: 1.1rem; margin-bottom: 8px; text-align: center; color: #1e40af;"></div>
 
-  <div class="controls">
-    <label for="daySelect">Select Day: </label>
-    <select id="daySelect">
+<div class="controls" style="
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #334155;
+  font-weight: 500;
+  font-size: 0.95rem;
+">
+  <label for="daySelect" style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+    <span>Select Day:</span>
+    <select id="daySelect" style="
+      padding: 6px 8px;
+      border-radius: 6px;
+      border: 1.5px solid #3b82f6;
+      font-weight: 600;
+      cursor: pointer;
+      background: white;
+      color: #1e3a8a;
+    ">
       <option>Sunday</option>
       <option>Monday</option>
       <option>Tuesday</option>
@@ -44,12 +63,23 @@
       <option>Friday</option>
       <option>Saturday</option>
     </select>
+  </label>
 
-    &nbsp;&nbsp;
-
-    <label for="datePicker">Select Date: </label>
-    <input type="date" id="datePicker" />
-  </div>
+  <label for="datePicker" style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+    <span>Select Date:</span>
+    <input type="date" id="datePicker" style="
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1.5px solid #3b82f6;
+      font-weight: 600;
+      cursor: pointer;
+      color: #1e3a8a;
+      background: white;
+    " />
+  </label>
+</div>
+</header>
+  
 
   <table>
     <thead>
@@ -58,7 +88,7 @@
         <th>ALP ID</th>
         <th>Train No</th>
         <th>Dep Time</th>
-        <th>Link Number</th>
+        
       </tr>
     </thead>
     <tbody id="dutyTable"></tbody>
