@@ -36,19 +36,13 @@
   
   <div id="dateHeading"></div>
 
-<h1 class="main-heading text-center">Crew Duty Table</h1>
-
-<div class="date-container" style="display: flex; justify-content: center; align-items: center; margin-top: 10px; gap: 10px;">
-  <span id="formattedDate" style="font-size: 1.2rem; font-weight: bold;">12 Aug 2025</span>
-  
-  <!-- Hidden actual date picker -->
-  <input type="date" id="datePicker" style="display: none;" />
-  
-  <!-- Calendar icon -->
-  <button id="calendarIcon" style="background: none; border: none; cursor: pointer; padding: 5px;">
-    📅
-  </button>
+<h1 id="mainHeading" class="text-center text-2xl font-bold mb-1">Crew Duty Table</h1>
+<div class="flex justify-center items-center gap-2 mb-4">
+    <span id="formattedDate" class="text-lg font-medium"></span>
+    <button id="calendarIcon" class="text-gray-600 hover:text-blue-500 text-xl">📅</button>
+    <input type="date" id="datePicker" class="hidden">
 </div>
+<select id="daySelect" class="border px-2 py-1 rounded"></select>
 
 
 
@@ -273,36 +267,56 @@ const linkColors = {
     document.getElementById('datePicker').valueAsDate = targetDate;
   }
 
-  function syncDaySelectToDate() {
-    const selectedDate = getSelectedDate();
-    const dayName = selectedDate.toLocaleString('en-US', { weekday: 'long' });
-    document.getElementById('daySelect').value = dayName;
-  }
+  
 
-  // Set today's date in display
-  const datePicker = document.getElementById('datePicker');
-  const formattedDate = document.getElementById('formattedDate');
+// === DATE SETUP ===
+const datePicker = document.getElementById("datePicker");
+const daySelect = document.getElementById("daySelect");
+const formattedDateEl = document.getElementById("formattedDate");
+const calendarIcon = document.getElementById("calendarIcon");
 
-  function formatDateDisplay(date) {
-    const options = { day: '2-digit', month: 'short', year: 'numeric' };
-    return date.toLocaleDateString('en-GB', options).replace(/ /g, ' ');
-  }
+// Function to format date as "12 Aug 2025"
+function formatDateDisplay(date) {
+    return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+}
 
-  const today = new Date();
-  datePicker.valueAsDate = today;
-  formattedDate.textContent = formatDateDisplay(today);
+// Set date on load
+const today = new Date();
+datePicker.valueAsDate = today;
+formattedDateEl.textContent = formatDateDisplay(today);
+syncDaySelectToDate(today);
 
-  // When clicking icon, open date picker
-  document.getElementById('calendarIcon').addEventListener('click', () => {
-    datePicker.showPicker();
-  });
+// Sync dropdown with date
+function syncDaySelectToDate(date) {
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    daySelect.innerHTML = days.map((day, idx) =>
+        `<option value="${day}" ${idx === date.getDay() ? "selected" : ""}>${day}</option>`
+    ).join("");
+}
 
-  // When date changes, update heading
-  datePicker.addEventListener('change', () => {
+// When date changes → update display, dropdown, and table
+datePicker.addEventListener("change", () => {
     const selectedDate = new Date(datePicker.value);
-    formattedDate.textContent = formatDateDisplay(selectedDate);
-    // call your duty refresh function here if needed
-  });
-  </script>
+    formattedDateEl.textContent = formatDateDisplay(selectedDate);
+    syncDaySelectToDate(selectedDate);
+    renderTableCombined();
+});
+
+// When dropdown changes → update date & table
+daySelect.addEventListener("change", () => {
+    const selectedDate = new Date(datePicker.value);
+    const currentDay = selectedDate.getDay();
+    const targetDay = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]
+        .indexOf(daySelect.value);
+    const diff = targetDay - currentDay;
+    selectedDate.setDate(selectedDate.getDate() + diff);
+    datePicker.valueAsDate = selectedDate;
+    formattedDateEl.textContent = formatDateDisplay(selectedDate);
+    renderTableCombined();
+});
+
+// Calendar icon opens date picker
+calendarIcon.addEventListener("click", () => datePicker.showPicker());
+</script>
 </body>
 </html>
