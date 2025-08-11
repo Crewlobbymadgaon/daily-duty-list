@@ -106,25 +106,24 @@
   </table>
 
 <script>
-  const linkFiles = ['link1.json', 'link2.json', 'link3.json', 'link4.json', 'rnlink1.json', 'rnlink2.json', 'rnlink3.json', 'ollink1.json', 'sllink1.json']; // Your JSON files
-  let allCrewData = [];
-  const daysArray = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const linkFiles = [
+    'link1.json', 'link2.json', 'link3.json', 'link4.json',
+    'rnlink1.json', 'rnlink2.json', 'rnlink3.json',
+    'ollink1.json', 'sllink1.json'
+  ];
 
-  // Initialize controls to today on page load
+  let allCrewData = [];
+
+  // Initialize date picker with today
   const today = new Date();
   document.getElementById('datePicker').valueAsDate = today;
-  document.getElementById('daySelect').value = today.toLocaleString('en-US', { weekday: 'long' });
+  updateDateHeading(today);
 
-  document.getElementById('daySelect').addEventListener('change', () => {
-    syncDatePickerToDay();
-    renderTableCombined();
-  });
   document.getElementById('datePicker').addEventListener('change', () => {
-    syncDaySelectToDate();
     renderTableCombined();
   });
 
-  // Load all link JSON files in parallel
+  // Load JSON data in parallel
   Promise.all(linkFiles.map(file =>
     fetch(file).then(res => {
       if (!res.ok) throw new Error(`Failed to load ${file}`);
@@ -132,8 +131,6 @@
     })
   )).then(allLinksData => {
     allCrewData = [];
-
-    // Append link info to each crew and flatten all crew from all links
     allLinksData.forEach(linkData => {
       const linkId = linkData.linkId || 0;
       const lastUpdatedDate = new Date(linkData.lastUpdated);
@@ -153,101 +150,93 @@
     renderTableCombined();
   }).catch(err => {
     console.error('Error loading JSON files:', err);
-    document.getElementById('dutyTable').innerHTML = `<tr><td colspan="5" style="color:red;">Error loading data</td></tr>`;
+    document.getElementById('dutyTable').innerHTML =
+      `<tr><td colspan="5" style="color:red;">Error loading data</td></tr>`;
   });
-function renderTableCombined() {
+
+  function renderTableCombined() {
     if (!allCrewData.length) return;
 
     const selectedDate = getSelectedDate();
-    const selectedDay = document.getElementById('daySelect').value;
-
     updateDateHeading(selectedDate);
 
     // Group crew by linkId
     const crewsByLink = {};
     allCrewData.forEach(crew => {
-        if (!crewsByLink[crew.linkId]) crewsByLink[crew.linkId] = [];
-        crewsByLink[crew.linkId].push(crew);
+      if (!crewsByLink[crew.linkId]) crewsByLink[crew.linkId] = [];
+      crewsByLink[crew.linkId].push(crew);
     });
 
     const dutyRows = [];
 
-    // For each link group, apply rotation and collect duties
+    // For each link group
     Object.values(crewsByLink).forEach(crewList => {
-        if (!crewList.length) return;
+      if (!crewList.length) return;
 
-        const { linkId, lastUpdatedDate } = crewList[0];
+      const { linkId, lastUpdatedDate } = crewList[0];
 
-        // Calculate weeks passed
-        const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
-        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-        const weeksPassed = Math.floor(diffDays / 7);
+      const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const weeksPassed = Math.floor(diffDays / 7);
 
-        // Duties fixed per row (index)
-        const dutiesPerRow = crewList.map(crew => crew.duties);
+      const dutiesPerRow = crewList.map(crew => crew.duties);
+      const dayName = selectedDate.toLocaleString('en-US', { weekday: 'long' });
 
-        for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
-            // Rotate crew position for this week
-            const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
-            const crew = crewList[crewIndex];
+      for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
+        const crewIndex = (rowIndex - weeksPassed + crewList.length) % crewList.length;
+        const crew = crewList[crewIndex];
+        const dutyForRow = dutiesPerRow[rowIndex][dayName] || '';
 
-            // Duty fixed by row index
-            const dutyForRow = dutiesPerRow[rowIndex][selectedDay] || '';
+        let trainNo = '';
+        let depTime = '';
 
-            let trainNo = '';
-            let depTime = '';
-
-            if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
-                trainNo = dutyForRow.incoming?.trim()
-                    ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
-                    : dutyForRow.outgoing;
-                depTime = dutyForRow.depTime || '';
-            } else if (typeof dutyForRow === 'string') {
-                trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
-            }
-
-            dutyRows.push({
-                crewLPId: crew.crewLPId,
-                crewALPId: crew.crewALPId,
-                trainNo,
-                depTime,
-                linkNumber: linkId,
-                isRest: trainNo.toUpperCase() === 'REST',
-            });
+        if (typeof dutyForRow === 'object' && dutyForRow.outgoing) {
+          trainNo = dutyForRow.incoming?.trim()
+            ? `${dutyForRow.outgoing}/${dutyForRow.incoming}`
+            : dutyForRow.outgoing;
+          depTime = dutyForRow.depTime || '';
+        } else if (typeof dutyForRow === 'string') {
+          trainNo = dutyForRow.toUpperCase() === 'REST' ? 'REST' : dutyForRow;
         }
+
+        dutyRows.push({
+          crewLPId: crew.crewLPId,
+          crewALPId: crew.crewALPId,
+          trainNo,
+          depTime,
+          linkNumber: linkId,
+          isRest: trainNo.toUpperCase() === 'REST',
+        });
+      }
     });
 
-    // ✅ Keep only rows with a valid train number (exclude empty and REST)
+    // Filter & sort
     const filteredRows = dutyRows.filter(row =>
-        row.trainNo && row.trainNo.trim() !== '' && row.trainNo.toUpperCase() !== 'REST'
+      row.trainNo && row.trainNo.trim() !== '' && row.trainNo.toUpperCase() !== 'REST'
     );
 
-    // Sort duties by depTime
     filteredRows.sort((a, b) => {
-        if (a.depTime && b.depTime) return timeStringToMinutes(a.depTime) - timeStringToMinutes(b.depTime);
-        if (a.depTime && !b.depTime) return -1;
-        if (!a.depTime && b.depTime) return 1;
-        return 0;
+      if (a.depTime && b.depTime) return timeStringToMinutes(a.depTime) - timeStringToMinutes(b.depTime);
+      if (a.depTime && !b.depTime) return -1;
+      if (!a.depTime && b.depTime) return 1;
+      return 0;
     });
 
-    // Render filtered table rows
+    // Render
     const tbody = document.getElementById('dutyTable');
     tbody.innerHTML = '';
-
     filteredRows.forEach(row => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${row.crewLPId}</td>
-            <td>${row.crewALPId}</td>
-            <td>${row.trainNo}</td>
-            <td>${row.depTime || ''}</td>
-            <td>${row.linkNumber}</td>
-        `;
-        tbody.appendChild(tr);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.crewLPId}</td>
+        <td>${row.crewALPId}</td>
+        <td>${row.trainNo}</td>
+        <td>${row.depTime || ''}</td>
+        <td>${row.linkNumber}</td>
+      `;
+      tbody.appendChild(tr);
     });
-}
-
-
+  }
 
   function timeStringToMinutes(timeStr) {
     if (!timeStr) return Infinity;
@@ -267,26 +256,6 @@ function renderTableCombined() {
     const dayName = date.toLocaleString('en-US', { weekday: 'long' });
     document.getElementById('dateHeading').textContent = `${dayName}, ${formattedDate}`;
   }
-
-  function syncDatePickerToDay() {
-    const selectedDay = document.getElementById('daySelect').value;
-    const today = new Date();
-    const todayIndex = today.getDay();
-    const targetIndex = daysArray.indexOf(selectedDay);
-    let dayDiff = targetIndex - todayIndex;
-    if (dayDiff < 0) dayDiff += 7;
-    const targetDate = new Date();
-    targetDate.setDate(today.getDate() + dayDiff);
-    document.getElementById('datePicker').valueAsDate = targetDate;
-  }
-
-  function syncDaySelectToDate() {
-    const selectedDate = getSelectedDate();
-    const dayName = selectedDate.toLocaleString('en-US', { weekday: 'long' });
-    document.getElementById('daySelect').value = dayName;
-  }
-
-  
 </script>
 </body>
 </html>
