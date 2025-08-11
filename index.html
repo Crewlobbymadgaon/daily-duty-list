@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>LP/ALP Duty Viewer - Combined Links</title>
+    <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     table { border-collapse: collapse; width: 100%; }
@@ -15,48 +16,35 @@
   </style>
 </head>
 <body>
-  <!-- Stylish Compact Header -->
-<header class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-4 shadow-md rounded-lg max-w-5xl mx-auto">
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-    <!-- Main Title -->
-    <div>
-      <h1 class="text-xl sm:text-2xl font-bold">Combined Crew Lobby Madgaon</h1>
-      <p class="text-sm sm:text-base opacity-90">Crew Duty List</p>
-    </div>
+  <body class="bg-gray-50 text-gray-900">
 
-    <!-- Date & Picker -->
-    <div class="flex items-center gap-2 bg-white text-gray-800 px-3 py-2 rounded-lg shadow-sm">
-      <span id="currentDate" class="font-medium text-sm sm:text-base"></span>
-      <label for="datePicker" class="cursor-pointer">
-        <img src="https://img.icons8.com/ios-filled/24/calendar.png" alt="Pick date" class="w-5 h-5 sm:w-6 sm:h-6" />
-      </label>
-      <input type="date" id="datePicker" class="hidden" />
-    </div>
+  <!-- HEADER -->
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <!-- Title -->
+      <div class="text-center sm:text-left">
+        <h1 class="text-xl sm:text-2xl font-bold text-blue-700">Combined Crew Lobby Madgaon</h1>
+        <p class="text-sm text-gray-500">Crew Duty List</p>
+      </div>
+  <div id="dateHeading"></div>
+
+  <div class="controls">
+    <label for="daySelect">Select Day: </label>
+    <select id="daySelect">
+      <option>Sunday</option>
+      <option>Monday</option>
+      <option>Tuesday</option>
+      <option>Wednesday</option>
+      <option>Thursday</option>
+      <option>Friday</option>
+      <option>Saturday</option>
+    </select>
+
+    &nbsp;&nbsp;
+
+    <label for="datePicker">Select Date: </label>
+    <input type="date" id="datePicker" />
   </div>
-</header>
-
-<script>
-  function formatDateDisplay(date) {
-    const options = { day: '2-digit', month: 'short', year: 'numeric', weekday: 'long' };
-    return date.toLocaleDateString('en-GB', options).replace(',', '');
-  }
-
-  const today = new Date();
-  const currentDateEl = document.getElementById('currentDate');
-  currentDateEl.textContent = formatDateDisplay(today);
-
-  const datePicker = document.getElementById('datePicker');
-  datePicker.valueAsDate = today;
-
-  datePicker.addEventListener('change', function () {
-    const selectedDate = new Date(this.value);
-    currentDateEl.textContent = formatDateDisplay(selectedDate);
-    // Call your existing table update function here if needed
-    if (typeof updateDutyTable === 'function') {
-      updateDutyTable(selectedDate);
-    }
-  });
-</script>
 
   <table>
     <thead>
