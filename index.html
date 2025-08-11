@@ -36,41 +36,21 @@
   
   <div id="dateHeading"></div>
 
-  <h1 class="text-center text-2xl font-bold mb-2">Daily Duty Display</h1>
+<h1 class="main-heading text-center">Crew Duty Table</h1>
 
-<div class="flex justify-center items-center space-x-2 mb-4">
-  <span id="formattedDate" class="text-lg font-semibold">12 Aug 2025</span>
+<div class="date-container" style="display: flex; justify-content: center; align-items: center; margin-top: 10px; gap: 10px;">
+  <span id="formattedDate" style="font-size: 1.2rem; font-weight: bold;">12 Aug 2025</span>
+  
+  <!-- Hidden actual date picker -->
+  <input type="date" id="datePicker" style="display: none;" />
   
   <!-- Calendar icon -->
-  <button onclick="document.getElementById('datePicker').showPicker()" 
-          class="p-1 rounded-full hover:bg-gray-200 transition">
+  <button id="calendarIcon" style="background: none; border: none; cursor: pointer; padding: 5px;">
     📅
   </button>
-  
-  <!-- Hidden date picker -->
-  <input type="date" id="datePicker" class="hidden" />
 </div>
 
-<script>
-  const datePicker = document.getElementById("datePicker");
-  const formattedDate = document.getElementById("formattedDate");
 
-  function formatDate(date) {
-    const options = { day: '2-digit', month: 'short', year: 'numeric' };
-    return date.toLocaleDateString('en-GB', options).replace(/ /g, ' ');
-  }
-
-  // Set today's date initially
-  const today = new Date();
-  datePicker.value = today.toISOString().split('T')[0];
-  formattedDate.textContent = formatDate(today);
-
-  // Update on change
-  datePicker.addEventListener("change", () => {
-    const selectedDate = new Date(datePicker.value);
-    formattedDate.textContent = formatDate(selectedDate);
-  });
-</script>
 
   <table>
     <thead>
@@ -298,6 +278,31 @@ const linkColors = {
     const dayName = selectedDate.toLocaleString('en-US', { weekday: 'long' });
     document.getElementById('daySelect').value = dayName;
   }
-</script>
+
+  // Set today's date in display
+  const datePicker = document.getElementById('datePicker');
+  const formattedDate = document.getElementById('formattedDate');
+
+  function formatDateDisplay(date) {
+    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+    return date.toLocaleDateString('en-GB', options).replace(/ /g, ' ');
+  }
+
+  const today = new Date();
+  datePicker.valueAsDate = today;
+  formattedDate.textContent = formatDateDisplay(today);
+
+  // When clicking icon, open date picker
+  document.getElementById('calendarIcon').addEventListener('click', () => {
+    datePicker.showPicker();
+  });
+
+  // When date changes, update heading
+  datePicker.addEventListener('change', () => {
+    const selectedDate = new Date(datePicker.value);
+    formattedDate.textContent = formatDateDisplay(selectedDate);
+    // call your duty refresh function here if needed
+  });
+  </script>
 </body>
 </html>
