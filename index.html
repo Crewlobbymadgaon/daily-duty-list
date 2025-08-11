@@ -33,26 +33,44 @@
   </style>
 </head>
 <body>
-  <h2>LP/ALP Duty Viewer</h2>
+  
   <div id="dateHeading"></div>
 
-  <div class="controls">
-    <label for="daySelect">Select Day: </label>
-    <select id="daySelect">
-      <option>Sunday</option>
-      <option>Monday</option>
-      <option>Tuesday</option>
-      <option>Wednesday</option>
-      <option>Thursday</option>
-      <option>Friday</option>
-      <option>Saturday</option>
-    </select>
+  <h1 class="text-center text-2xl font-bold mb-2">Daily Duty Display</h1>
 
-    &nbsp;&nbsp;
+<div class="flex justify-center items-center space-x-2 mb-4">
+  <span id="formattedDate" class="text-lg font-semibold">12 Aug 2025</span>
+  
+  <!-- Calendar icon -->
+  <button onclick="document.getElementById('datePicker').showPicker()" 
+          class="p-1 rounded-full hover:bg-gray-200 transition">
+    📅
+  </button>
+  
+  <!-- Hidden date picker -->
+  <input type="date" id="datePicker" class="hidden" />
+</div>
 
-    <label for="datePicker">Select Date: </label>
-    <input type="date" id="datePicker" />
-  </div>
+<script>
+  const datePicker = document.getElementById("datePicker");
+  const formattedDate = document.getElementById("formattedDate");
+
+  function formatDate(date) {
+    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+    return date.toLocaleDateString('en-GB', options).replace(/ /g, ' ');
+  }
+
+  // Set today's date initially
+  const today = new Date();
+  datePicker.value = today.toISOString().split('T')[0];
+  formattedDate.textContent = formatDate(today);
+
+  // Update on change
+  datePicker.addEventListener("change", () => {
+    const selectedDate = new Date(datePicker.value);
+    formattedDate.textContent = formatDate(selectedDate);
+  });
+</script>
 
   <table>
     <thead>
