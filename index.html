@@ -29,51 +29,40 @@
     .date-icon-btn:active{transform:scale(0.96)}
     input[type="date"].native-date{position:absolute;left:-9999px}
 
-    /* mobile header bar (hidden on wide screens) */
-    .mobile-header {
-      display:none;
-      width:100%;
-      background:#fff;
-      border-radius:8px;
-      padding:8px 10px;
-      margin-bottom:8px;
-      font-weight:700;
-      color:var(--muted);
-      box-shadow:0 6px 18px rgba(37,99,235,0.03);
-      overflow:hidden;
-    }
-    .mobile-header .cols{display:flex;gap:8px;align-items:center;justify-content:space-between}
-    .mobile-header .col{flex:1 0 0;text-align:left;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-
-    .tableWrap{overflow:auto;border-radius:10px;margin-top:12px}
-    table{width:100%;border-collapse:collapse}
-    thead th{background:#f8fafc;padding:12px 16px;text-align:left;color:var(--muted);font-weight:700;border-top:1px solid #f1f4f8}
-    tbody td{padding:12px 16px;border-top:1px solid #f6f9fc;font-size:0.95rem;color:var(--accent)}
+    /* table container allows horizontal scroll on small screens */
+    .tableWrap{overflow-x:auto;border-radius:10px;margin-top:12px;background:linear-gradient(#fff,#fff);padding:6px}
+    table{width:100%;border-collapse:collapse;min-width:820px}
+    thead th{background:#f8fafc;padding:12px 16px;text-align:left;color:var(--muted);font-weight:700;border-top:1px solid #f1f4f8;white-space:nowrap}
+    tbody td{padding:12px 16px;border-top:1px solid #f6f9fc;font-size:0.95rem;color:var(--accent);white-space:nowrap}
     tbody tr:nth-child(odd){background:transparent}
     .no-data{text-align:center;color:var(--muted);padding:14px}
 
-    /* collapsed row styles for very small screens */
-    @media (max-width:480px){
-      h1{font-size:1.4rem}
-      .date-icon-btn{width:54px;height:54px;font-size:1.6rem}
-      .mobile-header{display:block}
-      thead{display:none}
-      table,tbody,td,tr{display:block;width:100%}
-      tbody tr{margin-bottom:12px;border-radius:8px;background:var(--card);box-shadow:0 2px 6px rgba(15,23,42,0.05);overflow:hidden}
-      tbody td{display:flex;justify-content:space-between;padding:10px 12px;border-top:1px solid #f1f4f8}
-      tbody td::before{content:attr(data-label);color:var(--muted);font-weight:700;width:45%;display:inline-block}
+    /* On smaller screens reduce padding & font-size but keep table columns */
+    @media (max-width:900px){
+      table{min-width:780px}
+      thead th, tbody td{padding:10px 12px}
+      body{font-size:14px}
+    }
+    @media (max-width:600px){
+      table{min-width:700px}
+      thead th, tbody td{padding:8px 10px;font-size:13px}
+      .date-icon-btn{width:46px;height:46px;font-size:1.3rem}
     }
 
-    /* ensure table is still readable on mid-size screens */
-    @media (min-width:481px) and (max-width:900px){
-      table{font-size:0.95rem}
-      .mobile-header{display:none}
+    /* optional: visual hint that table scrolls horizontally */
+    .tableWrap::after{
+      content:'';
+      position:relative;
+      display:block;
+      height:0;
+      pointer-events:none;
+      /* no visible overlay — kept for easy customisation if you want a gradient edge */
     }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="card">
+    <div class="card" role="region" aria-label="Duty viewer">
       <header>
         <h1>LP/ALP Duty List</h1>
         <div class="sub">Madgaon Lobby</div>
@@ -83,17 +72,6 @@
       <div class="controls">
         <button id="dateBtn" class="date-icon-btn" aria-label="Select Date">📅</button>
         <input type="date" id="datePicker" class="native-date" aria-label="Date Picker" />
-      </div>
-
-      <!-- compact column labels for small screens -->
-      <div id="mobileHeader" class="mobile-header" aria-hidden="true">
-        <div class="cols">
-          <div class="col">Name of LP</div>
-          <div class="col">Name of ALP</div>
-          <div class="col">Train No</div>
-          <div class="col">Dep</div>
-          <div class="col">Link No</div>
-        </div>
       </div>
 
       <div class="tableWrap" aria-live="polite">
@@ -117,8 +95,8 @@
 
 <script>
 /* Loads multiple link files, flattens crew data, applies per-link weekly rotation,
-   and displays combined duties sorted by depTime. Column order:
-   Name of LP | Name of ALP | Train No | Dep | Link No
+   and displays combined duties sorted by depTime. Table stays columnar on all screens
+   and scrolls horizontally on small devices.
 */
 
 const linkFiles = [
@@ -127,14 +105,13 @@ const linkFiles = [
   'ollink1.json','sllink1.json'
 ];
 
-let allCrewData = [];      // flattened crew entries across all links (with linkId, lastUpdated)
+let allCrewData = [];
 let selectedDate = new Date();
 
 const dateBtn = document.getElementById('dateBtn');
 const datePicker = document.getElementById('datePicker');
 const dateHeading = document.getElementById('dateHeading');
 const dutyTable = document.getElementById('dutyTable');
-const mobileHeader = document.getElementById('mobileHeader');
 
 dateBtn.addEventListener('click', () => { datePicker.focus(); datePicker.click(); });
 datePicker.addEventListener('change', () => {
@@ -154,19 +131,7 @@ function setSelectedDate(d){
   updateDateHeading();
 }
 
-// Show/hide mobile header depending on viewport (run on load & resize)
-function updateMobileHeaderVisibility() {
-  if (window.innerWidth <= 480) {
-    mobileHeader.setAttribute('aria-hidden', 'false');
-    mobileHeader.style.display = 'block';
-  } else {
-    mobileHeader.setAttribute('aria-hidden', 'true');
-    mobileHeader.style.display = 'none';
-  }
-}
-window.addEventListener('resize', updateMobileHeaderVisibility);
-
-// Load all link files in parallel. If a file fails, skip it (warn in console).
+// Load all link files in parallel; skip failures
 async function loadAllLinks() {
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async file => {
@@ -183,9 +148,8 @@ async function loadAllLinks() {
   const results = await Promise.all(fetches);
   allCrewData = [];
 
-  // results[i] corresponds to linkFiles[i]
   results.forEach((linkData, idx) => {
-    if (!linkData) return; // skip failed load
+    if (!linkData) return;
     const linkId = linkData.linkId ?? (`file#${idx+1}`);
     const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
     const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
@@ -199,11 +163,10 @@ async function loadAllLinks() {
     });
   });
 
-  // after loading, render duties
   renderCombinedDuties();
 }
 
-// Flattened rotation + filter + sort by depTime
+// rotation + flatten + filter + sort
 function renderCombinedDuties() {
   if (!allCrewData.length) {
     dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`;
@@ -212,7 +175,6 @@ function renderCombinedDuties() {
 
   const weekday = selectedDate.toLocaleString('en-US', { weekday: 'long' });
 
-  // Group crew entries by linkId so we can apply rotation per link
   const crewsByLink = allCrewData.reduce((acc, crew) => {
     (acc[crew.linkId] = acc[crew.linkId] || []).push(crew);
     return acc;
@@ -223,20 +185,16 @@ function renderCombinedDuties() {
   Object.values(crewsByLink).forEach(crewList => {
     if (!crewList.length) return;
 
-    // use the lastUpdatedDate from first entry of this link
     const lastUpdatedDate = crewList[0].lastUpdatedDate ? new Date(crewList[0].lastUpdatedDate) : new Date();
     const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const weeksPassed = Math.floor(diffDays / 7);
 
-    // duties arranged per row index (as in your rotation model)
     const dutiesPerRow = crewList.map(c => c.duties || {});
 
     for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
-      // rotated crew index for selected week
       const crewIndex = ((rowIndex - weeksPassed) % crewList.length + crewList.length) % crewList.length;
       const crew = crewList[crewIndex];
-
       const dutyForRow = dutiesPerRow[rowIndex][weekday] ?? '';
 
       let trainNo = '';
@@ -251,10 +209,8 @@ function renderCombinedDuties() {
         trainNo = dutyForRow.trim();
       }
 
-      // skip empty or REST
       if (!trainNo || trainNo.toUpperCase() === 'REST') continue;
 
-      // prefer the crew names if present, else use IDs
       const lpName = (crew.crewLPName && crew.crewLPName.trim()) ? crew.crewLPName.trim() : (crew.crewLPId || '');
       const alpName = (crew.crewALPName && crew.crewALPName.trim()) ? crew.crewALPName.trim() : (crew.crewALPId || '');
 
@@ -268,7 +224,6 @@ function renderCombinedDuties() {
     }
   });
 
-  // parse time to minutes (HH:MM). invalid or missing => Infinity (sorted last)
   function timeToMinutes(t) {
     if (!t || typeof t !== 'string') return Infinity;
     const m = t.match(/^(\d{1,2}):(\d{2})$/);
@@ -280,7 +235,6 @@ function renderCombinedDuties() {
 
   rows.sort((a, b) => timeToMinutes(a.depTime) - timeToMinutes(b.depTime));
 
-  // render rows
   if (!rows.length) {
     dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`;
     return;
@@ -308,14 +262,12 @@ function escapeHtml(s) {
 // init
 (function init() {
   setSelectedDate(new Date());
-  updateMobileHeaderVisibility();
   loadAllLinks().catch(e => {
     console.error('Error loading links', e);
     dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Error loading data</td></tr>`;
   });
 })();
 
-// helper to set date input
 function setSelectedDate(d) {
   selectedDate = d || new Date();
   const yyyy = selectedDate.getFullYear();
