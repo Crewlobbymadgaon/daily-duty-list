@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>LP/ALP Duty List — Madgaon Lobby (9 links)</title>
+  <title>LP/ALP Duty List — Madgaon Lobby</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
@@ -65,10 +65,10 @@
         <table>
           <thead>
             <tr>
-              <th>Dep Time</th>
+              <th>Name of LP</th>
+              <th>Name of ALP</th>
               <th>Train No</th>
-              <th>LP ID</th>
-              <th>ALP ID</th>
+              <th>Dep</th>
               <th>Link No</th>
             </tr>
           </thead>
@@ -81,8 +81,9 @@
   </div>
 
 <script>
-/* 9 links loader, flatten + rotation + sort by depTime
-   Change filenames in linkFiles array if needed.
+/* Loads multiple link files, flattens crew data, applies per-link weekly rotation,
+   and displays combined duties sorted by depTime. Table columns are:
+   Name of LP | Name of ALP | Train No | Dep | Link No
 */
 
 const linkFiles = [
@@ -205,11 +206,15 @@ function renderCombinedDuties() {
       // skip empty or REST
       if (!trainNo || trainNo.toUpperCase() === 'REST') continue;
 
+      // prefer the crew names if present, else use IDs
+      const lpName = (crew.crewLPName && crew.crewLPName.trim()) ? crew.crewLPName.trim() : (crew.crewLPId || '');
+      const alpName = (crew.crewALPName && crew.crewALPName.trim()) ? crew.crewALPName.trim() : (crew.crewALPId || '');
+
       rows.push({
         depTime,
         trainNo,
-        lp: crew.crewLPId || '',
-        alp: crew.crewALPId || '',
+        lpName,
+        alpName,
         link: crew.linkId
       });
     }
@@ -237,10 +242,10 @@ function renderCombinedDuties() {
   rows.forEach(r => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td data-label="Dep Time">${escapeHtml(r.depTime || '')}</td>
+      <td data-label="Name of LP">${escapeHtml(r.lpName)}</td>
+      <td data-label="Name of ALP">${escapeHtml(r.alpName)}</td>
       <td data-label="Train No">${escapeHtml(r.trainNo)}</td>
-      <td data-label="LP ID">${escapeHtml(r.lp)}</td>
-      <td data-label="ALP ID">${escapeHtml(r.alp)}</td>
+      <td data-label="Dep">${escapeHtml(r.depTime || '')}</td>
       <td data-label="Link No">${escapeHtml(r.link)}</td>
     `;
     dutyTable.appendChild(tr);
@@ -255,14 +260,11 @@ function escapeHtml(s) {
 // init
 (function init() {
   setSelectedDate(new Date());
-  // load all links; if none available, user will see "No data available" or per-day message
+  // load all links
   loadAllLinks().catch(e => {
     console.error('Error loading links', e);
     dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Error loading data</td></tr>`;
   });
-
-  // handle window focus -> reload to pick up updates (optional convenience)
-  // window.addEventListener('focus', () => loadAllLinks());
 })();
 
 // helper to set date input
