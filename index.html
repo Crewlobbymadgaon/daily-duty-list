@@ -3,143 +3,85 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>LP/ALP Duty List — Madgaon Lobby</title>
-
+  <title>LP/ALP Duty List — Madgaon Lobby (Editable + LocalStorage + Firebase)</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-
   <style>
-    :root {
-      --bg: #f4f7fb;
-      --card: #ffffff;
-      --muted: #6b7280;
-      --accent: #0f172a;
-      --accent-2: #2563eb;
-      --radius: 12px;
-      --divider: #1f6feb;      /* accent divider color */
-      --border: #cdd4e1;
+    :root{
+      --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb;
+      --radius:12px; --divider:#1f6feb; --border:#cdd4e1;
     }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: var(--bg);
-      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      color: var(--accent);
-    }
-    .wrap { max-width: 1100px; margin: 20px auto; padding: 14px; }
-    .card {
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-      padding: 18px;
-    }
-    header { text-align: center; }
-    h1 { margin: 0; font-size: 1.6rem; font-weight: 700; }
-    .sub { font-size: 1rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
-    #dateHeading { font-size: 1rem; font-weight: 600; color: var(--accent-2); margin-top: 8px; }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent)}
+    .wrap{max-width:1200px;margin:18px auto;padding:14px}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);padding:16px}
+    header{text-align:center}
+    h1{margin:0;font-size:1.45rem;font-weight:700}
+    .sub{font-size:0.95rem;color:var(--muted);margin-top:6px}
+    #dateHeading{font-weight:600;color:var(--accent-2);margin-top:8px}
 
-    .controls { text-align: center; margin: 12px 0 18px; display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap }
-    .nav-btn {
-      background: transparent;
-      border: 1px solid rgba(15,23,42,0.06);
-      width:40px;height:40px;border-radius:8px;
-      display:inline-flex;align-items:center;justify-content:center;
-      cursor:pointer;font-size:1.05rem;color:var(--accent);
-      box-shadow: 0 2px 6px rgba(15,23,42,0.04);
-    }
-    .nav-btn:active{transform:translateY(1px)}
-    .date-icon-btn {
-      display:inline-flex;align-items:center;justify-content:center;
-      background:var(--accent-2);color:#fff;border:none;border-radius:10px;
-      min-width:48px;height:40px;font-size:1.05rem;padding:0 10px;cursor:pointer;
-      box-shadow: 0 6px 18px rgba(37,99,235,0.12);
-    }
-    .date-icon-btn:active { transform: scale(0.98); }
-    input[type="date"].native-date { position: absolute; left: -9999px; }
+    .controls{display:flex;gap:10px;align-items:center;justify-content:center;margin:12px 0;flex-wrap:wrap}
+    .nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:38px;height:38px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+    .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:48px;height:38px;padding:0 10px;cursor:pointer}
+    input[type="date"].native-date{position:absolute;left:-9999px}
 
-    /* Table container */
-    .tableWrap {
-      overflow-x: auto;
-      border-radius: 10px;
-      margin-top: 12px;
-      background: #fff;
-      padding: 6px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 720px;
-      table-layout: fixed;
-      border: 1px solid var(--border);
-    }
-    thead th {
-      background: #f8fafc;
-      padding: 10px 12px;
-      text-align: center;
-      color: var(--muted);
-      font-weight: 700;
-      border: 1px solid var(--border);
-      white-space: nowrap;
-    }
-    tbody td {
-      padding: 10px 12px;
-      border: 1px solid var(--border);
-      font-size: 0.95rem;
-      color: var(--accent);
-      vertical-align: middle;
-      text-align: center;
-    }
-    tbody tr:nth-child(odd) { background: #fbfdff; }
-    .no-data { text-align: center; color: var(--muted); padding: 14px; }
+    /* settings */
+    .toolbar{display:flex;gap:8px;align-items:center;justify-content:center;margin:8px 0;flex-wrap:wrap}
+    .btn{background:#fff;border:1px solid var(--border);padding:8px 10px;border-radius:8px;cursor:pointer}
+    .btn-primary{background:var(--accent-2);color:#fff;border:none}
+    .small{font-size:0.85rem;padding:6px 8px}
 
-    /* Column widths */
-    thead th:nth-child(1), tbody td:nth-child(1) { width: 30%; }
-    thead th:nth-child(2), tbody td:nth-child(2) { width: 30%; }
-    thead th:nth-child(3), tbody td:nth-child(3) { width: 25%; }
-    thead th:nth-child(4), tbody td:nth-child(4) { width: 7%; }
-    thead th:nth-child(5), tbody td:nth-child(5) { width: 8%; }
+    .tableWrap{overflow-x:auto;border-radius:10px;margin-top:12px;background:#fff;padding:6px}
+    table{width:100%;border-collapse:collapse;min-width:680px;table-layout:fixed;border:1px solid var(--border)}
+    thead th{background:#f8fafc;padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border:1px solid var(--border);white-space:nowrap}
+    tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center}
+    tbody tr:nth-child(odd){background:#fbfdff}
+    .no-data{text-align:center;color:var(--muted);padding:14px}
 
-    /* Center wrappers */
-    .cell-center { display: flex; align-items: center; justify-content: center; min-height: 40px; }
+    /* column widths: give more to names, reduce train column */
+    thead th:nth-child(1), td:nth-child(1){width:36%}
+    thead th:nth-child(2), td:nth-child(2){width:36%}
+    thead th:nth-child(3), td:nth-child(3){width:18%}
+    thead th:nth-child(4), td:nth-child(4){width:5%}
+    thead th:nth-child(5), td:nth-child(5){width:5%}
 
-    /* Train stack: make train text inline-block so divider width matches text width */
-    .train-stack { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 6px; }
-    .train-top, .train-bottom {
-      line-height: 1.1;
-      font-weight: 400;
-      color: var(--accent);
-      font-size: 0.95rem;
-      display:inline-block;
+    /* editable cell style */
+    .editable {
+      display:block;
+      min-height:34px;
+      padding:6px;
+      border-radius:6px;
+      outline:none;
+      cursor:text;
+      width:100%;
+      box-sizing:border-box;
     }
-    .train-divider {
-      width: 100%;               /* fills the train-stack width (matches text width) */
-      max-width: 240px;          /* reasonable cap so very long text doesn't make divider huge */
-      height: 2px;               /* more visible */
-      background: var(--divider);
-      border-radius: 2px;
-      margin: 0;
+    .editable[contenteditable="true"]{background:linear-gradient(transparent, transparent)}
+    .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.12);border:1px dashed rgba(37,99,235,0.25)}
+
+    /* train stack */
+    .cell-center{display:flex;align-items:center;justify-content:center;min-height:40px}
+    .train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:4px 6px}
+    .train-top,.train-bottom{font-weight:400;font-size:0.9rem;display:inline-block}
+    .train-divider{width:100%;max-width:180px;height:2px;background:var(--divider);border-radius:2px}
+
+    /* mobile: hide dep & link columns and reduce padding */
+    @media (max-width:640px){
+      table{min-width:0;table-layout:auto}
+      thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
+      thead th,tbody td{padding:8px}
+      .train-divider{max-width:140px;height:1.5px}
     }
 
-    /* text wrap for LP/ALP/Train */
-    tbody td:nth-child(1), tbody td:nth-child(2), tbody td:nth-child(3) {
-      white-space: normal;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      hyphens: auto;
-      word-break: break-word;
-    }
+    /* small helpers */
+    .meta{font-size:0.85rem;color:var(--muted);margin-top:8px;text-align:center}
+    .notice{font-size:0.85rem;color:#a00;text-align:center;margin-top:6px}
+    .config-area{width:100%;max-width:760px;margin:8px auto;display:none;flex-direction:column;gap:6px}
+    .config-area textarea{width:100%;height:120px;padding:8px;border-radius:8px;border:1px solid var(--border);font-family:monospace}
+    .status{font-size:0.9rem;color:var(--muted);text-align:center;margin-top:8px}
 
-    /* Mobile adjustments: hide Dep & Link columns for space */
-    @media (max-width: 600px) {
-      table { min-width: 0; table-layout: auto; font-size: 14px; }
-      thead th, tbody td { padding: 8px 10px; }
-      thead th:nth-child(4), thead th:nth-child(5),
-      tbody td:nth-child(4), tbody td:nth-child(5) { display: none; }
-      .date-icon-btn { min-width:44px;height:38px;font-size:1.0rem;padding:0 8px }
-      .train-top, .train-bottom { font-size: 0.90rem; }
-      .train-divider { max-width:160px; height:1.5px; }
-      .cell-center { min-height:42px; }
-      .nav-btn { width:36px;height:36px;font-size:0.95rem; }
-    }
+    /* tiny toast */
+    .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
+    .toast.show{opacity:1;transform:translateY(0)}
   </style>
 </head>
 <body>
@@ -148,20 +90,35 @@
       <header>
         <h1>LP/ALP Duty List</h1>
         <div class="sub">Madgaon Lobby</div>
-        <div id="dateHeading" aria-live="polite">Loading date...</div>
+        <div id="dateHeading">Loading date...</div>
       </header>
 
       <div class="controls" role="toolbar" aria-label="Date controls">
-        <button id="prevDay" class="nav-btn" title="Previous day" aria-label="Previous day">◀</button>
+        <button id="prevDay" class="nav-btn" title="Previous day">◀</button>
+        <button id="dateBtn" class="date-icon-btn" title="Pick a date">📅</button>
+        <input id="datePicker" class="native-date" type="date" />
+        <button id="nextDay" class="nav-btn" title="Next day">▶</button>
+      </div>
 
-        <button id="dateBtn" class="date-icon-btn" aria-label="Open date picker">📅</button>
-        <input type="date" id="datePicker" class="native-date" aria-label="Date Picker" />
+      <div class="toolbar">
+        <button id="showConfig" class="btn small">Firebase Settings</button>
+        <button id="pushFirebase" class="btn small" title="Push local edits to Firebase">Push Edits → Firebase</button>
+        <button id="clearLocal" class="btn small">Clear Local Edits</button>
+        <div class="status" id="syncStatus"></div>
+      </div>
 
-        <button id="nextDay" class="nav-btn" title="Next day" aria-label="Next day">▶</button>
+      <div class="config-area" id="configArea" aria-hidden="true">
+        <label style="font-weight:600">Paste Firebase config (JSON) here and click Connect:</label>
+        <textarea id="firebaseConfig" placeholder='{"apiKey":"...","authDomain":"...","databaseURL":"...","projectId":"...", ...}'></textarea>
+        <div style="display:flex;gap:8px;justify-content:center">
+          <button id="connectFirebase" class="btn btn-primary small">Connect</button>
+          <button id="disconnectFirebase" class="btn small">Disconnect</button>
+        </div>
+        <div class="meta">Using Realtime Database path: <code>/edits/{linkId}/{crewIndex}</code></div>
       </div>
 
       <div class="tableWrap" aria-live="polite">
-        <table>
+        <table aria-describedby="dateHeading">
           <thead>
             <tr>
               <th>Name of LP</th>
@@ -176,71 +133,119 @@
           </tbody>
         </table>
       </div>
+
+      <div class="meta">Click an LP/ALP name to edit. Edits saved locally (browser) automatically.</div>
     </div>
   </div>
 
-<script>
-/* Loads multiple link files, flattens crew data, applies per-link weekly rotation,
-   displays combined duties sorted by depTime. Navigator arrows advance/decrease date.
-*/
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+  <!-- FIREBASE (compat) SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+/* ---------------------------
+   Data & Files
+   --------------------------- */
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json',
   'ollink1.json','sllink1.json'
 ];
 
-let allCrewData = [];
+let allCrewData = [];        // flattened crew objects with linkId, lastUpdatedDate, crewIndex, duties...
 let selectedDate = new Date();
+const LS_KEY = 'lp_alp_edits_v1';   // localStorage key for edits (change if you want reset)
+let localEdits = loadLocalEdits();  // structure: { [linkId]: { [crewIndex]: { crewLPName, crewALPName } } }
 
-const prevBtn = document.getElementById('prevDay');
-const nextBtn = document.getElementById('nextDay');
+/* ---------------------------
+   Firebase state
+   --------------------------- */
+let firebaseApp = null;
+let firebaseDb = null;
+
+/* ---------------------------
+   DOM refs
+   --------------------------- */
 const dateBtn = document.getElementById('dateBtn');
 const datePicker = document.getElementById('datePicker');
-const dateHeading = document.getElementById('dateHeading');
+const prevBtn = document.getElementById('prevDay');
+const nextBtn = document.getElementById('nextDay');
 const dutyTable = document.getElementById('dutyTable');
+const dateHeading = document.getElementById('dateHeading');
+const showConfig = document.getElementById('showConfig');
+const configArea = document.getElementById('configArea');
+const firebaseConfigTextarea = document.getElementById('firebaseConfig');
+const connectFirebaseBtn = document.getElementById('connectFirebase');
+const disconnectFirebaseBtn = document.getElementById('disconnectFirebase');
+const pushFirebaseBtn = document.getElementById('pushFirebase');
+const clearLocalBtn = document.getElementById('clearLocal');
+const toast = document.getElementById('toast');
+const syncStatus = document.getElementById('syncStatus');
 
-// date picker open
-dateBtn.addEventListener('click', () => { datePicker.focus(); datePicker.click(); });
-datePicker.addEventListener('change', () => {
+/* ---------------------------
+   Utilities
+   --------------------------- */
+function showToast(msg, timeout=2000){
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=> toast.classList.remove('show'), timeout);
+}
+
+function loadLocalEdits(){
+  try{
+    const s = localStorage.getItem(LS_KEY);
+    return s ? JSON.parse(s) : {};
+  }catch(e){ console.warn('loadLocalEdits', e); return {}; }
+}
+function saveLocalEdits(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(localEdits));
+  }catch(e){ console.warn('saveLocalEdits', e); }
+}
+
+/* ---------------------------
+   Date controls
+   --------------------------- */
+dateBtn.addEventListener('click', ()=> { datePicker.focus(); datePicker.click(); });
+datePicker.addEventListener('change', ()=> {
   selectedDate = datePicker.value ? new Date(datePicker.value + 'T00:00:00') : new Date();
-  updateDateHeading();
+  setSelectedDate(selectedDate);
   renderCombinedDuties();
 });
+prevBtn.addEventListener('click', ()=> changeDate(-1));
+nextBtn.addEventListener('click', ()=> changeDate(1));
 
-// prev/next handlers
-prevBtn.addEventListener('click', () => changeDate(-1));
-nextBtn.addEventListener('click', () => changeDate(1));
-
-function changeDate(offsetDays) {
+function changeDate(offset){
   const d = new Date(selectedDate.getTime());
-  d.setDate(d.getDate() + offsetDays);
+  d.setDate(d.getDate() + offset);
   setSelectedDate(d);
   renderCombinedDuties();
 }
 
-function updateDateHeading() {
-  const d = selectedDate || new Date();
-  dateHeading.textContent = `${d.toLocaleString('en-US',{weekday:'long'})}, ${d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`;
-}
-function setSelectedDate(d) {
+function setSelectedDate(d){
   selectedDate = d || new Date();
   const yyyy = selectedDate.getFullYear();
-  const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
-  const dd = String(selectedDate.getDate()).padStart(2, '0');
+  const mm = String(selectedDate.getMonth()+1).padStart(2,'0');
+  const dd = String(selectedDate.getDate()).padStart(2,'0');
   datePicker.value = `${yyyy}-${mm}-${dd}`;
-  updateDateHeading();
+  dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`;
 }
 
-// load link files
-async function loadAllLinks() {
+/* ---------------------------
+   Load ALL link files & flatten data
+   --------------------------- */
+async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
-  const fetches = linkFiles.map(async file => {
-    try {
+
+  const fetches = linkFiles.map(async file=>{
+    try{
       const r = await fetch(file, { cache: 'no-cache' });
-      if (!r.ok) throw new Error(file + ' ' + r.status);
+      if(!r.ok) throw new Error(file+' '+r.status);
       return await r.json();
-    } catch (e) {
+    }catch(e){
       console.warn('Failed to load', file, e);
       return null;
     }
@@ -249,92 +254,86 @@ async function loadAllLinks() {
   const results = await Promise.all(fetches);
   allCrewData = [];
 
-  results.forEach((linkData, idx) => {
-    if (!linkData) return;
+  results.forEach((linkData, idx)=>{
+    if(!linkData) return;
     const linkId = linkData.linkId ?? (`file#${idx+1}`);
     const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
     const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
     crewArr.forEach((crew, crewIndex) => {
-      allCrewData.push({
-        ...crew,
-        linkId,
-        lastUpdatedDate: lastUpdated,
-        crewIndex
-      });
+      allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex});
     });
   });
 
   renderCombinedDuties();
 }
 
-// rotation + flatten + filter + sort
-function renderCombinedDuties() {
-  if (!allCrewData.length) {
+/* ---------------------------
+   Render combined duties with rotation, apply local edits overlay
+   --------------------------- */
+function renderCombinedDuties(){
+  if(!allCrewData.length){
     dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`;
     return;
   }
 
-  const weekday = selectedDate.toLocaleString('en-US', { weekday: 'long' });
-
-  const crewsByLink = allCrewData.reduce((acc, crew) => {
-    (acc[crew.linkId] = acc[crew.linkId] || []).push(crew);
-    return acc;
-  }, {});
-
+  const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
+  const crewsByLink = allCrewData.reduce((acc, crew)=> { (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
   const rows = [];
 
-  Object.values(crewsByLink).forEach(crewList => {
-    if (!crewList.length) return;
-
+  Object.values(crewsByLink).forEach(crewList=>{
+    if(!crewList.length) return;
     const lastUpdatedDate = crewList[0].lastUpdatedDate ? new Date(crewList[0].lastUpdatedDate) : new Date();
-    const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    const weeksPassed = Math.floor(diffDays / 7);
+    const diffDays = Math.floor((selectedDate.getTime() - lastUpdatedDate.getTime())/(1000*60*60*24));
+    const weeksPassed = Math.floor(diffDays/7);
+    const dutiesPerRow = crewList.map(c=>c.duties||{});
 
-    const dutiesPerRow = crewList.map(c => c.duties || {});
-
-    for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
+    for(let rowIndex=0; rowIndex<crewList.length; rowIndex++){
       const crewIndex = ((rowIndex - weeksPassed) % crewList.length + crewList.length) % crewList.length;
       const crew = crewList[crewIndex];
       const dutyForRow = dutiesPerRow[rowIndex][weekday] ?? '';
 
-      let outgoing = '', incoming = '', depTime = '';
-      if (dutyForRow && typeof dutyForRow === 'object' && (dutyForRow.outgoing || dutyForRow.incoming)) {
-        outgoing = (dutyForRow.outgoing || '').toString().trim();
-        incoming = (dutyForRow.incoming || '').toString().trim();
-        depTime = (dutyForRow.depTime || '').toString().trim();
-      } else if (typeof dutyForRow === 'string') outgoing = dutyForRow.trim();
+      let outgoing='', incoming='', depTime='';
+      if(dutyForRow && typeof dutyForRow === 'object' && (dutyForRow.outgoing || dutyForRow.incoming)){
+        outgoing = (dutyForRow.outgoing||'').toString().trim();
+        incoming = (dutyForRow.incoming||'').toString().trim();
+        depTime = (dutyForRow.depTime||'').toString().trim();
+      } else if(typeof dutyForRow === 'string'){
+        outgoing = dutyForRow.trim();
+      }
 
-      const check = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
-      if (!check || check === 'REST') continue;
+      const combinedCheck = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
+      if(!combinedCheck || combinedCheck === 'REST') continue;
 
-      const lpName = crew.crewLPName?.trim() || crew.crewLPId || '';
-      const alpName = crew.crewALPName?.trim() || crew.crewALPId || '';
+      // apply local edits if exist
+      const linkId = crew.linkId;
+      const editsForLink = localEdits[linkId] || {};
+      const crewEdits = editsForLink[crew.crewIndex] || {};
 
-      rows.push({ depTime, outgoing, incoming, lpName, alpName, link: crew.linkId });
+      const lpName = crewEdits.crewLPName?.trim() || crew.crewLPName?.trim() || crew.crewLPId || '';
+      const alpName = crewEdits.crewALPName?.trim() || crew.crewALPName?.trim() || crew.crewALPId || '';
+
+      rows.push({
+        depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex
+      });
     }
   });
 
-  function timeToMinutes(t) {
-    if (!t) return Infinity;
-    const m = t.match(/^(\d{1,2}):(\d{2})$/);
-    return m ? +m[1]*60 + +m[2] : Infinity;
-  }
+  // sort by depTime (HH:MM)
+  function timeToMin(t){ if(!t) return Infinity; const m = t.match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1])*60 + (+m[2]) : Infinity; }
+  rows.sort((a,b)=> timeToMin(a.depTime) - timeToMin(b.depTime) );
 
-  rows.sort((a,b)=>timeToMinutes(a.depTime)-timeToMinutes(b.depTime));
-
-  if (!rows.length) {
+  if(!rows.length){
     dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`;
     return;
   }
 
+  // render rows
   dutyTable.innerHTML = '';
   rows.forEach(r=>{
     const out = escapeHtml(r.outgoing||''), inc = escapeHtml(r.incoming||'');
-    // train-stack container width adapts to text width (inline-flex); divider width = 100% of that container
-    const trainCell = inc ? `
+    const trainHtml = inc ? `
       <div class="cell-center">
-        <div class="train-stack" role="group" aria-label="Train numbers">
+        <div class="train-stack" role="group">
           <div class="train-top">${out}</div>
           <div class="train-divider" aria-hidden="true"></div>
           <div class="train-bottom">${inc}</div>
@@ -344,26 +343,153 @@ function renderCombinedDuties() {
 
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td><div class="cell-center">${escapeHtml(r.lpName)}</div></td>
-      <td><div class="cell-center">${escapeHtml(r.alpName)}</div></td>
-      <td>${trainCell}</td>
+      <td>
+        <div class="cell-center">
+          <div class="editable" contenteditable="true" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="Click to edit LP name">${escapeHtml(r.lpName)}</div>
+        </div>
+      </td>
+      <td>
+        <div class="cell-center">
+          <div class="editable" contenteditable="true" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="Click to edit ALP name">${escapeHtml(r.alpName)}</div>
+        </div>
+      </td>
+      <td>${trainHtml}</td>
       <td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>
       <td><div class="cell-center">${escapeHtml(r.link)}</div></td>
     `;
     dutyTable.appendChild(tr);
   });
+
+  // attach events to editable cells (after render)
+  document.querySelectorAll('.editable').forEach(el=>{
+    // avoid attaching multiple listeners
+    if(el.__editableBound) return;
+    el.__editableBound = true;
+
+    // save on blur
+    el.addEventListener('blur', onEditableCommit);
+    // save on Enter key
+    el.addEventListener('keydown', (ev)=>{
+      if(ev.key === 'Enter'){ ev.preventDefault(); el.blur(); }
+    });
+  });
 }
 
-function escapeHtml(s){
-  return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]));
+/* ---------------------------
+   Editable commit: save to localEdits and localStorage
+   --------------------------- */
+function onEditableCommit(e){
+  const el = e.currentTarget;
+  const linkId = el.dataset.link;
+  const crewIndex = Number(el.dataset.crew);
+  const field = el.dataset.field; // crewLPName or crewALPName
+  const newVal = el.textContent.trim();
+
+  // ensure data structure exists
+  if(!localEdits[linkId]) localEdits[linkId] = {};
+  if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
+
+  localEdits[linkId][crewIndex][field] = newVal;
+  saveLocalEdits();
+  showToast('Saved locally');
 }
 
-// init
+/* ---------------------------
+   Clear local edits (UI)
+   --------------------------- */
+clearLocalBtn.addEventListener('click', ()=>{
+  if(!confirm('Clear all local edits? This cannot be undone.')) return;
+  localEdits = {};
+  saveLocalEdits();
+  renderCombinedDuties();
+  showToast('Local edits cleared');
+});
+
+/* ---------------------------
+   Firebase connect / push
+   --------------------------- */
+showConfig.addEventListener('click', ()=>{
+  configArea.style.display = configArea.style.display === 'flex' ? 'none' : 'flex';
+});
+
+connectFirebaseBtn.addEventListener('click', ()=> {
+  const txt = firebaseConfigTextarea.value.trim();
+  if(!txt){ alert('Paste your Firebase config JSON first (see comments).'); return; }
+  try {
+    const cfg = JSON.parse(txt);
+    // initialize firebase app
+    try{
+      if(firebaseApp) firebaseApp.delete && firebaseApp.delete(); // attempt cleanup
+    }catch(e){}
+    firebaseApp = firebase.initializeApp(cfg);
+    firebaseDb = firebase.database();
+    syncStatus.textContent = 'Firebase connected';
+    showToast('Firebase connected');
+  } catch (e){
+    console.error('Firebase init error', e);
+    alert('Invalid JSON or firebase init failed. Check console.');
+  }
+});
+
+disconnectFirebaseBtn.addEventListener('click', ()=> {
+  try{
+    firebaseApp = null;
+    firebaseDb = null;
+    syncStatus.textContent = 'Firebase disconnected';
+    showToast('Disconnected');
+  }catch(e){ console.warn(e); }
+});
+
+pushFirebaseBtn.addEventListener('click', async ()=>{
+  if(!firebaseDb){ alert('Not connected to Firebase. Paste config and Connect.'); return; }
+  // push localEdits to /edits/{linkId}/{crewIndex}
+  try{
+    let total=0;
+    for(const linkId of Object.keys(localEdits)){
+      const byCrew = localEdits[linkId];
+      for(const crewIndex of Object.keys(byCrew)){
+        const payload = byCrew[crewIndex];
+        // write under /edits/{linkId}/{crewIndex}
+        await firebaseDb.ref(`/edits/${linkId}/${crewIndex}`).set(payload);
+        total++;
+      }
+    }
+    showToast(`Pushed ${total} edits`);
+    syncStatus.textContent = `Last sync: ${new Date().toLocaleString()}`;
+  }catch(e){
+    console.error('pushFirebase error', e);
+    alert('Failed to push edits. Check console.');
+  }
+});
+
+/* ---------------------------
+   small helpers
+   --------------------------- */
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+
+/* ---------------------------
+   Init
+   --------------------------- */
 (function init(){
   setSelectedDate(new Date());
   loadAllLinks();
+  // show any existing edits count
+  const cnt = Object.keys(localEdits).reduce((acc,link)=> acc + Object.keys(localEdits[link]||{}).length, 0);
+  if(cnt) syncStatus.textContent = `${cnt} local edits saved`;
 })();
 
+/* ---------------------------
+   Note for developer:
+   - To enable Firebase: create a Firebase Realtime Database, copy your firebase config JSON object
+     (the same object used for firebase.initializeApp) and paste it in the textarea, then click Connect.
+   - Example config JSON (do NOT use this - replace with your project's config):
+     {
+       "apiKey":"...","authDomain":"...","databaseURL":"https://your-project-default-rtdb.firebaseio.com",
+       "projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."
+     }
+   - This UI writes local edits to /edits/{linkId}/{crewIndex} in the Realtime Database as simple objects:
+     { "crewLPName": "...", "crewALPName": "..." }
+   --------------------------- */
 </script>
 </body>
 </html>
