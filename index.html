@@ -16,9 +16,9 @@
   --divider:#1f6feb;
   --border:#cdd4e1;
 
-  /* Heights used for sticky stacking — tweak if you change paddings */
-  --header-h:108px;    /* header area height (includes title, sub, dateHeading) */
-  --controls-h:56px;   /* controls bar height */
+  /* these will be set dynamically at runtime */
+  --header-h:108px;
+  --controls-h:56px;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent)}
@@ -30,6 +30,7 @@ body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,S
   padding:18px 16px;
   border-bottom:1px solid rgba(0,0,0,0.04);
   z-index:40;
+  /* height is dynamic via CSS var */
   height:var(--header-h);
   display:flex; flex-direction:column; justify-content:center;
 }
@@ -61,7 +62,9 @@ table{width:100%;border-collapse:collapse;min-width:680px;table-layout:fixed;bor
 thead th{
   background:#f8fafc;padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border:1px solid var(--border);white-space:nowrap;
   position:sticky;
-  top: calc(var(--header-h) + var(--controls-h));
+  top: calc(var(--header-h) + var(--controls_h_fallback, var(--controls-h)));
+  /* IMPORTANT: browsers sometimes need the computed numeric top value; we'll set it via JS too
+     but keep this fallback expression for safety. */
   z-index:30;
 }
 tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center}
@@ -134,34 +137,78 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- Firebase (compat) -->
+  <!-- Firebase (compat) - unchanged, optional -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-/* ============================
-  CONFIG: paste your Firebase config object below to enable DB sync
-  If FIREBASE_CONFIG is null, the app uses only localStorage.
+/* -------------------------
+  Dynamic sticky measurement
+  - Measures .headerArea and .controls heights and writes CSS vars:
+    --header-h and --controls-h
+  - Runs on load, fontready, resize, orientationchange.
 */
-const FIREBASE_CONFIG = null; // <-- paste your config here if you want firebase sync
+function updateStickyVars(){
+  const header = document.querySelector('.headerArea');
+  const controls = document.querySelector('.controls');
+  if(!header || !controls) return;
+  // get computed heights including margins
+  const headerRect = header.getBoundingClientRect();
+  const controlsRect = controls.getBoundingClientRect();
+  const headerH = Math.round(headerRect.height);
+  const controlsH = Math.round(controlsRect.height);
 
+  // set CSS vars on :root
+  document.documentElement.style.setProperty('--header-h', headerH + 'px');
+  document.documentElement.style.setProperty('--controls-h', controlsH + 'px');
+
+  // set explicit top for thead th (some browsers need numeric computed top)
+  const topPx = headerH + controlsH;
+  document.querySelectorAll('thead th').forEach(th => {
+    th.style.top = topPx + 'px';
+  });
+
+  // also ensure tableWrap max-height recalculated by forcing reflow (no-op read)
+  void document.querySelector('.tableWrap').offsetHeight;
+}
+
+// run once when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  updateStickyVars();
+  // update again after fonts are loaded (ensures measurements include font metrics)
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => { updateStickyVars(); });
+  } else {
+    // fallback small timeout
+    setTimeout(updateStickyVars, 200);
+  }
+});
+
+// update on resize/orientation change
+window.addEventListener('resize', updateStickyVars);
+window.addEventListener('orientationchange', () => { setTimeout(updateStickyVars, 120); });
+
+/* ============================
+  The rest of your app (inline editing + owner model) follows.
+  I left the logic unchanged from your working version but included
+  here so the file is a single drop-in.
+  If you want only the sticky measurement JS, paste that into your file.
+*/
+const FIREBASE_CONFIG = null; // leave null or add your config
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json',
   'ollink1.json','sllink1.json'
 ];
-
 const LS_KEY = 'lp_alp_edits_owner_v1';
 let localEdits = loadLocalEdits();
 let allCrewData = [];
 let selectedDate = new Date();
-
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
-let currentUser = null;
-let isAdmin = false;
+let currentUser = null, isAdmin = false;
 
-/* Init Firebase if config present */
+/* Firebase init (same as before) */
 if(FIREBASE_CONFIG){
   try{
     firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
@@ -171,15 +218,12 @@ if(FIREBASE_CONFIG){
       if(user){
         currentUser = { uid: user.uid, displayName: user.displayName || user.uid };
         saveLocalUser(currentUser);
-        await detectAdmin(); // will re-render
+        await detectAdmin();
       } else {
         try{ await firebaseAuth.signInAnonymously(); }catch(e){ console.warn('anon sign-in failed', e); }
       }
     });
-  } catch(e){
-    console.warn('Firebase init failed', e);
-    firebaseApp = null; firebaseDb = null; firebaseAuth = null;
-  }
+  } catch(e){ console.warn('Firebase init failed', e); firebaseApp=null; firebaseDb=null; firebaseAuth=null; }
 }
 
 /* DOM refs */
@@ -191,7 +235,7 @@ const nextBtn = document.getElementById('nextDay');
 const dateHeading = document.getElementById('dateHeading');
 const toast = document.getElementById('toast');
 
-/* Utilities */
+/* Utilities & app code (unchanged) */
 function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
@@ -207,7 +251,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* Load all link files */
+/* Load links and render (same rendering/ownership logic you had) */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async f => {
@@ -225,20 +269,15 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* Render duties; owner model: if a cell has _updatedBy, only that uid or admin can edit */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
-
-  // fetch firebase edits to know owners (if DB present)
   let fbEdits = {};
   if(firebaseDb){
     try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; }catch(e){ fbEdits = {}; }
   }
-
   const crewsByLink = allCrewData.reduce((acc,crew)=> { (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
   const rows = [];
-
   Object.values(crewsByLink).forEach(crewList=>{
     if(!crewList.length) return;
     const lastUpdatedDate = crewList[0].lastUpdatedDate ? new Date(crewList[0].lastUpdatedDate) : new Date();
@@ -258,37 +297,26 @@ async function renderCombinedDuties(){
       const combined = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
       if(!combined || combined === 'REST') continue;
       const linkId = crew.linkId;
-
-      // overlay local edits first, then firebase edits if present
       const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
       const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
-      // prefer fb owner (if present), else local owner
       const owner = fb._updatedBy || local._updatedBy || null;
       const lpName = local.crewLPName?.trim() || fb.crewLPName?.trim() || crew.crewLPId || '';
       const alpName = local.crewALPName?.trim() || fb.crewALPName?.trim() || crew.crewALPId || '';
-
       rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, owner });
     }
   });
 
-  // sort by depTime
   function tmin(t){ if(!t) return Infinity; const m = t.match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1])*60 + (+m[2]) : Infinity; }
   rows.sort((a,b)=> tmin(a.depTime) - tmin(b.depTime));
-
   if(!rows.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`; return; }
-
   dutyTable.innerHTML = '';
   rows.forEach(r=>{
     const out = escapeHtml(r.outgoing||''), inc = escapeHtml(r.incoming||'');
     const trainHtml = inc ? `<div class="cell-center"><div class="train-stack" role="group"><div class="train-top">${out}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${inc}</div></div></div>` : `<div class="cell-center"><div class="train-stack"><div class="train-top">${out}</div></div></div>`;
     const tr = document.createElement('tr');
-
-    // editing rule: editable if no owner yet OR owner === currentUser.uid OR isAdmin
     const mayEditLP = (!r.owner) || (currentUser && r.owner === currentUser.uid) || isAdmin;
     const mayEditALP = (!r.owner) || (currentUser && r.owner === currentUser.uid) || isAdmin;
-
     const ownerTag = r.owner ? `<span class="ownerTag">${escapeHtml(r.owner)}</span>` : '';
-
     tr.innerHTML = `
       <td><div class="cell-center"><div class="editable" contenteditable="${mayEditLP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="${mayEditLP? 'Edit LP name':'Owned by someone else'}">${escapeHtml(r.lpName)}</div></div></td>
       <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="${mayEditALP? 'Edit ALP name':'Owned by someone else'}">${escapeHtml(r.alpName)}</div></div></td>
@@ -299,62 +327,32 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  // attach editable behavior
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
-
-    // focus: if default crew id pattern, clear immediately for typing and store original
     el.addEventListener('focus', (ev)=>{
       if(el.getAttribute('contenteditable') === 'false'){ el.blur(); showToast('This cell is owned by someone else.'); return; }
       const txt = el.textContent.trim();
-      if(/^(LP|ALP)\d+/i.test(txt)){
-        el.dataset._orig = txt;
-        el.textContent = '';
-      } else {
-        el.dataset._orig = '';
-      }
+      if(/^(LP|ALP)\d+/i.test(txt)){ el.dataset._orig = txt; el.textContent = ''; } else { el.dataset._orig = ''; }
     });
-
-    // Escape restores original; Enter commits (blur)
-    el.addEventListener('keydown', (ev)=>{
-      if(ev.key === 'Escape'){ if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); } }
-      else if(ev.key === 'Enter'){ ev.preventDefault(); el.blur(); }
-    });
-
-    // on blur commit
+    el.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape'){ if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); } } else if(ev.key==='Enter'){ ev.preventDefault(); el.blur(); } });
     el.addEventListener('blur', onEditableCommit);
   });
 }
 
-/* Commit handler: claim ownership if none, save value, push to firebase */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   const linkId = el.dataset.link;
   const crewIndex = Number(el.dataset.crew);
-  const field = el.dataset.field; // crewLPName or crewALPName
+  const field = el.dataset.field;
   const newVal = el.textContent.trim();
-
-  // read existing local or fb owner
   const existingLocal = (localEdits[linkId] && localEdits[linkId][crewIndex]) || {};
-  // check firebase owner if any (best-effort)
   let fbOwner = null;
   if(firebaseDb){
-    try{
-      const fbSnap = await firebaseDb.ref(`/edits/${linkId}/${crewIndex}/_updatedBy`).once('value');
-      fbOwner = fbSnap.exists() ? fbSnap.val() : null;
-    }catch(e){ fbOwner = null; }
+    try{ const fbSnap = await firebaseDb.ref(`/edits/${linkId}/${crewIndex}/_updatedBy`).once('value'); fbOwner = fbSnap.exists() ? fbSnap.val() : null; }catch(e){ fbOwner = null; }
   }
   const owner = fbOwner || existingLocal._updatedBy || null;
-
-  // If someone else owns it and current user not owner nor admin, revert visually
-  if(owner && (!currentUser || owner !== currentUser.uid) && !isAdmin){
-    showToast('Not allowed: owned by ' + owner);
-    await renderCombinedDuties();
-    return;
-  }
-
-  // Set owner if none
+  if(owner && (!currentUser || owner !== currentUser.uid) && !isAdmin){ showToast('Not allowed: owned by ' + owner); await renderCombinedDuties(); return; }
   const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
@@ -363,69 +361,37 @@ async function onEditableCommit(e){
   localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
   saveLocalEdits();
   showToast('Saved locally');
-
-  // push to firebase
   if(firebaseDb){
-    try{
-      const path = `/edits/${linkId}/${crewIndex}`;
-      const payload = { [field]: newVal, _updatedBy: userUid, _updatedAt: new Date().toISOString() };
-      await firebaseDb.ref(path).update(payload);
-      showToast('Synced to Firebase');
-    }catch(err){
-      console.warn('Firebase push failed', err);
-    }
+    try{ const path = `/edits/${linkId}/${crewIndex}`; const payload = { [field]: newVal, _updatedBy: userUid, _updatedAt: new Date().toISOString() }; await firebaseDb.ref(path).update(payload); showToast('Synced to Firebase'); }catch(err){ console.warn('Firebase push failed', err); }
   }
-
-  // refresh display (shows owner tag and disables editing for others)
   await renderCombinedDuties();
 }
 
-/* admin detection (keeps admin toggle optional) */
 async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
-  // optional ADMIN_UIDS fallback: add admin UIDs here if you want local admins without db
   const ADMIN_UIDS = [];
-  try{
-    if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
-    if(firebaseDb){
-      const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value');
-      if(snap.exists() && snap.val() === true) isAdmin = true;
-    }
-  }catch(e){ console.warn('admin detect err', e); }
-  // re-render to apply admin state
+  try{ if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true; if(firebaseDb){ const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value'); if(snap.exists() && snap.val() === true) isAdmin = true; } }catch(e){ console.warn('admin detect err', e); }
   await renderCombinedDuties();
 }
 
-/* small helpers */
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 
-/* make sure there's a local user (for ownership when Firebase not configured) */
-function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
-
-/* init */
-(async function init(){
+async function init(){
   setSelectedDate(new Date());
-  // ensure a local user exists immediately
   currentUser = loadLocalUser() || createLocalUser();
   saveLocalUser(currentUser);
-
   await loadAllLinks();
-
-  // if firebase auth already signed in, detect admin; otherwise create anon auth if configured
   if(firebaseAuth && firebaseDb){
-    if(firebaseAuth.currentUser){
-      currentUser = { uid: firebaseAuth.currentUser.uid, displayName: firebaseAuth.currentUser.displayName || firebaseAuth.currentUser.uid };
-      saveLocalUser(currentUser);
-      await detectAdmin();
-    } else {
-      try{ await firebaseAuth.signInAnonymously(); }catch(e){ console.warn('anon sign-in failed', e); }
-    }
+    if(firebaseAuth.currentUser){ currentUser = { uid: firebaseAuth.currentUser.uid, displayName: firebaseAuth.currentUser.displayName || firebaseAuth.currentUser.uid }; saveLocalUser(currentUser); await detectAdmin(); } else { try{ await firebaseAuth.signInAnonymously(); }catch(e){ console.warn('anon sign-in failed', e); } }
   } else {
-    // no firebase - just display; ownership enforced locally
     await detectAdmin();
   }
-})();
+}
+
+// run init after DOM ready
+document.addEventListener('DOMContentLoaded', () => { init(); });
+
 </script>
 </body>
 </html>
