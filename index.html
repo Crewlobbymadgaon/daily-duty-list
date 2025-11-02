@@ -3,35 +3,28 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>LP/ALP Duty List — Madgaon Lobby</title>
+<title>LP/ALP Duty List — Madgaon Lobby (fixed header)</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f4f7fb;
-  --card:#fff;
-  --muted:#6b7280;
-  --accent:#0f172a;
-  --accent-2:#2563eb;
-  --radius:12px;
-  --divider:#1f6feb;
-  --border:#cdd4e1;
-
-  /* these will be set dynamically at runtime */
-  --header-h:108px;
-  --controls-h:56px;
+  --bg:#f4f7fb;--card:#fff;--muted:#6b7280;--accent:#0f172a;--accent-2:#2563eb;
+  --radius:12px;--divider:#1f6feb;--border:#cdd4e1;
+  /* runtime vars set by JS: --header-h & --controls-h */
+  --header-h: 0px;
+  --controls-h: 0px;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent)}
 .wrap{max-width:1100px;margin:0 auto;padding:14px}
 .card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);overflow:hidden}
+
+/* header and controls - sticky */
 .headerArea{
   position:sticky; top:0;
   background:var(--card);
   padding:18px 16px;
   border-bottom:1px solid rgba(0,0,0,0.04);
   z-index:40;
-  /* height is dynamic via CSS var */
-  height:var(--header-h);
   display:flex; flex-direction:column; justify-content:center;
 }
 .headerArea h1{margin:0;font-size:1.4rem;font-weight:700;text-align:center}
@@ -41,12 +34,11 @@ body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,S
 /* Controls sticky directly below header */
 .controls{
   position:sticky;
-  top:var(--header-h);
+  top:calc(var(--header-h, 0px));
   background:var(--card);
   z-index:35;
   display:flex;gap:10px;align-items:center;justify-content:center;
   padding:10px;border-bottom:1px solid rgba(0,0,0,0.03);
-  height:var(--controls-h);
 }
 .nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:38px;height:38px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:48px;height:38px;padding:0 10px;cursor:pointer}
@@ -54,24 +46,22 @@ input[type="date"].native-date{position:absolute;left:-9999px}
 
 /* table area scrolls under sticky header + controls */
 .tableWrap{
-  max-height:calc(100vh - var(--header-h) - var(--controls-h) - 28px);
+  max-height:calc(100vh - var(--header-h, 0px) - var(--controls-h, 0px) - 28px);
   overflow:auto;border-radius:0;background:#fff;padding:6px;
 }
 table{width:100%;border-collapse:collapse;min-width:680px;table-layout:fixed;border:1px solid var(--border)}
-/* table header sticks below header + controls */
+/* remove CSS top for thead.th — JS will set inline top px */
 thead th{
   background:#f8fafc;padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border:1px solid var(--border);white-space:nowrap;
   position:sticky;
-  top: calc(var(--header-h) + var(--controls_h_fallback, var(--controls-h)));
-  /* IMPORTANT: browsers sometimes need the computed numeric top value; we'll set it via JS too
-     but keep this fallback expression for safety. */
+  /* no top here; JS will set th.style.top = 'NNpx' to match measured stack */
   z-index:30;
 }
 tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center}
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
 
-/* sizing and train stack */
+/* column sizing and train stack */
 thead th:nth-child(1), td:nth-child(1){width:36%}
 thead th:nth-child(2), td:nth-child(2){width:36%}
 thead th:nth-child(3), td:nth-child(3){width:18%}
@@ -137,65 +127,66 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- Firebase (compat) - unchanged, optional -->
+  <!-- Firebase (compat) - optional -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
 /* -------------------------
-  Dynamic sticky measurement
-  - Measures .headerArea and .controls heights and writes CSS vars:
-    --header-h and --controls-h
-  - Runs on load, fontready, resize, orientationchange.
+  JS: measure header + controls and apply numeric top to thead th
 */
-function updateStickyVars(){
+function measureAndApply() {
   const header = document.querySelector('.headerArea');
   const controls = document.querySelector('.controls');
-  if(!header || !controls) return;
-  // get computed heights including margins
+  const tableWrap = document.querySelector('.tableWrap');
+  if (!header || !controls || !tableWrap) return;
+
+  // measure bottom edge (header top + header height) and controls height
   const headerRect = header.getBoundingClientRect();
   const controlsRect = controls.getBoundingClientRect();
+
+  // header height and controls height in px
   const headerH = Math.round(headerRect.height);
   const controlsH = Math.round(controlsRect.height);
 
-  // set CSS vars on :root
+  // set CSS vars for other calculations
   document.documentElement.style.setProperty('--header-h', headerH + 'px');
   document.documentElement.style.setProperty('--controls-h', controlsH + 'px');
 
-  // set explicit top for thead th (some browsers need numeric computed top)
-  const topPx = headerH + controlsH;
+  // compute numeric top for thead (header bottom + controls height)
+  // We need the offset from the viewport top where th should stick.
+  // That equals headerH + controlsH (since both are sticky at top).
+  const numericTop = headerH + controlsH;
+
+  // apply inline style top to each thead th so browsers use exact value
   document.querySelectorAll('thead th').forEach(th => {
-    th.style.top = topPx + 'px';
+    th.style.top = numericTop + 'px';
   });
 
-  // also ensure tableWrap max-height recalculated by forcing reflow (no-op read)
-  void document.querySelector('.tableWrap').offsetHeight;
+  // also set tableWrap max-height precisely so scroll area is correct
+  const reserved = numericTop + 28; // 28px buffer
+  const maxH = Math.max(120, window.innerHeight - reserved);
+  tableWrap.style.maxHeight = maxH + 'px';
 }
 
-// run once when DOM is ready
+// run on DOM ready, after fonts ready, and on resize/orientation
 document.addEventListener('DOMContentLoaded', () => {
-  updateStickyVars();
-  // update again after fonts are loaded (ensures measurements include font metrics)
+  measureAndApply();
   if (document.fonts && document.fonts.ready) {
-    document.fonts.ready.then(() => { updateStickyVars(); });
+    document.fonts.ready.then(() => { measureAndApply(); });
   } else {
-    // fallback small timeout
-    setTimeout(updateStickyVars, 200);
+    setTimeout(measureAndApply, 200);
   }
 });
-
-// update on resize/orientation change
-window.addEventListener('resize', updateStickyVars);
-window.addEventListener('orientationchange', () => { setTimeout(updateStickyVars, 120); });
+window.addEventListener('resize', measureAndApply);
+window.addEventListener('orientationchange', () => setTimeout(measureAndApply, 120));
 
 /* ============================
-  The rest of your app (inline editing + owner model) follows.
-  I left the logic unchanged from your working version but included
-  here so the file is a single drop-in.
-  If you want only the sticky measurement JS, paste that into your file.
+  App: inline editing + ownership (keeps previous logic)
+  Paste your FIREBASE_CONFIG here if needed
 */
-const FIREBASE_CONFIG = null; // leave null or add your config
+const FIREBASE_CONFIG = null; // add your config to enable firebase
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json',
@@ -208,7 +199,7 @@ let selectedDate = new Date();
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
 
-/* Firebase init (same as before) */
+/* Firebase optional init */
 if(FIREBASE_CONFIG){
   try{
     firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
@@ -235,7 +226,7 @@ const nextBtn = document.getElementById('nextDay');
 const dateHeading = document.getElementById('dateHeading');
 const toast = document.getElementById('toast');
 
-/* Utilities & app code (unchanged) */
+/* Utilities & app logic (same behavior as before) */
 function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
@@ -251,7 +242,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* Load links and render (same rendering/ownership logic you had) */
+/* Load link files */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async f => {
@@ -269,15 +260,20 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
+/* Render duties (ownership model) */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
+
+  // fetch firebase edits to know owners (if DB present)
   let fbEdits = {};
   if(firebaseDb){
     try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; }catch(e){ fbEdits = {}; }
   }
+
   const crewsByLink = allCrewData.reduce((acc,crew)=> { (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
   const rows = [];
+
   Object.values(crewsByLink).forEach(crewList=>{
     if(!crewList.length) return;
     const lastUpdatedDate = crewList[0].lastUpdatedDate ? new Date(crewList[0].lastUpdatedDate) : new Date();
@@ -297,26 +293,35 @@ async function renderCombinedDuties(){
       const combined = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
       if(!combined || combined === 'REST') continue;
       const linkId = crew.linkId;
+
+      // overlay local edits first, then firebase edits if present
       const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
       const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
       const owner = fb._updatedBy || local._updatedBy || null;
       const lpName = local.crewLPName?.trim() || fb.crewLPName?.trim() || crew.crewLPId || '';
       const alpName = local.crewALPName?.trim() || fb.crewALPName?.trim() || crew.crewALPId || '';
+
       rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, owner });
     }
   });
 
   function tmin(t){ if(!t) return Infinity; const m = t.match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1])*60 + (+m[2]) : Infinity; }
   rows.sort((a,b)=> tmin(a.depTime) - tmin(b.depTime));
+
   if(!rows.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`; return; }
+
   dutyTable.innerHTML = '';
   rows.forEach(r=>{
     const out = escapeHtml(r.outgoing||''), inc = escapeHtml(r.incoming||'');
     const trainHtml = inc ? `<div class="cell-center"><div class="train-stack" role="group"><div class="train-top">${out}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${inc}</div></div></div>` : `<div class="cell-center"><div class="train-stack"><div class="train-top">${out}</div></div></div>`;
     const tr = document.createElement('tr');
+
+    // editing rule: editable if no owner yet OR owner === currentUser.uid OR isAdmin
     const mayEditLP = (!r.owner) || (currentUser && r.owner === currentUser.uid) || isAdmin;
     const mayEditALP = (!r.owner) || (currentUser && r.owner === currentUser.uid) || isAdmin;
+
     const ownerTag = r.owner ? `<span class="ownerTag">${escapeHtml(r.owner)}</span>` : '';
+
     tr.innerHTML = `
       <td><div class="cell-center"><div class="editable" contenteditable="${mayEditLP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="${mayEditLP? 'Edit LP name':'Owned by someone else'}">${escapeHtml(r.lpName)}</div></div></td>
       <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="${mayEditALP? 'Edit ALP name':'Owned by someone else'}">${escapeHtml(r.alpName)}</div></div></td>
@@ -327,32 +332,43 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
+  // attach editable behaviour
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
+
     el.addEventListener('focus', (ev)=>{
       if(el.getAttribute('contenteditable') === 'false'){ el.blur(); showToast('This cell is owned by someone else.'); return; }
       const txt = el.textContent.trim();
       if(/^(LP|ALP)\d+/i.test(txt)){ el.dataset._orig = txt; el.textContent = ''; } else { el.dataset._orig = ''; }
     });
+
     el.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape'){ if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); } } else if(ev.key==='Enter'){ ev.preventDefault(); el.blur(); } });
     el.addEventListener('blur', onEditableCommit);
   });
 }
 
+/* Commit handler */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   const linkId = el.dataset.link;
   const crewIndex = Number(el.dataset.crew);
   const field = el.dataset.field;
   const newVal = el.textContent.trim();
+
   const existingLocal = (localEdits[linkId] && localEdits[linkId][crewIndex]) || {};
   let fbOwner = null;
   if(firebaseDb){
     try{ const fbSnap = await firebaseDb.ref(`/edits/${linkId}/${crewIndex}/_updatedBy`).once('value'); fbOwner = fbSnap.exists() ? fbSnap.val() : null; }catch(e){ fbOwner = null; }
   }
   const owner = fbOwner || existingLocal._updatedBy || null;
-  if(owner && (!currentUser || owner !== currentUser.uid) && !isAdmin){ showToast('Not allowed: owned by ' + owner); await renderCombinedDuties(); return; }
+
+  if(owner && (!currentUser || owner !== currentUser.uid) && !isAdmin){
+    showToast('Not allowed: owned by ' + owner);
+    await renderCombinedDuties();
+    return;
+  }
+
   const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
@@ -361,12 +377,15 @@ async function onEditableCommit(e){
   localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
   saveLocalEdits();
   showToast('Saved locally');
+
   if(firebaseDb){
     try{ const path = `/edits/${linkId}/${crewIndex}`; const payload = { [field]: newVal, _updatedBy: userUid, _updatedAt: new Date().toISOString() }; await firebaseDb.ref(path).update(payload); showToast('Synced to Firebase'); }catch(err){ console.warn('Firebase push failed', err); }
   }
+
   await renderCombinedDuties();
 }
 
+/* Admin detect (optional) */
 async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
@@ -375,9 +394,14 @@ async function detectAdmin(){
   await renderCombinedDuties();
 }
 
+/* helpers */
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
+function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
+function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 
-async function init(){
+/* init */
+(async function init(){
   setSelectedDate(new Date());
   currentUser = loadLocalUser() || createLocalUser();
   saveLocalUser(currentUser);
@@ -387,10 +411,12 @@ async function init(){
   } else {
     await detectAdmin();
   }
-}
+  // ensure measured positions are applied after initial render
+  setTimeout(measureAndApply, 60);
+})();
 
-// run init after DOM ready
-document.addEventListener('DOMContentLoaded', () => { init(); });
+/* measure and re-apply on layout changes */
+function measureAndApply(){ measureAndApply(); } // alias used earlier
 
 </script>
 </body>
