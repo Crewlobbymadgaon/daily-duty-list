@@ -15,7 +15,7 @@
       --accent: #0f172a;
       --accent-2: #2563eb;
       --radius: 12px;
-      --divider: #d9e8ff;
+      --divider: #1f6feb;      /* accent divider color */
       --border: #cdd4e1;
     }
     * { box-sizing: border-box; }
@@ -37,23 +37,23 @@
     .sub { font-size: 1rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
     #dateHeading { font-size: 1rem; font-weight: 600; color: var(--accent-2); margin-top: 8px; }
 
-    .controls { text-align: center; margin: 16px 0; }
-    .date-icon-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--accent-2);
-      color: #fff;
-      border: none;
-      border-radius: 50%;
-      width: 48px;
-      height: 48px;
-      font-size: 1.4rem;
-      cursor: pointer;
-      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
-      transition: transform .08s ease;
+    .controls { text-align: center; margin: 12px 0 18px; display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap }
+    .nav-btn {
+      background: transparent;
+      border: 1px solid rgba(15,23,42,0.06);
+      width:40px;height:40px;border-radius:8px;
+      display:inline-flex;align-items:center;justify-content:center;
+      cursor:pointer;font-size:1.05rem;color:var(--accent);
+      box-shadow: 0 2px 6px rgba(15,23,42,0.04);
     }
-    .date-icon-btn:active { transform: scale(0.96); }
+    .nav-btn:active{transform:translateY(1px)}
+    .date-icon-btn {
+      display:inline-flex;align-items:center;justify-content:center;
+      background:var(--accent-2);color:#fff;border:none;border-radius:10px;
+      min-width:48px;height:40px;font-size:1.05rem;padding:0 10px;cursor:pointer;
+      box-shadow: 0 6px 18px rgba(37,99,235,0.12);
+    }
+    .date-icon-btn:active { transform: scale(0.98); }
     input[type="date"].native-date { position: absolute; left: -9999px; }
 
     /* Table container */
@@ -101,27 +101,25 @@
     /* Center wrappers */
     .cell-center { display: flex; align-items: center; justify-content: center; min-height: 40px; }
 
-    /* Train stack */
-    .train-stack {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-    }
+    /* Train stack: make train text inline-block so divider width matches text width */
+    .train-stack { display: inline-flex; flex-direction: column; align-items: center; gap: 6px; padding: 4px 6px; }
     .train-top, .train-bottom {
       line-height: 1.1;
       font-weight: 400;
       color: var(--accent);
       font-size: 0.95rem;
+      display:inline-block;
     }
     .train-divider {
-      width: 60%;
-      height: 1px;
+      width: 100%;               /* fills the train-stack width (matches text width) */
+      max-width: 240px;          /* reasonable cap so very long text doesn't make divider huge */
+      height: 2px;               /* more visible */
       background: var(--divider);
-      border-radius: 1px;
+      border-radius: 2px;
+      margin: 0;
     }
 
-    /* LP/ALP/Train text wrap */
+    /* text wrap for LP/ALP/Train */
     tbody td:nth-child(1), tbody td:nth-child(2), tbody td:nth-child(3) {
       white-space: normal;
       overflow: hidden;
@@ -130,17 +128,17 @@
       word-break: break-word;
     }
 
-    /* Mobile adjustments */
+    /* Mobile adjustments: hide Dep & Link columns for space */
     @media (max-width: 600px) {
       table { min-width: 0; table-layout: auto; font-size: 14px; }
       thead th, tbody td { padding: 8px 10px; }
-      /* Hide Dep and Link columns */
       thead th:nth-child(4), thead th:nth-child(5),
       tbody td:nth-child(4), tbody td:nth-child(5) { display: none; }
-      .date-icon-btn { width: 46px; height: 46px; font-size: 1.3rem; }
-      .train-top, .train-bottom { font-size: 0.9rem; }
-      .train-divider { width: 50%; }
-      .cell-center { min-height: 42px; }
+      .date-icon-btn { min-width:44px;height:38px;font-size:1.0rem;padding:0 8px }
+      .train-top, .train-bottom { font-size: 0.90rem; }
+      .train-divider { max-width:160px; height:1.5px; }
+      .cell-center { min-height:42px; }
+      .nav-btn { width:36px;height:36px;font-size:0.95rem; }
     }
   </style>
 </head>
@@ -153,9 +151,13 @@
         <div id="dateHeading" aria-live="polite">Loading date...</div>
       </header>
 
-      <div class="controls">
-        <button id="dateBtn" class="date-icon-btn" aria-label="Select Date">📅</button>
+      <div class="controls" role="toolbar" aria-label="Date controls">
+        <button id="prevDay" class="nav-btn" title="Previous day" aria-label="Previous day">◀</button>
+
+        <button id="dateBtn" class="date-icon-btn" aria-label="Open date picker">📅</button>
         <input type="date" id="datePicker" class="native-date" aria-label="Date Picker" />
+
+        <button id="nextDay" class="nav-btn" title="Next day" aria-label="Next day">▶</button>
       </div>
 
       <div class="tableWrap" aria-live="polite">
@@ -178,6 +180,10 @@
   </div>
 
 <script>
+/* Loads multiple link files, flattens crew data, applies per-link weekly rotation,
+   displays combined duties sorted by depTime. Navigator arrows advance/decrease date.
+*/
+
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json',
@@ -187,11 +193,14 @@ const linkFiles = [
 let allCrewData = [];
 let selectedDate = new Date();
 
+const prevBtn = document.getElementById('prevDay');
+const nextBtn = document.getElementById('nextDay');
 const dateBtn = document.getElementById('dateBtn');
 const datePicker = document.getElementById('datePicker');
 const dateHeading = document.getElementById('dateHeading');
 const dutyTable = document.getElementById('dutyTable');
 
+// date picker open
 dateBtn.addEventListener('click', () => { datePicker.focus(); datePicker.click(); });
 datePicker.addEventListener('change', () => {
   selectedDate = datePicker.value ? new Date(datePicker.value + 'T00:00:00') : new Date();
@@ -199,17 +208,31 @@ datePicker.addEventListener('change', () => {
   renderCombinedDuties();
 });
 
+// prev/next handlers
+prevBtn.addEventListener('click', () => changeDate(-1));
+nextBtn.addEventListener('click', () => changeDate(1));
+
+function changeDate(offsetDays) {
+  const d = new Date(selectedDate.getTime());
+  d.setDate(d.getDate() + offsetDays);
+  setSelectedDate(d);
+  renderCombinedDuties();
+}
+
 function updateDateHeading() {
   const d = selectedDate || new Date();
   dateHeading.textContent = `${d.toLocaleString('en-US',{weekday:'long'})}, ${d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`;
 }
 function setSelectedDate(d) {
   selectedDate = d || new Date();
-  const yyyy = selectedDate.getFullYear(), mm = String(selectedDate.getMonth()+1).padStart(2,'0'), dd = String(selectedDate.getDate()).padStart(2,'0');
+  const yyyy = selectedDate.getFullYear();
+  const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
+  const dd = String(selectedDate.getDate()).padStart(2, '0');
   datePicker.value = `${yyyy}-${mm}-${dd}`;
   updateDateHeading();
 }
 
+// load link files
 async function loadAllLinks() {
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async file => {
@@ -244,6 +267,7 @@ async function loadAllLinks() {
   renderCombinedDuties();
 }
 
+// rotation + flatten + filter + sort
 function renderCombinedDuties() {
   if (!allCrewData.length) {
     dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`;
@@ -276,9 +300,9 @@ function renderCombinedDuties() {
 
       let outgoing = '', incoming = '', depTime = '';
       if (dutyForRow && typeof dutyForRow === 'object' && (dutyForRow.outgoing || dutyForRow.incoming)) {
-        outgoing = (dutyForRow.outgoing || '').trim();
-        incoming = (dutyForRow.incoming || '').trim();
-        depTime = (dutyForRow.depTime || '').trim();
+        outgoing = (dutyForRow.outgoing || '').toString().trim();
+        incoming = (dutyForRow.incoming || '').toString().trim();
+        depTime = (dutyForRow.depTime || '').toString().trim();
       } else if (typeof dutyForRow === 'string') outgoing = dutyForRow.trim();
 
       const check = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
@@ -307,11 +331,12 @@ function renderCombinedDuties() {
   dutyTable.innerHTML = '';
   rows.forEach(r=>{
     const out = escapeHtml(r.outgoing||''), inc = escapeHtml(r.incoming||'');
+    // train-stack container width adapts to text width (inline-flex); divider width = 100% of that container
     const trainCell = inc ? `
       <div class="cell-center">
-        <div class="train-stack">
+        <div class="train-stack" role="group" aria-label="Train numbers">
           <div class="train-top">${out}</div>
-          <div class="train-divider"></div>
+          <div class="train-divider" aria-hidden="true"></div>
           <div class="train-bottom">${inc}</div>
         </div>
       </div>` :
@@ -330,13 +355,15 @@ function renderCombinedDuties() {
 }
 
 function escapeHtml(s){
-  return String(s||'').replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+  return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]));
 }
 
+// init
 (function init(){
   setSelectedDate(new Date());
   loadAllLinks();
 })();
+
 </script>
 </body>
 </html>
