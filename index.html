@@ -3,16 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>LP/ALP Duty List — Madgaon Lobby (Editable + LocalStorage + Firebase)</title>
+  <title>LP/ALP Duty List — Madgaon Lobby (Auto-save + Firebase)</title>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    :root{
-      --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb;
-      --radius:12px; --divider:#1f6feb; --border:#cdd4e1;
-    }
+    :root{--bg:#f4f7fb;--card:#fff;--muted:#6b7280;--accent:#0f172a;--accent-2:#2563eb;--radius:12px;--divider:#1f6feb;--border:#cdd4e1}
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent)}
-    .wrap{max-width:1200px;margin:18px auto;padding:14px}
+    .wrap{max-width:1100px;margin:18px auto;padding:14px}
     .card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);padding:16px}
     header{text-align:center}
     h1{margin:0;font-size:1.45rem;font-weight:700}
@@ -24,12 +22,6 @@
     .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:48px;height:38px;padding:0 10px;cursor:pointer}
     input[type="date"].native-date{position:absolute;left:-9999px}
 
-    /* settings */
-    .toolbar{display:flex;gap:8px;align-items:center;justify-content:center;margin:8px 0;flex-wrap:wrap}
-    .btn{background:#fff;border:1px solid var(--border);padding:8px 10px;border-radius:8px;cursor:pointer}
-    .btn-primary{background:var(--accent-2);color:#fff;border:none}
-    .small{font-size:0.85rem;padding:6px 8px}
-
     .tableWrap{overflow-x:auto;border-radius:10px;margin-top:12px;background:#fff;padding:6px}
     table{width:100%;border-collapse:collapse;min-width:680px;table-layout:fixed;border:1px solid var(--border)}
     thead th{background:#f8fafc;padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border:1px solid var(--border);white-space:nowrap}
@@ -37,34 +29,22 @@
     tbody tr:nth-child(odd){background:#fbfdff}
     .no-data{text-align:center;color:var(--muted);padding:14px}
 
-    /* column widths: give more to names, reduce train column */
+    /* wider name columns, smaller train */
     thead th:nth-child(1), td:nth-child(1){width:36%}
     thead th:nth-child(2), td:nth-child(2){width:36%}
     thead th:nth-child(3), td:nth-child(3){width:18%}
     thead th:nth-child(4), td:nth-child(4){width:5%}
     thead th:nth-child(5), td:nth-child(5){width:5%}
 
-    /* editable cell style */
-    .editable {
-      display:block;
-      min-height:34px;
-      padding:6px;
-      border-radius:6px;
-      outline:none;
-      cursor:text;
-      width:100%;
-      box-sizing:border-box;
-    }
-    .editable[contenteditable="true"]{background:linear-gradient(transparent, transparent)}
-    .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.12);border:1px dashed rgba(37,99,235,0.25)}
-
-    /* train stack */
     .cell-center{display:flex;align-items:center;justify-content:center;min-height:40px}
     .train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:4px 6px}
     .train-top,.train-bottom{font-weight:400;font-size:0.9rem;display:inline-block}
     .train-divider{width:100%;max-width:180px;height:2px;background:var(--divider);border-radius:2px}
 
-    /* mobile: hide dep & link columns and reduce padding */
+    /* editable */
+    .editable{display:block;min-height:34px;padding:6px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text}
+    .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.12);border:1px dashed rgba(37,99,235,0.25)}
+
     @media (max-width:640px){
       table{min-width:0;table-layout:auto}
       thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
@@ -72,14 +52,7 @@
       .train-divider{max-width:140px;height:1.5px}
     }
 
-    /* small helpers */
-    .meta{font-size:0.85rem;color:var(--muted);margin-top:8px;text-align:center}
-    .notice{font-size:0.85rem;color:#a00;text-align:center;margin-top:6px}
-    .config-area{width:100%;max-width:760px;margin:8px auto;display:none;flex-direction:column;gap:6px}
-    .config-area textarea{width:100%;height:120px;padding:8px;border-radius:8px;border:1px solid var(--border);font-family:monospace}
-    .status{font-size:0.9rem;color:var(--muted);text-align:center;margin-top:8px}
-
-    /* tiny toast */
+    /* toast */
     .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
     .toast.show{opacity:1;transform:translateY(0)}
   </style>
@@ -100,25 +73,8 @@
         <button id="nextDay" class="nav-btn" title="Next day">▶</button>
       </div>
 
-      <div class="toolbar">
-        <button id="showConfig" class="btn small">Firebase Settings</button>
-        <button id="pushFirebase" class="btn small" title="Push local edits to Firebase">Push Edits → Firebase</button>
-        <button id="clearLocal" class="btn small">Clear Local Edits</button>
-        <div class="status" id="syncStatus"></div>
-      </div>
-
-      <div class="config-area" id="configArea" aria-hidden="true">
-        <label style="font-weight:600">Paste Firebase config (JSON) here and click Connect:</label>
-        <textarea id="firebaseConfig" placeholder='{"apiKey":"...","authDomain":"...","databaseURL":"...","projectId":"...", ...}'></textarea>
-        <div style="display:flex;gap:8px;justify-content:center">
-          <button id="connectFirebase" class="btn btn-primary small">Connect</button>
-          <button id="disconnectFirebase" class="btn small">Disconnect</button>
-        </div>
-        <div class="meta">Using Realtime Database path: <code>/edits/{linkId}/{crewIndex}</code></div>
-      </div>
-
       <div class="tableWrap" aria-live="polite">
-        <table aria-describedby="dateHeading">
+        <table>
           <thead>
             <tr>
               <th>Name of LP</th>
@@ -133,226 +89,153 @@
           </tbody>
         </table>
       </div>
-
-      <div class="meta">Click an LP/ALP name to edit. Edits saved locally (browser) automatically.</div>
     </div>
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- FIREBASE (compat) SDKs -->
+  <!-- Firebase compat SDKs (still included) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-/* ---------------------------
-   Data & Files
-   --------------------------- */
+/*
+  AUTOMATIC FIREBASE + LOCALSTORE SAVER
+
+  To enable automatic Firebase sync, paste your Firebase config object below into FIREBASE_CONFIG.
+  Example (replace with your project's config):
+  const FIREBASE_CONFIG = {
+    apiKey: "AAA...",
+    authDomain: "your-project.firebaseapp.com",
+    databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+    projectId: "your-project",
+    storageBucket: "...",
+    messagingSenderId: "...",
+    appId: "..."
+  };
+
+  If FIREBASE_CONFIG is null, only localStorage will be used.
+*/
+const FIREBASE_CONFIG = null; // <-- paste your config object here to enable realtime push
+
+// list of link files
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json',
   'ollink1.json','sllink1.json'
 ];
 
-let allCrewData = [];        // flattened crew objects with linkId, lastUpdatedDate, crewIndex, duties...
+const LS_KEY = 'lp_alp_edits_v1';
+let localEdits = loadLocalEdits();
+let allCrewData = [];
 let selectedDate = new Date();
-const LS_KEY = 'lp_alp_edits_v1';   // localStorage key for edits (change if you want reset)
-let localEdits = loadLocalEdits();  // structure: { [linkId]: { [crewIndex]: { crewLPName, crewALPName } } }
 
-/* ---------------------------
-   Firebase state
-   --------------------------- */
 let firebaseApp = null;
 let firebaseDb = null;
 
-/* ---------------------------
-   DOM refs
-   --------------------------- */
+/* Init Firebase if config provided */
+if (FIREBASE_CONFIG) {
+  try {
+    firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseDb = firebase.database();
+    console.info('Firebase initialized (auto)');
+  } catch (e) {
+    console.error('Firebase init failed', e);
+    firebaseApp = null;
+    firebaseDb = null;
+  }
+}
+
+/* DOM refs */
+const dutyTable = document.getElementById('dutyTable');
 const dateBtn = document.getElementById('dateBtn');
 const datePicker = document.getElementById('datePicker');
 const prevBtn = document.getElementById('prevDay');
 const nextBtn = document.getElementById('nextDay');
-const dutyTable = document.getElementById('dutyTable');
 const dateHeading = document.getElementById('dateHeading');
-const showConfig = document.getElementById('showConfig');
-const configArea = document.getElementById('configArea');
-const firebaseConfigTextarea = document.getElementById('firebaseConfig');
-const connectFirebaseBtn = document.getElementById('connectFirebase');
-const disconnectFirebaseBtn = document.getElementById('disconnectFirebase');
-const pushFirebaseBtn = document.getElementById('pushFirebase');
-const clearLocalBtn = document.getElementById('clearLocal');
 const toast = document.getElementById('toast');
-const syncStatus = document.getElementById('syncStatus');
 
-/* ---------------------------
-   Utilities
-   --------------------------- */
-function showToast(msg, timeout=2000){
-  toast.textContent = msg;
-  toast.classList.add('show');
-  clearTimeout(toast._t);
-  toast._t = setTimeout(()=> toast.classList.remove('show'), timeout);
-}
+/* Utilities */
+function showToast(msg, t=1600){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(()=>toast.classList.remove('show'), t); }
+function loadLocalEdits(){ try{ const s = localStorage.getItem(LS_KEY); return s ? JSON.parse(s) : {}; } catch(e){return {};}}
+function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); } catch(e){console.warn(e);} }
 
-function loadLocalEdits(){
-  try{
-    const s = localStorage.getItem(LS_KEY);
-    return s ? JSON.parse(s) : {};
-  }catch(e){ console.warn('loadLocalEdits', e); return {}; }
-}
-function saveLocalEdits(){
-  try{
-    localStorage.setItem(LS_KEY, JSON.stringify(localEdits));
-  }catch(e){ console.warn('saveLocalEdits', e); }
-}
-
-/* ---------------------------
-   Date controls
-   --------------------------- */
+/* Date controls */
 dateBtn.addEventListener('click', ()=> { datePicker.focus(); datePicker.click(); });
-datePicker.addEventListener('change', ()=> {
-  selectedDate = datePicker.value ? new Date(datePicker.value + 'T00:00:00') : new Date();
-  setSelectedDate(selectedDate);
-  renderCombinedDuties();
-});
+datePicker.addEventListener('change', ()=> { selectedDate = datePicker.value ? new Date(datePicker.value + 'T00:00:00') : new Date(); setSelectedDate(selectedDate); renderCombinedDuties(); });
 prevBtn.addEventListener('click', ()=> changeDate(-1));
 nextBtn.addEventListener('click', ()=> changeDate(1));
+function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
+function setSelectedDate(d){ selectedDate = d || new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value=`${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-function changeDate(offset){
-  const d = new Date(selectedDate.getTime());
-  d.setDate(d.getDate() + offset);
-  setSelectedDate(d);
-  renderCombinedDuties();
-}
-
-function setSelectedDate(d){
-  selectedDate = d || new Date();
-  const yyyy = selectedDate.getFullYear();
-  const mm = String(selectedDate.getMonth()+1).padStart(2,'0');
-  const dd = String(selectedDate.getDate()).padStart(2,'0');
-  datePicker.value = `${yyyy}-${mm}-${dd}`;
-  dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`;
-}
-
-/* ---------------------------
-   Load ALL link files & flatten data
-   --------------------------- */
+/* Load all link files */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
-
-  const fetches = linkFiles.map(async file=>{
-    try{
-      const r = await fetch(file, { cache: 'no-cache' });
+  const fetches = linkFiles.map(async file => {
+    try {
+      const r = await fetch(file, {cache:'no-cache'});
       if(!r.ok) throw new Error(file+' '+r.status);
       return await r.json();
-    }catch(e){
+    } catch(e){
       console.warn('Failed to load', file, e);
       return null;
     }
   });
-
   const results = await Promise.all(fetches);
   allCrewData = [];
-
-  results.forEach((linkData, idx)=>{
+  results.forEach((linkData, idx) => {
     if(!linkData) return;
     const linkId = linkData.linkId ?? (`file#${idx+1}`);
     const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
     const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
-    crewArr.forEach((crew, crewIndex) => {
-      allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex});
-    });
+    crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex}));
   });
-
   renderCombinedDuties();
 }
 
-/* ---------------------------
-   Render combined duties with rotation, apply local edits overlay
-   --------------------------- */
+/* Render duties with rotation + overlay local edits */
 function renderCombinedDuties(){
-  if(!allCrewData.length){
-    dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`;
-    return;
-  }
-
+  if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
-  const crewsByLink = allCrewData.reduce((acc, crew)=> { (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
+  const crewsByLink = allCrewData.reduce((acc,crew)=> { (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
   const rows = [];
-
   Object.values(crewsByLink).forEach(crewList=>{
     if(!crewList.length) return;
     const lastUpdatedDate = crewList[0].lastUpdatedDate ? new Date(crewList[0].lastUpdatedDate) : new Date();
-    const diffDays = Math.floor((selectedDate.getTime() - lastUpdatedDate.getTime())/(1000*60*60*24));
+    const diffDays = Math.floor((selectedDate.getTime()-lastUpdatedDate.getTime())/(1000*60*60*24));
     const weeksPassed = Math.floor(diffDays/7);
     const dutiesPerRow = crewList.map(c=>c.duties||{});
-
     for(let rowIndex=0; rowIndex<crewList.length; rowIndex++){
       const crewIndex = ((rowIndex - weeksPassed) % crewList.length + crewList.length) % crewList.length;
       const crew = crewList[crewIndex];
       const dutyForRow = dutiesPerRow[rowIndex][weekday] ?? '';
-
       let outgoing='', incoming='', depTime='';
-      if(dutyForRow && typeof dutyForRow === 'object' && (dutyForRow.outgoing || dutyForRow.incoming)){
+      if(dutyForRow && typeof dutyForRow === 'object' && (dutyForRow.outgoing||dutyForRow.incoming)){
         outgoing = (dutyForRow.outgoing||'').toString().trim();
         incoming = (dutyForRow.incoming||'').toString().trim();
         depTime = (dutyForRow.depTime||'').toString().trim();
-      } else if(typeof dutyForRow === 'string'){
-        outgoing = dutyForRow.trim();
-      }
-
-      const combinedCheck = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
-      if(!combinedCheck || combinedCheck === 'REST') continue;
-
-      // apply local edits if exist
+      } else if(typeof dutyForRow === 'string'){ outgoing = dutyForRow.trim(); }
+      const combined = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
+      if(!combined || combined==='REST') continue;
       const linkId = crew.linkId;
-      const editsForLink = localEdits[linkId] || {};
-      const crewEdits = editsForLink[crew.crewIndex] || {};
-
-      const lpName = crewEdits.crewLPName?.trim() || crew.crewLPName?.trim() || crew.crewLPId || '';
-      const alpName = crewEdits.crewALPName?.trim() || crew.crewALPName?.trim() || crew.crewALPId || '';
-
-      rows.push({
-        depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex
-      });
+      const crewEd = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
+      const lpName = crewEd.crewLPName?.trim() || crew.crewLPName?.trim() || crew.crewLPId || '';
+      const alpName = crewEd.crewALPName?.trim() || crew.crewALPName?.trim() || crew.crewALPId || '';
+      rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex });
     }
   });
-
-  // sort by depTime (HH:MM)
-  function timeToMin(t){ if(!t) return Infinity; const m = t.match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1])*60 + (+m[2]) : Infinity; }
-  rows.sort((a,b)=> timeToMin(a.depTime) - timeToMin(b.depTime) );
-
-  if(!rows.length){
-    dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`;
-    return;
-  }
-
-  // render rows
+  // sort by depTime
+  function tmin(t){ if(!t) return Infinity; const m=t.match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1])*60 + (+m[2]) : Infinity; }
+  rows.sort((a,b)=> tmin(a.depTime) - tmin(b.depTime) );
+  if(!rows.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`; return; }
   dutyTable.innerHTML = '';
   rows.forEach(r=>{
     const out = escapeHtml(r.outgoing||''), inc = escapeHtml(r.incoming||'');
-    const trainHtml = inc ? `
-      <div class="cell-center">
-        <div class="train-stack" role="group">
-          <div class="train-top">${out}</div>
-          <div class="train-divider" aria-hidden="true"></div>
-          <div class="train-bottom">${inc}</div>
-        </div>
-      </div>` :
-      `<div class="cell-center"><div class="train-stack"><div class="train-top">${out}</div></div></div>`;
-
+    const trainHtml = inc ? `<div class="cell-center"><div class="train-stack" role="group"><div class="train-top">${out}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${inc}</div></div></div>` : `<div class="cell-center"><div class="train-stack"><div class="train-top">${out}</div></div></div>`;
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>
-        <div class="cell-center">
-          <div class="editable" contenteditable="true" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="Click to edit LP name">${escapeHtml(r.lpName)}</div>
-        </div>
-      </td>
-      <td>
-        <div class="cell-center">
-          <div class="editable" contenteditable="true" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="Click to edit ALP name">${escapeHtml(r.alpName)}</div>
-        </div>
-      </td>
+      <td><div class="cell-center"><div class="editable" contenteditable="true" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="Click to edit LP name">${escapeHtml(r.lpName)}</div></div></td>
+      <td><div class="cell-center"><div class="editable" contenteditable="true" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="Click to edit ALP name">${escapeHtml(r.alpName)}</div></div></td>
       <td>${trainHtml}</td>
       <td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>
       <td><div class="cell-center">${escapeHtml(r.link)}</div></td>
@@ -360,136 +243,74 @@ function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  // attach events to editable cells (after render)
+  // attach events to editable cells
   document.querySelectorAll('.editable').forEach(el=>{
-    // avoid attaching multiple listeners
-    if(el.__editableBound) return;
-    el.__editableBound = true;
+    if(el.__bound) return;
+    el.__bound = true;
 
-    // save on blur
-    el.addEventListener('blur', onEditableCommit);
-    // save on Enter key
-    el.addEventListener('keydown', (ev)=>{
-      if(ev.key === 'Enter'){ ev.preventDefault(); el.blur(); }
+    // on focus: if the cell contains default id pattern (LP### or ALP###), clear for typing
+    el.addEventListener('focus', (ev)=>{
+      const txt = el.textContent.trim();
+      if(/^(LP|ALP)\d+/i.test(txt)) {
+        // clear immediately so user can type; store original in dataset to allow escape restore
+        el.dataset._orig = txt;
+        el.textContent = '';
+      } else {
+        el.dataset._orig = '';
+      }
     });
+
+    // allow Escape to revert to original if content was cleared
+    el.addEventListener('keydown', (ev)=>{
+      if(ev.key === 'Escape'){
+        if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); }
+      } else if(ev.key === 'Enter'){ ev.preventDefault(); el.blur(); }
+    });
+
+    // on blur: commit edit
+    el.addEventListener('blur', onEditableCommit);
   });
 }
 
-/* ---------------------------
-   Editable commit: save to localEdits and localStorage
-   --------------------------- */
-function onEditableCommit(e){
+/* Commit handler: save to localStorage and push to firebase if configured */
+async function onEditableCommit(e){
   const el = e.currentTarget;
   const linkId = el.dataset.link;
   const crewIndex = Number(el.dataset.crew);
   const field = el.dataset.field; // crewLPName or crewALPName
   const newVal = el.textContent.trim();
 
-  // ensure data structure exists
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
-
   localEdits[linkId][crewIndex][field] = newVal;
   saveLocalEdits();
   showToast('Saved locally');
+
+  // push to firebase automatically (if ready)
+  if(firebaseDb){
+    try {
+      const path = `/edits/${linkId}/${crewIndex}`;
+      await firebaseDb.ref(path).update({ [field]: newVal });
+      // also update timestamp
+      await firebaseDb.ref(`${path}/_updatedAt`).set(new Date().toISOString());
+      showToast('Synced to Firebase');
+    } catch(err){
+      console.warn('Firebase push failed', err);
+      // silent failure (local saved)
+    }
+  }
 }
 
-/* ---------------------------
-   Clear local edits (UI)
-   --------------------------- */
-clearLocalBtn.addEventListener('click', ()=>{
-  if(!confirm('Clear all local edits? This cannot be undone.')) return;
-  localEdits = {};
-  saveLocalEdits();
-  renderCombinedDuties();
-  showToast('Local edits cleared');
-});
-
-/* ---------------------------
-   Firebase connect / push
-   --------------------------- */
-showConfig.addEventListener('click', ()=>{
-  configArea.style.display = configArea.style.display === 'flex' ? 'none' : 'flex';
-});
-
-connectFirebaseBtn.addEventListener('click', ()=> {
-  const txt = firebaseConfigTextarea.value.trim();
-  if(!txt){ alert('Paste your Firebase config JSON first (see comments).'); return; }
-  try {
-    const cfg = JSON.parse(txt);
-    // initialize firebase app
-    try{
-      if(firebaseApp) firebaseApp.delete && firebaseApp.delete(); // attempt cleanup
-    }catch(e){}
-    firebaseApp = firebase.initializeApp(cfg);
-    firebaseDb = firebase.database();
-    syncStatus.textContent = 'Firebase connected';
-    showToast('Firebase connected');
-  } catch (e){
-    console.error('Firebase init error', e);
-    alert('Invalid JSON or firebase init failed. Check console.');
-  }
-});
-
-disconnectFirebaseBtn.addEventListener('click', ()=> {
-  try{
-    firebaseApp = null;
-    firebaseDb = null;
-    syncStatus.textContent = 'Firebase disconnected';
-    showToast('Disconnected');
-  }catch(e){ console.warn(e); }
-});
-
-pushFirebaseBtn.addEventListener('click', async ()=>{
-  if(!firebaseDb){ alert('Not connected to Firebase. Paste config and Connect.'); return; }
-  // push localEdits to /edits/{linkId}/{crewIndex}
-  try{
-    let total=0;
-    for(const linkId of Object.keys(localEdits)){
-      const byCrew = localEdits[linkId];
-      for(const crewIndex of Object.keys(byCrew)){
-        const payload = byCrew[crewIndex];
-        // write under /edits/{linkId}/{crewIndex}
-        await firebaseDb.ref(`/edits/${linkId}/${crewIndex}`).set(payload);
-        total++;
-      }
-    }
-    showToast(`Pushed ${total} edits`);
-    syncStatus.textContent = `Last sync: ${new Date().toLocaleString()}`;
-  }catch(e){
-    console.error('pushFirebase error', e);
-    alert('Failed to push edits. Check console.');
-  }
-});
-
-/* ---------------------------
-   small helpers
-   --------------------------- */
+/* small helpers */
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 
-/* ---------------------------
-   Init
-   --------------------------- */
+/* init */
 (function init(){
   setSelectedDate(new Date());
   loadAllLinks();
-  // show any existing edits count
-  const cnt = Object.keys(localEdits).reduce((acc,link)=> acc + Object.keys(localEdits[link]||{}).length, 0);
-  if(cnt) syncStatus.textContent = `${cnt} local edits saved`;
+  // if firebase not configured, console log instruction
+  if(!FIREBASE_CONFIG) console.info('Firebase not configured. To enable auto-sync, set FIREBASE_CONFIG in the script.');
 })();
-
-/* ---------------------------
-   Note for developer:
-   - To enable Firebase: create a Firebase Realtime Database, copy your firebase config JSON object
-     (the same object used for firebase.initializeApp) and paste it in the textarea, then click Connect.
-   - Example config JSON (do NOT use this - replace with your project's config):
-     {
-       "apiKey":"...","authDomain":"...","databaseURL":"https://your-project-default-rtdb.firebaseio.com",
-       "projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."
-     }
-   - This UI writes local edits to /edits/{linkId}/{crewIndex} in the Realtime Database as simple objects:
-     { "crewLPName": "...", "crewALPName": "..." }
-   --------------------------- */
 </script>
 </body>
 </html>
