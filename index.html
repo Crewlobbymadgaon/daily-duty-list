@@ -6,31 +6,69 @@
 <title>LP/ALP Duty List — Madgaon Lobby</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f4f7fb;--card:#fff;--muted:#6b7280;--accent:#0f172a;--accent-2:#2563eb;--radius:12px;--divider:#1f6feb;--border:#cdd4e1}
+:root{
+  --bg:#f4f7fb;
+  --card:#fff;
+  --muted:#6b7280;
+  --accent:#0f172a;
+  --accent-2:#2563eb;
+  --radius:12px;
+  --divider:#1f6feb;
+  --border:#cdd4e1;
+
+  /* Heights used for sticky stacking — tweak if you change paddings */
+  --header-h:108px;    /* header area height (includes title, sub, dateHeading) */
+  --controls-h:56px;   /* controls bar height */
+}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent)}
 .wrap{max-width:1100px;margin:0 auto;padding:14px}
 .card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);overflow:hidden}
-.headerArea{position:sticky;top:0;background:var(--card);padding:18px 16px;border-bottom:1px solid rgba(0,0,0,0.04);z-index:30}
+.headerArea{
+  position:sticky; top:0;
+  background:var(--card);
+  padding:18px 16px;
+  border-bottom:1px solid rgba(0,0,0,0.04);
+  z-index:40;
+  height:var(--header-h);
+  display:flex; flex-direction:column; justify-content:center;
+}
 .headerArea h1{margin:0;font-size:1.4rem;font-weight:700;text-align:center}
 .headerArea .sub{font-size:0.95rem;color:var(--muted);text-align:center;margin-top:6px}
 .headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center;margin-top:8px}
 
-/* Controls sticky below header */
-.controls{position:sticky;top:74px;background:var(--card);z-index:25;display:flex;gap:10px;align-items:center;justify-content:center;padding:10px;border-bottom:1px solid rgba(0,0,0,0.03)}
+/* Controls sticky directly below header */
+.controls{
+  position:sticky;
+  top:var(--header-h);
+  background:var(--card);
+  z-index:35;
+  display:flex;gap:10px;align-items:center;justify-content:center;
+  padding:10px;border-bottom:1px solid rgba(0,0,0,0.03);
+  height:var(--controls-h);
+}
 .nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:38px;height:38px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:48px;height:38px;padding:0 10px;cursor:pointer}
 input[type="date"].native-date{position:absolute;left:-9999px}
 
-/* table area scrolls under sticky header */
-.tableWrap{max-height:calc(100vh - 220px);overflow:auto;border-radius:0;background:#fff;padding:6px}
+/* table area scrolls under sticky header + controls */
+.tableWrap{
+  max-height:calc(100vh - var(--header-h) - var(--controls-h) - 28px);
+  overflow:auto;border-radius:0;background:#fff;padding:6px;
+}
 table{width:100%;border-collapse:collapse;min-width:680px;table-layout:fixed;border:1px solid var(--border)}
-thead th{background:#f8fafc;padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border:1px solid var(--border);white-space:nowrap;position:sticky;top:128px;z-index:20}
+/* table header sticks below header + controls */
+thead th{
+  background:#f8fafc;padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border:1px solid var(--border);white-space:nowrap;
+  position:sticky;
+  top: calc(var(--header-h) + var(--controls-h));
+  z-index:30;
+}
 tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center}
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
 
-/* column sizing and train stack */
+/* sizing and train stack */
 thead th:nth-child(1), td:nth-child(1){width:36%}
 thead th:nth-child(2), td:nth-child(2){width:36%}
 thead th:nth-child(3), td:nth-child(3){width:18%}
@@ -104,16 +142,6 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 <script>
 /* ============================
   CONFIG: paste your Firebase config object below to enable DB sync
-  Example:
-  const FIREBASE_CONFIG = {
-    apiKey: "AAA...",
-    authDomain: "your-project.firebaseapp.com",
-    databaseURL: "https://your-project-default-rtdb.firebaseio.com",
-    projectId: "...",
-    storageBucket: "...",
-    messagingSenderId: "...",
-    appId: "1:...:web:..."
-  };
   If FIREBASE_CONFIG is null, the app uses only localStorage.
 */
 const FIREBASE_CONFIG = null; // <-- paste your config here if you want firebase sync
@@ -124,8 +152,8 @@ const linkFiles = [
   'ollink1.json','sllink1.json'
 ];
 
-const LS_KEY = 'lp_alp_edits_owner_v1'; // local edits store
-let localEdits = loadLocalEdits();     // structure { linkId: { crewIndex: { crewLPName, crewALPName, _updatedBy, _updatedAt } } }
+const LS_KEY = 'lp_alp_edits_owner_v1';
+let localEdits = loadLocalEdits();
 let allCrewData = [];
 let selectedDate = new Date();
 
@@ -168,7 +196,7 @@ function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('s
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
 function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
-function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner', JSON.stringify(u)); }catch(e){} }
+function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 
 /* Date controls */
@@ -321,9 +349,7 @@ async function onEditableCommit(e){
 
   // If someone else owns it and current user not owner nor admin, revert visually
   if(owner && (!currentUser || owner !== currentUser.uid) && !isAdmin){
-    // revert display (pull latest owner value if any or original)
     showToast('Not allowed: owned by ' + owner);
-    // re-render to refresh ownership display
     await renderCombinedDuties();
     return;
   }
