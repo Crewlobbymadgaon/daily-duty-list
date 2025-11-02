@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>LP/ALP Duty List — Madgaon Lobby</title>
+<title>LP/ALP Duty List — Madgaon Lobby (Firebase)</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -69,6 +69,9 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
 
+/* admin button (floating, small) */
+#adminSignInBtn{position:fixed;top:10px;right:10px;z-index:120;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
+
 /* toast */
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
@@ -110,16 +113,28 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
     </div>
   </div>
 
+  <button id="adminSignInBtn" title="Admin sign-in">Admin</button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- Firebase (compat) optional - include if needed -->
+  <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-/* --- CONFIG --- put your Firebase config object here to enable realtime sync, otherwise keep null --- */
-const FIREBASE_CONFIG = null;
+/* === FIREBASE CONFIG (provided) ===
+   Your Firebase config has been embedded below.
+   Keep this file secure on your host.
+*/
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyA39vWi_90CUyj0davz4XAXqMey1aNM6FU",
+  authDomain: "crewdutytable.firebaseapp.com",
+  databaseURL: "https://crewdutytable-default-rtdb.firebaseio.com",
+  projectId: "crewdutytable",
+  storageBucket: "crewdutytable.firebasestorage.app",
+  messagingSenderId: "190634478615",
+  appId: "1:190634478615:web:28e998325f69fb8bf36052"
+};
 
 /* --- Files & keys --- */
 const linkFiles = [
@@ -136,17 +151,36 @@ let selectedDate = new Date();
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
 
-/* Init Firebase if provided */
-if(FIREBASE_CONFIG){
-  try{
-    firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
-    firebaseAuth = firebase.auth();
-    firebaseDb = firebase.database();
-    firebaseAuth.onAuthStateChanged(async user => {
-      if(user){ currentUser = { uid: user.uid, displayName: user.displayName || user.uid }; saveLocalUser(currentUser); await detectAdmin(); }
-      else { try{ await firebaseAuth.signInAnonymously(); }catch(e){ console.warn('anon sign-in failed', e); } }
-    });
-  }catch(e){ console.warn('Firebase init failed', e); firebaseApp=null; firebaseDb=null; firebaseAuth=null; }
+/* Initialize Firebase */
+try {
+  firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+  firebaseAuth = firebase.auth();
+  firebaseDb = firebase.database();
+  console.info('Firebase initialized');
+  // sign-in flow: try to preserve any existing session; else anonymous
+  firebaseAuth.onAuthStateChanged(async user => {
+    if(user){
+      currentUser = { uid: user.uid, displayName: user.displayName || user.uid };
+      saveLocalUser(currentUser);
+      console.info('Authenticated as', currentUser.uid);
+      await detectAdmin();
+    } else {
+      try {
+        const anon = await firebaseAuth.signInAnonymously();
+        currentUser = { uid: anon.user.uid, displayName: 'Anonymous' };
+        saveLocalUser(currentUser);
+        console.info('Signed in anonymously:', anon.user.uid);
+        await detectAdmin();
+      } catch(e){
+        console.warn('Anonymous sign-in failed', e);
+        // fallback to local-only user
+        currentUser = loadLocalUser() || createLocalUser();
+      }
+    }
+  });
+} catch (err) {
+  console.warn('Firebase init error', err);
+  firebaseApp = null; firebaseDb = null; firebaseAuth = null;
 }
 
 /* DOM */
@@ -159,12 +193,13 @@ const prevBtn = document.getElementById('prevDay');
 const nextBtn = document.getElementById('nextDay');
 const dateHeading = document.getElementById('dateHeading');
 const toast = document.getElementById('toast');
+const adminSignInBtn = document.getElementById('adminSignInBtn');
 
 /* helpers */
 function showToast(msg, t=1200){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
-function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
+function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null}}
 function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
@@ -336,7 +371,7 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  /* Attach editable behavior with "delete-first" rule for name changes */
+  /* Attach editable behavior with "delete-first" rule */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
@@ -355,13 +390,11 @@ async function renderCombinedDuties(){
       const txt = el.textContent.trim();
 
       if(/^(LP|ALP)\d+/i.test(txt)){
-        // default id - clear immediately so user can type
         el.dataset._orig = txt;
         el.textContent = '';
         el.removeAttribute('data-must-clear');
       } else {
         el.dataset._orig = '';
-        // if cell already has a name and owner is current user -> require delete first
         if(txt !== '' && isOwnedByCurrentUser() && !isAdmin){
           el.setAttribute('data-must-clear','1');
           showToast('To change, delete the existing name first.');
@@ -372,7 +405,6 @@ async function renderCombinedDuties(){
       }
     });
 
-    // beforeinput to block typing/paste when delete-first flag is set
     el.addEventListener('beforeinput', (ev)=>{
       if(el.getAttribute('contenteditable') === 'false'){ ev.preventDefault(); return; }
       if(el.hasAttribute('data-must-clear')){
@@ -382,8 +414,7 @@ async function renderCombinedDuties(){
           'historyUndo', 'historyRedo'
         ];
         const t = ev.inputType || '';
-        if(allowTypes.includes(t)) return; // allow deletions
-        // otherwise block insertion
+        if(allowTypes.includes(t)) return;
         ev.preventDefault();
         showToast('Please delete the existing name first, then type the new name.');
       }
@@ -399,14 +430,11 @@ async function renderCombinedDuties(){
     });
 
     el.addEventListener('blur', async (ev)=>{
-      // if user cleared the content, remove must-clear to allow typing next time
       if(el.textContent.trim() === '') el.removeAttribute('data-must-clear');
-      // commit changes
       await onEditableCommit(ev);
     });
   });
 
-  // final layout adjustments
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
@@ -419,7 +447,6 @@ async function onEditableCommit(e){
   const field = el.dataset.field;
   const newVal = el.textContent.trim();
 
-  // check existing owner (firebase or local)
   const existingLocal = (localEdits[linkId] && localEdits[linkId][crewIndex]) || {};
   let fbOwner = null;
   if(firebaseDb){
@@ -436,12 +463,10 @@ async function onEditableCommit(e){
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
   localEdits[linkId][crewIndex][field] = newVal;
-  // If user typed a name, set/update ownership. If they cleared the cell, remove ownership fields (allow others)
   if(newVal){
     localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
     localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
   } else {
-    // clear owner metadata when cell emptied
     delete localEdits[linkId][crewIndex]['_updatedBy'];
     delete localEdits[linkId][crewIndex]['_updatedAt'];
   }
@@ -456,7 +481,6 @@ async function onEditableCommit(e){
         payload._updatedBy = userUid;
         payload._updatedAt = new Date().toISOString();
       } else {
-        // to remove keys in Firebase, set them to null
         payload._updatedBy = null;
         payload._updatedAt = null;
       }
@@ -467,18 +491,42 @@ async function onEditableCommit(e){
     }
   }
 
-  // re-render to reflect ownership changes and enforce rules
   await renderCombinedDuties();
 }
 
-/* Admin detection (optional) */
+/* Admin sign-in UI */
+if(adminSignInBtn){
+  adminSignInBtn.addEventListener('click', async ()=>{
+    if(!firebaseAuth){
+      alert('Firebase not initialized.');
+      return;
+    }
+    const choice = confirm('Use existing admin account to sign in? OK = Sign in, Cancel = Sign out');
+    if(!choice){
+      try { await firebaseAuth.signOut(); showToast('Signed out'); } catch(e){ console.warn(e); }
+      return;
+    }
+    const email = prompt('Admin email:');
+    if(!email) return;
+    const pwd = prompt('Password:');
+    if(!pwd) return;
+    try {
+      await firebaseAuth.signInWithEmailAndPassword(email, pwd);
+      showToast('Signed in');
+    } catch (err){
+      alert('Sign-in failed: ' + (err.message || err));
+    }
+  });
+}
+
+/* Admin detection: check /meta/admins/{uid} in DB */
 async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
-  const ADMIN_UIDS = []; // add known admin UIDs here if you want local override
+  const ADMIN_UIDS = [];
   try{
     if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
-    if(firebaseDb){
+    if(firebaseDb && currentUser && currentUser.uid){
       const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value');
       if(snap.exists() && snap.val() === true) isAdmin = true;
     }
@@ -497,7 +545,6 @@ async function init(){
   saveLocalUser(currentUser);
   localEdits = loadLocalEdits();
   await loadAllLinks();
-  // recalc on resize/orientation/fonts
   window.addEventListener('resize', () => setTimeout(setTableWrapPaddingAndHeader, 60));
   window.addEventListener('orientationchange', () => setTimeout(setTableWrapPaddingAndHeader, 140));
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(setTableWrapPaddingAndHeader, 80));
