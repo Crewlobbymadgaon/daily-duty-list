@@ -10,6 +10,7 @@
   <style>
     :root{
       --bg:#f4f7fb; --card:#ffffff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb; --radius:12px;
+      --divider:#e6eefc;
     }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent)}
@@ -44,12 +45,20 @@
     thead th:nth-child(4), tbody td:nth-child(4) { width: 7%; }
     thead th:nth-child(5), tbody td:nth-child(5) { width: 8%; }
 
+    /* train stack styles inside cell */
+    .train-stack{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+    .train-top, .train-bottom{line-height:1.05;font-weight:700}
+    .train-top{font-size:1rem}
+    .train-bottom{font-size:0.95rem;color:var(--muted);font-weight:600}
+    .train-divider{width:100%;height:6px;background:linear-gradient(to right,var(--divider),transparent);border-radius:2px;align-self:stretch;opacity:0.9}
+
     /* make LP/ALP/trains wrap and truncate if too long */
     tbody td:nth-child(1), tbody td:nth-child(2), tbody td:nth-child(3) {
       white-space:normal;
       overflow:hidden;
       text-overflow:ellipsis;
       hyphens:auto;
+      word-break:break-word;
     }
 
     /* On smaller screens keep columns but hide Dep & Link to ensure LP/ALP/Train fit
@@ -70,6 +79,8 @@
       }
       /* slightly smaller date icon */
       .date-icon-btn{width:46px;height:46px;font-size:1.3rem}
+      .train-top{font-size:1rem}
+      .train-bottom{font-size:0.9rem}
     }
 
     /* Mid-size screens (tablet) reduce min-width */
@@ -114,8 +125,8 @@
 
 <script>
 /* Loads multiple link files, flattens crew data, applies per-link weekly rotation,
-   and displays combined duties sorted by depTime. On small screens Dep & Link columns are hidden
-   so Name of LP / Name of ALP / Train No fit and remain visible.
+   and displays combined duties sorted by depTime. Train cell now stacks outgoing
+   and incoming trains in the same cell with a divider.
 */
 
 const linkFiles = [
@@ -221,20 +232,21 @@ function renderCombinedDuties() {
 
       const dutyForRow = dutiesPerRow[rowIndex][weekday] ?? '';
 
-      let trainNo = '';
+      let outgoing = '';
+      let incoming = '';
       let depTime = '';
 
       if (dutyForRow && typeof dutyForRow === 'object' && (dutyForRow.outgoing || dutyForRow.incoming)) {
-        const out = (dutyForRow.outgoing || '').toString().trim();
-        const inc = (dutyForRow.incoming || '').toString().trim();
-        trainNo = inc ? `${out}/${inc}` : out;
+        outgoing = (dutyForRow.outgoing || '').toString().trim();
+        incoming = (dutyForRow.incoming || '').toString().trim();
         depTime = (dutyForRow.depTime || '').toString().trim();
       } else if (typeof dutyForRow === 'string') {
-        trainNo = dutyForRow.trim();
+        outgoing = dutyForRow.trim();
       }
 
       // skip empty or REST
-      if (!trainNo || trainNo.toUpperCase() === 'REST') continue;
+      const combinedCheck = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
+      if (!combinedCheck || combinedCheck === 'REST') continue;
 
       // prefer the crew names if present, else use IDs
       const lpName = (crew.crewLPName && crew.crewLPName.trim()) ? crew.crewLPName.trim() : (crew.crewLPId || '');
@@ -242,7 +254,9 @@ function renderCombinedDuties() {
 
       rows.push({
         depTime,
-        trainNo,
+        outgoing,
+        incoming,
+        trainDisplay: { outgoing, incoming },
         lpName,
         alpName,
         link: crew.linkId
@@ -271,10 +285,27 @@ function renderCombinedDuties() {
   dutyTable.innerHTML = '';
   rows.forEach(r => {
     const tr = document.createElement('tr');
+
+    // build train cell HTML: if incoming exists, stack with divider, else show single line
+    let trainCellHtml = '';
+    const out = escapeHtml(r.trainDisplay.outgoing || '');
+    const inc = escapeHtml(r.trainDisplay.incoming || '');
+    if (inc) {
+      trainCellHtml = `
+        <div class="train-stack" role="group" aria-label="Train numbers">
+          <div class="train-top">${out}</div>
+          <div class="train-divider" aria-hidden="true"></div>
+          <div class="train-bottom">${inc}</div>
+        </div>
+      `;
+    } else {
+      trainCellHtml = `<div class="train-stack"><div class="train-top">${out}</div></div>`;
+    }
+
     tr.innerHTML = `
       <td data-label="Name of LP">${escapeHtml(r.lpName)}</td>
       <td data-label="Name of ALP">${escapeHtml(r.alpName)}</td>
-      <td data-label="Train No">${escapeHtml(r.trainNo)}</td>
+      <td data-label="Train No">${trainCellHtml}</td>
       <td data-label="Dep">${escapeHtml(r.depTime || '')}</td>
       <td data-label="Link No">${escapeHtml(r.link)}</td>
     `;
@@ -296,7 +327,6 @@ function escapeHtml(s) {
   });
 })();
 
-// helper to set date input
 function setSelectedDate(d) {
   selectedDate = d || new Date();
   const yyyy = selectedDate.getFullYear();
