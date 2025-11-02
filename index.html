@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>LP/ALP Duty List — Madgaon Lobby (gap & train fix)</title>
+<title>LP/ALP Duty List — Madgaon Lobby (wrap & wbr fix)</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -48,7 +48,7 @@ body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,S
 input[type="date"].native-date{position:absolute;left:-9999px}
 
 /* table container: scrollable.
-   JS will set padding-top to exactly match header+controls so the table header sits flush. */
+   JS sets padding-top to match header+controls so the table header sits flush. */
 .tableWrap{
   max-height:calc(100vh - 112px); /* fallback; JS will override */
   overflow:auto;border-radius:0;background:#fff;padding:6px;position:relative;
@@ -61,10 +61,11 @@ thead th{
   padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);
   border-top:1px solid rgba(0,0,0,0.04);
   position:sticky; z-index:70;
-  top:0; /* kept at 0 because we use padding-top on .tableWrap */
+  top:0; /* we use padding-top on .tableWrap */
   box-sizing:border-box;
 }
-tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:hidden}
+/* allow wrapping in td so long tokens are visible (removed overflow:hidden) */
+tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;word-break:break-word;overflow-wrap:anywhere}
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
 
@@ -75,19 +76,18 @@ thead th:nth-child(3), td:nth-child(3){width:18%}
 thead th:nth-child(4), td:nth-child(4){width:5%}
 thead th:nth-child(5), td:nth-child(5){width:5%}
 
-/* train number stack — prefer no-wrap for numeric tokens so 5-digit numbers stay on one line */
+/* train number stack — allow wrapping but prefer breaking at slashes (we add <wbr> in JS) */
 .cell-center{display:flex;align-items:center;justify-content:center;min-height:44px}
 .train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:4px 6px;max-width:100%;box-sizing:border-box}
 .train-top,.train-bottom{
   font-weight:400;
-  font-size:0.90rem;        /* slightly smaller to fit 5-digit numbers */
+  font-size:0.90rem;
   line-height:1;
   display:inline-block;
   text-align:center;
-  white-space:nowrap;      /* no wrap so 5-digit numbers stay single-line */
-  overflow:visible;
-  overflow-wrap:normal;
-  word-break:normal;
+  white-space:normal;          /* allow wrapping */
+  overflow-wrap:anywhere;      /* allow break anywhere if necessary */
+  word-break:break-word;
   max-width:100%;
 }
 .train-divider{ width:90%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
@@ -152,7 +152,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- Firebase (compat) optional - include only if you plan to sync -->
+  <!-- Firebase (compat) optional -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -207,8 +207,15 @@ function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stri
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 
-/* KEY: use padding-top on .tableWrap (numericTop) so the thead can be sticky with top:0 inside it.
-   This avoids any 1px rounding gap showing table rows. */
+/* Insert <wbr> before each slash so browser can break lines at slashes.
+   We escape first, then place the <wbr> safely. */
+function addWbrToSlashes(raw){
+  const escaped = escapeHtml(raw || '');
+  // Place <wbr> before every '/', preserving the slash: "a/b" -> "a<wbr>/b"
+  return escaped.replace(/\//g, '<wbr>/');
+}
+
+/* KEY: use padding-top on .tableWrap so the thead can be sticky with top:0 inside it (no visible gap) */
 function setTableWrapPaddingAndHeader(){
   const header = document.querySelector('.headerArea');
   const controls = document.querySelector('.controls');
@@ -220,8 +227,6 @@ function setTableWrapPaddingAndHeader(){
 
   // compute distance from top of tableWrap to bottom of controls (px)
   let numericTop = Math.round(controlsRect.bottom - wrapRect.top);
-
-  // safety: ensure non-negative
   numericTop = Math.max(0, numericTop);
 
   // apply exactly as padding-top to tableWrap and set the thead th top=0 (so header sits flush)
@@ -242,7 +247,6 @@ function alignHeaderWidths(){
   const thead = mainTable.querySelector('thead');
   if(!thead) return;
   const ths = Array.from(thead.querySelectorAll('th'));
-  // measure widths of first visible body row cells if present
   const firstRow = mainTable.querySelector('tbody tr');
   let widths = [];
   if(firstRow){
@@ -342,11 +346,12 @@ async function renderCombinedDuties(){
 
   dutyTable.innerHTML = '';
   rows.forEach(r=>{
-    const out = escapeHtml(r.outgoing||''), inc = escapeHtml(r.incoming||'');
-    // trainHtml: single-line numbers won't wrap (white-space:nowrap)
-    const trainHtml = inc
-      ? `<div class="cell-center"><div class="train-stack" role="group"><div class="train-top">${out}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${inc}</div></div></div>`
-      : `<div class="cell-center"><div class="train-stack"><div class="train-top">${out}</div></div></div>`;
+    // create train cell HTML with <wbr> inserted before slashes so long tokens can break there
+    const outHtml = addWbrToSlashes(r.outgoing || '');
+    const incHtml = addWbrToSlashes(r.incoming || '');
+    const trainHtml = (incHtml)
+      ? `<div class="cell-center"><div class="train-stack" role="group"><div class="train-top">${outHtml}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${incHtml}</div></div></div>`
+      : `<div class="cell-center"><div class="train-stack"><div class="train-top">${outHtml}</div></div></div>`;
 
     const tr = document.createElement('tr');
     const mayEditLP = (!r.owner) || (currentUser && r.owner === currentUser.uid) || isAdmin;
@@ -363,7 +368,7 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  // attach editable behaviour
+  // attach editable behavior (same as before)
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
@@ -380,7 +385,7 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* commit edits */
+/* on edit commit */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   const linkId = el.dataset.link;
@@ -435,7 +440,6 @@ async function detectAdmin(){
 function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
 function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
-function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 
 async function init(){
   setSelectedDate(new Date());
