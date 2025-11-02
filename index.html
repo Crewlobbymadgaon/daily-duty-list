@@ -3,28 +3,34 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>LP/ALP Duty List — Madgaon Lobby (Full)</title>
+<title>LP/ALP Duty List — Madgaon Lobby</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--muted:#6b7280;--accent:#0f172a;--accent-2:#2563eb;--radius:12px;--divider:#1f6feb;--border:#cdd4e1}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent)}
-.wrap{max-width:1100px;margin:18px auto;padding:14px}
-.card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);padding:16px}
-header{text-align:center}
-h1{margin:0;font-size:1.45rem;font-weight:700}
-.sub{font-size:0.95rem;color:var(--muted);margin-top:6px}
-#dateHeading{font-weight:600;color:var(--accent-2);margin-top:8px}
-.controls{display:flex;gap:10px;align-items:center;justify-content:center;margin:12px 0;flex-wrap:wrap}
+.wrap{max-width:1100px;margin:0 auto;padding:14px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);overflow:hidden}
+.headerArea{position:sticky;top:0;background:var(--card);padding:18px 16px;border-bottom:1px solid rgba(0,0,0,0.04);z-index:30}
+.headerArea h1{margin:0;font-size:1.4rem;font-weight:700;text-align:center}
+.headerArea .sub{font-size:0.95rem;color:var(--muted);text-align:center;margin-top:6px}
+.headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center;margin-top:8px}
+
+/* Controls sticky below header */
+.controls{position:sticky;top:74px;background:var(--card);z-index:25;display:flex;gap:10px;align-items:center;justify-content:center;padding:10px;border-bottom:1px solid rgba(0,0,0,0.03)}
 .nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:38px;height:38px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:48px;height:38px;padding:0 10px;cursor:pointer}
 input[type="date"].native-date{position:absolute;left:-9999px}
-.tableWrap{overflow-x:auto;border-radius:10px;margin-top:12px;background:#fff;padding:6px}
+
+/* table area scrolls under sticky header */
+.tableWrap{max-height:calc(100vh - 220px);overflow:auto;border-radius:0;background:#fff;padding:6px}
 table{width:100%;border-collapse:collapse;min-width:680px;table-layout:fixed;border:1px solid var(--border)}
-thead th{background:#f8fafc;padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border:1px solid var(--border);white-space:nowrap}
+thead th{background:#f8fafc;padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border:1px solid var(--border);white-space:nowrap;position:sticky;top:128px;z-index:20}
 tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center}
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
+
+/* column sizing and train stack */
 thead th:nth-child(1), td:nth-child(1){width:36%}
 thead th:nth-child(2), td:nth-child(2){width:36%}
 thead th:nth-child(3), td:nth-child(3){width:18%}
@@ -34,19 +40,17 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 .train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:4px 6px}
 .train-top,.train-bottom{font-weight:400;font-size:0.9rem;display:inline-block}
 .train-divider{width:100%;max-width:180px;height:2px;background:var(--divider);border-radius:2px}
+
+/* editable visuals */
 .editable{display:block;min-height:34px;padding:6px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text}
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.12);border:1px dashed rgba(37,99,235,0.25)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
-.row-badge{font-size:0.8rem;color:#fff;background:#d9534f;padding:4px 6px;border-radius:6px;display:inline-block}
-#adminPanel{display:none;max-width:1100px;margin:12px auto}
-.admin-card{background:#fff;padding:12px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06)}
-.admin-grid{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
-.admin-btn{padding:8px 10px;border-radius:8px;border:1px solid #dfe8f5;background:#f8fbff;cursor:pointer}
-.small-input{padding:6px;border-radius:6px;border:1px solid #e6eaf2}
-#uidHelper{position:fixed;left:14px;bottom:14px;z-index:1200;display:flex;gap:8px}
-#uidHelper button{padding:8px 10px;border-radius:8px;border:1px solid #dfe8f5;background:#fff;cursor:pointer;font-size:13px}
+.ownerTag{font-size:0.78rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:8px}
+
+/* toast */
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
+
 @media (max-width:640px){
   table{min-width:0;table-layout:auto}
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
@@ -57,13 +61,12 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 </head>
 <body>
   <div class="wrap">
-    <div class="card" role="region" aria-label="Duty viewer">
-      <header>
+    <div class="card">
+      <div class="headerArea" role="banner" aria-label="Header">
         <h1>LP/ALP Duty List</h1>
         <div class="sub">Madgaon Lobby</div>
-        <div id="dateHeading">Loading date...</div>
-        <div id="roleNotice" style="font-size:0.9rem;color:var(--muted);margin-top:6px"></div>
-      </header>
+        <div id="dateHeading">Loading date…</div>
+      </div>
 
       <div class="controls" role="toolbar" aria-label="Date controls">
         <button id="prevDay" class="nav-btn" title="Previous day">◀</button>
@@ -91,70 +94,38 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
     </div>
   </div>
 
-  <!-- admin panel -->
-  <div id="adminPanel">
-    <div class="admin-card" role="region" aria-label="Admin panel">
-      <h3>Admin Panel</h3>
-      <div class="admin-grid">
-        <button id="btnListLocks" class="admin-btn">List locks</button>
-        <button id="btnListEdits" class="admin-btn">List edits</button>
-        <button id="btnRefreshData" class="admin-btn">Refresh duty data</button>
-      </div>
-
-      <div style="margin-bottom:8px">
-        <label style="font-weight:600">Assign row to user:</label>
-        <input id="assignLink" placeholder="linkId" class="small-input" />
-        <input id="assignCrew" placeholder="crewIndex" class="small-input" style="width:80px" />
-        <input id="assignUid" placeholder="user uid" class="small-input" style="width:220px" />
-        <button id="btnAssign" class="admin-btn">Assign</button>
-      </div>
-
-      <div style="margin-bottom:8px">
-        <label style="font-weight:600">Promote UID to admin:</label>
-        <input id="adminUidInput" placeholder="firebase uid" class="small-input" />
-        <button id="btnPromote" class="admin-btn">Promote</button>
-      </div>
-
-      <div id="adminContent" style="margin-top:8px;max-height:300px;overflow:auto"></div>
-    </div>
-  </div>
-
-  <div id="uidHelper" aria-hidden="false">
-    <button id="btnGetUid">Get my UID</button>
-    <button id="btnRequestAdmin">Request Admin</button>
-  </div>
-
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- Firebase SDKs -->
+  <!-- Firebase (compat) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-/* ===========================
-   CONFIGURE FIREBASE HERE
-   - Replace the null with your Firebase config object.
-   Example:
-   const FIREBASE_CONFIG = {
-     apiKey: "AAA...",
-     authDomain: "your-project.firebaseapp.com",
-     databaseURL: "https://your-project-default-rtdb.firebaseio.com",
-     projectId: "your-project",
-     storageBucket: "...",
-     messagingSenderId: "...",
-     appId: "1:...:web:..."
-   };
-   =========================== */
-const FIREBASE_CONFIG = null; // <-- paste your config here
-const ADMIN_UIDS = [];        // optional: one-off admin UIDs fallback
+/* ============================
+  CONFIG: paste your Firebase config object below to enable DB sync
+  Example:
+  const FIREBASE_CONFIG = {
+    apiKey: "AAA...",
+    authDomain: "your-project.firebaseapp.com",
+    databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+    projectId: "...",
+    storageBucket: "...",
+    messagingSenderId: "...",
+    appId: "1:...:web:..."
+  };
+  If FIREBASE_CONFIG is null, the app uses only localStorage.
+*/
+const FIREBASE_CONFIG = null; // <-- paste your config here if you want firebase sync
+
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json',
   'ollink1.json','sllink1.json'
 ];
-const LS_KEY = 'lp_alp_edits_v_full';
-let localEdits = loadLocalEdits();
+
+const LS_KEY = 'lp_alp_edits_owner_v1'; // local edits store
+let localEdits = loadLocalEdits();     // structure { linkId: { crewIndex: { crewLPName, crewALPName, _updatedBy, _updatedAt } } }
 let allCrewData = [];
 let selectedDate = new Date();
 
@@ -162,22 +133,25 @@ let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null;
 let isAdmin = false;
 
-/* Initialize Firebase if configured */
+/* Init Firebase if config present */
 if(FIREBASE_CONFIG){
   try{
     firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
     firebaseAuth = firebase.auth();
     firebaseDb = firebase.database();
-    firebaseAuth.onAuthStateChanged(async user=>{
+    firebaseAuth.onAuthStateChanged(async user => {
       if(user){
         currentUser = { uid: user.uid, displayName: user.displayName || user.uid };
         saveLocalUser(currentUser);
-        await detectAdmin();
+        await detectAdmin(); // will re-render
       } else {
         try{ await firebaseAuth.signInAnonymously(); }catch(e){ console.warn('anon sign-in failed', e); }
       }
     });
-  }catch(e){ console.warn('firebase init fail', e); }
+  } catch(e){
+    console.warn('Firebase init failed', e);
+    firebaseApp = null; firebaseDb = null; firebaseAuth = null;
+  }
 }
 
 /* DOM refs */
@@ -188,18 +162,14 @@ const prevBtn = document.getElementById('prevDay');
 const nextBtn = document.getElementById('nextDay');
 const dateHeading = document.getElementById('dateHeading');
 const toast = document.getElementById('toast');
-const roleNotice = document.getElementById('roleNotice');
-const adminPanel = document.getElementById('adminPanel');
-const adminContent = document.getElementById('adminContent');
-const btnGetUid = document.getElementById('btnGetUid');
-const btnRequestAdmin = document.getElementById('btnRequestAdmin');
 
 /* Utilities */
 function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
-function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_full', JSON.stringify(u)); }catch(e){} }
-function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_full')||'null'); }catch(e){return null} }
+function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
+function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner', JSON.stringify(u)); }catch(e){} }
+function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 
 /* Date controls */
 dateBtn.addEventListener('click', ()=>{ datePicker.focus(); datePicker.click(); });
@@ -209,44 +179,46 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* Load all link JSONs and flatten crew */
+/* Load all link files */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
-  const fetches = linkFiles.map(async f=> {
-    try{ const r = await fetch(f, {cache:'no-cache'}); if(!r.ok) throw new Error(f+' '+r.status); return await r.json(); } catch(e){ console.warn('load fail', f, e); return null; }
+  const fetches = linkFiles.map(async f => {
+    try{ const r = await fetch(f, {cache:'no-cache'}); if(!r.ok) throw new Error(f+' '+r.status); return await r.json(); } catch(e){ console.warn('Failed to load', f, e); return null; }
   });
   const results = await Promise.all(fetches);
   allCrewData = [];
-  results.forEach((linkData, idx)=>{
+  results.forEach((linkData, idx) => {
     if(!linkData) return;
     const linkId = linkData.linkId ?? (`file#${idx+1}`);
     const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
     const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
-    crewArr.forEach((c,ci)=> allCrewData.push({...c, linkId, lastUpdatedDate: lastUpdated, crewIndex:ci}));
+    crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex}));
   });
   await renderCombinedDuties();
 }
 
-/* Render duties with assignment check */
+/* Render duties; owner model: if a cell has _updatedBy, only that uid or admin can edit */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
-  const crewsByLink = allCrewData.reduce((acc,c)=>{ (acc[c.linkId]=acc[c.linkId]||[]).push(c); return acc; }, {});
-  const rows = [];
 
-  // fetch assignments if firebase present
-  let assignments = {};
+  // fetch firebase edits to know owners (if DB present)
+  let fbEdits = {};
   if(firebaseDb){
-    try{ const snap = await firebaseDb.ref('/assignments').once('value'); assignments = snap.val() || {}; }catch(e){ assignments = {}; }
+    try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; }catch(e){ fbEdits = {}; }
   }
+
+  const crewsByLink = allCrewData.reduce((acc,crew)=> { (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
+  const rows = [];
 
   Object.values(crewsByLink).forEach(crewList=>{
     if(!crewList.length) return;
     const lastUpdatedDate = crewList[0].lastUpdatedDate ? new Date(crewList[0].lastUpdatedDate) : new Date();
     const diffDays = Math.floor((selectedDate.getTime()-lastUpdatedDate.getTime())/(1000*60*60*24));
+    const weeksPassed = Math.floor(diffDays/7);
     const dutiesPerRow = crewList.map(c=>c.duties||{});
     for(let rowIndex=0; rowIndex<crewList.length; rowIndex++){
-      const crewIndex = ((rowIndex - Math.floor(diffDays/7)) % crewList.length + crewList.length) % crewList.length;
+      const crewIndex = ((rowIndex - weeksPassed) % crewList.length + crewList.length) % crewList.length;
       const crew = crewList[crewIndex];
       const dutyForRow = dutiesPerRow[rowIndex][weekday] ?? '';
       let outgoing='', incoming='', depTime='';
@@ -256,40 +228,45 @@ async function renderCombinedDuties(){
         depTime = (dutyForRow.depTime||'').toString().trim();
       } else if(typeof dutyForRow === 'string') outgoing = dutyForRow.trim();
       const combined = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
-      if(!combined || combined==='REST') continue;
+      if(!combined || combined === 'REST') continue;
       const linkId = crew.linkId;
-      const crewEd = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
-      const lpName = crewEd.crewLPName?.trim() || crew.crewLPName?.trim() || crew.crewLPId || '';
-      const alpName = crewEd.crewALPName?.trim() || crew.crewALPName?.trim() || crew.crewALPId || '';
-      const assigned = (assignments[linkId] && assignments[linkId][crew.crewIndex]) || null;
-      rows.push({ depTime, outgoing, incoming, lpName, alpName, link:linkId, crewIndex: crew.crewIndex, assigned });
+
+      // overlay local edits first, then firebase edits if present
+      const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
+      const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
+      // prefer fb owner (if present), else local owner
+      const owner = fb._updatedBy || local._updatedBy || null;
+      const lpName = local.crewLPName?.trim() || fb.crewLPName?.trim() || crew.crewLPId || '';
+      const alpName = local.crewALPName?.trim() || fb.crewALPName?.trim() || crew.crewALPId || '';
+
+      rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, owner });
     }
   });
 
-  function tmin(t){ if(!t) return Infinity; const m=t.match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1])*60 + (+m[2]) : Infinity; }
+  // sort by depTime
+  function tmin(t){ if(!t) return Infinity; const m = t.match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1])*60 + (+m[2]) : Infinity; }
   rows.sort((a,b)=> tmin(a.depTime) - tmin(b.depTime));
 
   if(!rows.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`; return; }
-  dutyTable.innerHTML = '';
 
+  dutyTable.innerHTML = '';
   rows.forEach(r=>{
     const out = escapeHtml(r.outgoing||''), inc = escapeHtml(r.incoming||'');
     const trainHtml = inc ? `<div class="cell-center"><div class="train-stack" role="group"><div class="train-top">${out}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${inc}</div></div></div>` : `<div class="cell-center"><div class="train-stack"><div class="train-top">${out}</div></div></div>`;
-    const assignedUid = r.assigned && r.assigned.uid ? r.assigned.uid : null;
-    const mayEdit = isAdmin || (currentUser && assignedUid && currentUser.uid === assignedUid);
-    const badgeHtml = (()=> {
-      if(!assignedUid) return '';
-      if(currentUser && currentUser.uid === assignedUid) return `<span style="color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;font-size:0.8rem">Assigned to you</span>`;
-      return `<span class="row-badge">Assigned</span>`;
-    })();
-
     const tr = document.createElement('tr');
+
+    // editing rule: editable if no owner yet OR owner === currentUser.uid OR isAdmin
+    const mayEditLP = (!r.owner) || (currentUser && r.owner === currentUser.uid) || isAdmin;
+    const mayEditALP = (!r.owner) || (currentUser && r.owner === currentUser.uid) || isAdmin;
+
+    const ownerTag = r.owner ? `<span class="ownerTag">${escapeHtml(r.owner)}</span>` : '';
+
     tr.innerHTML = `
-      <td><div class="cell-center"><div class="editable" contenteditable="${mayEdit? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="${mayEdit? 'Edit LP name':'You cannot edit this row'}">${escapeHtml(r.lpName)}</div></div></td>
-      <td><div class="cell-center"><div class="editable" contenteditable="${mayEdit? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="${mayEdit? 'Edit ALP name':'You cannot edit this row'}">${escapeHtml(r.alpName)}</div></div></td>
+      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditLP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="${mayEditLP? 'Edit LP name':'Owned by someone else'}">${escapeHtml(r.lpName)}</div></div></td>
+      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="${mayEditALP? 'Edit ALP name':'Owned by someone else'}">${escapeHtml(r.alpName)}</div></div></td>
       <td>${trainHtml}</td>
       <td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>
-      <td><div class="cell-center">${escapeHtml(r.link)}&nbsp;${badgeHtml}</div></td>
+      <td><div class="cell-center">${escapeHtml(r.link)} ${ownerTag}</div></td>
     `;
     dutyTable.appendChild(tr);
   });
@@ -298,151 +275,128 @@ async function renderCombinedDuties(){
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
-    el.addEventListener('focus', ()=>{
-      if(el.getAttribute('contenteditable') === 'false'){ el.blur(); showToast('You cannot edit this row. Request assignment from admin.'); return; }
+
+    // focus: if default crew id pattern, clear immediately for typing and store original
+    el.addEventListener('focus', (ev)=>{
+      if(el.getAttribute('contenteditable') === 'false'){ el.blur(); showToast('This cell is owned by someone else.'); return; }
       const txt = el.textContent.trim();
-      if(/^(LP|ALP)\d+/i.test(txt)){ el.dataset._orig = txt; el.textContent = ''; }
+      if(/^(LP|ALP)\d+/i.test(txt)){
+        el.dataset._orig = txt;
+        el.textContent = '';
+      } else {
+        el.dataset._orig = '';
+      }
     });
-    el.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape'){ if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); } } else if(ev.key==='Enter'){ ev.preventDefault(); el.blur(); } });
+
+    // Escape restores original; Enter commits (blur)
+    el.addEventListener('keydown', (ev)=>{
+      if(ev.key === 'Escape'){ if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); } }
+      else if(ev.key === 'Enter'){ ev.preventDefault(); el.blur(); }
+    });
+
+    // on blur commit
     el.addEventListener('blur', onEditableCommit);
   });
 }
 
-/* commit edits */
+/* Commit handler: claim ownership if none, save value, push to firebase */
 async function onEditableCommit(e){
   const el = e.currentTarget;
-  if(el.getAttribute('contenteditable') === 'false') return;
   const linkId = el.dataset.link;
   const crewIndex = Number(el.dataset.crew);
-  const field = el.dataset.field;
+  const field = el.dataset.field; // crewLPName or crewALPName
   const newVal = el.textContent.trim();
 
+  // read existing local or fb owner
+  const existingLocal = (localEdits[linkId] && localEdits[linkId][crewIndex]) || {};
+  // check firebase owner if any (best-effort)
+  let fbOwner = null;
+  if(firebaseDb){
+    try{
+      const fbSnap = await firebaseDb.ref(`/edits/${linkId}/${crewIndex}/_updatedBy`).once('value');
+      fbOwner = fbSnap.exists() ? fbSnap.val() : null;
+    }catch(e){ fbOwner = null; }
+  }
+  const owner = fbOwner || existingLocal._updatedBy || null;
+
+  // If someone else owns it and current user not owner nor admin, revert visually
+  if(owner && (!currentUser || owner !== currentUser.uid) && !isAdmin){
+    // revert display (pull latest owner value if any or original)
+    showToast('Not allowed: owned by ' + owner);
+    // re-render to refresh ownership display
+    await renderCombinedDuties();
+    return;
+  }
+
+  // Set owner if none
+  const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
   localEdits[linkId][crewIndex][field] = newVal;
+  localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
+  localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
   saveLocalEdits();
   showToast('Saved locally');
 
-  if(firebaseDb && currentUser){
-    try{ const path = `/edits/${linkId}/${crewIndex}`; await firebaseDb.ref(path).update({ [field]: newVal, _updatedBy: currentUser.uid, _updatedAt: new Date().toISOString() }); showToast('Synced'); }catch(e){ console.warn('sync failed', e); }
-  }
-}
-
-/* detect admin */
-async function detectAdmin(){
-  currentUser = currentUser || loadLocalUser() || ensureLocalUser();
-  isAdmin = false;
-  try{
-    if(Array.isArray(ADMIN_UIDS) && ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
-    if(firebaseDb && currentUser && currentUser.uid){
-      const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value');
-      if(snap.exists() && snap.val() === true) isAdmin = true;
+  // push to firebase
+  if(firebaseDb){
+    try{
+      const path = `/edits/${linkId}/${crewIndex}`;
+      const payload = { [field]: newVal, _updatedBy: userUid, _updatedAt: new Date().toISOString() };
+      await firebaseDb.ref(path).update(payload);
+      showToast('Synced to Firebase');
+    }catch(err){
+      console.warn('Firebase push failed', err);
     }
-  }catch(e){ console.warn('admin check failed', e); }
-  if(isAdmin){ adminPanel.style.display='block'; roleNotice.textContent='Admin: edit any row & assign rows.'; attachAdminHandlers(); } else { adminPanel.style.display='none'; roleNotice.textContent='Edit only rows assigned to you. Request assignment from admin.'; }
+  }
+
+  // refresh display (shows owner tag and disables editing for others)
   await renderCombinedDuties();
 }
 
-/* admin handlers */
-function attachAdminHandlers(){
-  if(attachAdminHandlers.done) return;
-  attachAdminHandlers.done = true;
-
-  document.getElementById('btnRefreshData').addEventListener('click', ()=>{ loadAllLinks(); showToast('Refreshed'); });
-
-  document.getElementById('btnListLocks').addEventListener('click', async ()=>{
-    adminContent.innerHTML = '<div>Loading locks…</div>';
-    try{
-      const snap = await firebaseDb.ref('/locks').once('value'); const val = snap.val()||{};
-      let items=[]; Object.keys(val).forEach(link=>{ const by = val[link]||{}; Object.keys(by).forEach(ci=> items.push({ link, ci, info: by[ci] })); });
-      if(!items.length){ adminContent.innerHTML = '<div>No locks</div>'; return; }
-      let html = '<table class="admin-table"><thead><tr><th>Link</th><th>Crew</th><th>User</th><th>ts</th><th>Action</th></tr></thead><tbody>';
-      items.forEach(it=>{ const ts = it.info.ts? new Date(it.info.ts).toLocaleString():''; html += `<tr><td>${it.link}</td><td>${it.ci}</td><td>${it.info.name||it.info.uid}</td><td>${ts}</td><td><button class="admin-btn rel" data-link="${it.link}" data-crew="${it.ci}">Release</button></td></tr>`; });
-      html += '</tbody></table>'; adminContent.innerHTML = html;
-      document.querySelectorAll('.rel').forEach(b=> b.addEventListener('click', async ()=>{ const l=b.dataset.link, c=b.dataset.crew; if(!confirm('Release?')) return; await firebaseDb.ref(`/locks/${l}/${c}`).remove(); showToast('Released'); }));
-    }catch(e){ adminContent.innerHTML = '<div>Error loading locks</div>'; console.warn(e); }
-  });
-
-  document.getElementById('btnListEdits').addEventListener('click', async ()=>{
-    adminContent.innerHTML = '<div>Loading edits…</div>';
-    try{
-      const snap = await firebaseDb.ref('/edits').once('value'); const val = snap.val()||{};
-      let rows=[]; Object.keys(val).forEach(link=>{ const by = val[link]||{}; Object.keys(by).forEach(ci=> rows.push({ link, ci, data: by[ci] })); });
-      if(!rows.length){ adminContent.innerHTML = '<div>No edits</div>'; return; }
-      let html = '<table class="admin-table"><thead><tr><th>Link</th><th>Crew</th><th>Data</th><th>By</th><th>At</th></tr></thead><tbody>';
-      rows.forEach(r=>{ const by = r.data._updatedBy||'', at = r.data._updatedAt||''; const clone = Object.assign({}, r.data); delete clone._updatedBy; delete clone._updatedAt; html += `<tr><td>${r.link}</td><td>${r.ci}</td><td><pre style="white-space:pre-wrap">${JSON.stringify(clone,null,0)}</pre></td><td>${by}</td><td>${at}</td></tr>`; });
-      html += '</tbody></table>'; adminContent.innerHTML = html;
-    }catch(e){ adminContent.innerHTML = '<div>Error loading edits</div>'; console.warn(e); }
-  });
-
-  document.getElementById('btnAssign').addEventListener('click', async ()=>{
-    const link = document.getElementById('assignLink').value.trim();
-    const crew = document.getElementById('assignCrew').value.trim();
-    const uid = document.getElementById('assignUid').value.trim();
-    if(!link || !crew || !uid) return alert('Enter link, crewIndex and uid');
-    if(!confirm(`Assign ${link}/${crew} → ${uid}?`)) return;
-    try{ await firebaseDb.ref(`/assignments/${link}/${crew}`).set({ uid, assignedBy: currentUser.uid, ts: new Date().toISOString() }); showToast('Assigned'); loadAllLinks(); }catch(e){ console.warn(e); alert('Assign failed'); }
-  });
-
-  document.getElementById('btnPromote').addEventListener('click', async ()=>{
-    const uid = document.getElementById('adminUidInput').value.trim();
-    if(!uid) return alert('Enter uid');
-    if(!confirm(`Promote ${uid} to admin?`)) return;
-    try{ await firebaseDb.ref(`/meta/admins/${uid}`).set(true); showToast('Promoted'); }catch(e){ console.warn(e); alert('Promote failed'); }
-  });
-}
-
-/* Get my UID / Request admin */
-btnGetUid.addEventListener('click', async ()=>{
-  let uid = null;
-  if(firebaseAuth && firebaseAuth.currentUser) uid = firebaseAuth.currentUser.uid;
-  if(!uid){ currentUser = currentUser || loadLocalUser() || createLocalUser(); uid = currentUser.uid; }
-  try{ await navigator.clipboard.writeText(uid); alert('UID copied: ' + uid); }catch(e){ prompt('Copy this UID:', uid); }
-});
-
-btnRequestAdmin.addEventListener('click', async ()=>{
-  let uid = null;
-  if(firebaseAuth && firebaseAuth.currentUser) uid = firebaseAuth.currentUser.uid;
-  if(!uid){ currentUser = currentUser || loadLocalUser() || createLocalUser(); uid = currentUser.uid; }
-  if(!firebaseDb){ alert('Firebase not configured. Contact admin.'); return; }
-  if(!confirm(`Send admin request for UID:\n${uid}\nProceed?`)) return;
-  try{ await firebaseDb.ref(`/adminRequests/${uid}`).set({ uid, name: currentUser.displayName || '', ts: new Date().toISOString(), status:'pending' }); showToast('Request sent'); }catch(e){ console.warn(e); alert('Request failed'); }
-});
-
-/* helpers */
-function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
-function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_full')||'null'); }catch(e){return null;} }
-function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_full', JSON.stringify(u)); }catch(e){} }
-function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
-
-/* detect admin + init */
+/* admin detection (keeps admin toggle optional) */
 async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
+  // optional ADMIN_UIDS fallback: add admin UIDs here if you want local admins without db
+  const ADMIN_UIDS = [];
   try{
-    if(Array.isArray(ADMIN_UIDS) && ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
-    if(firebaseDb && currentUser && currentUser.uid){
+    if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
+    if(firebaseDb){
       const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value');
-      if(snap.exists() && snap.val()===true) isAdmin = true;
+      if(snap.exists() && snap.val() === true) isAdmin = true;
     }
-  }catch(e){ console.warn('admin detect error', e); }
-  if(isAdmin){ adminPanel.style.display='block'; roleNotice.textContent='Admin: edit any row & assign rows.'; attachAdminHandlers(); } else { adminPanel.style.display='none'; roleNotice.textContent='Edit only rows assigned to you. Request assignment from admin.'; }
+  }catch(e){ console.warn('admin detect err', e); }
+  // re-render to apply admin state
   await renderCombinedDuties();
 }
 
-/* initial boot */
+/* small helpers */
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+
+/* make sure there's a local user (for ownership when Firebase not configured) */
+function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
+
+/* init */
 (async function init(){
   setSelectedDate(new Date());
+  // ensure a local user exists immediately
   currentUser = loadLocalUser() || createLocalUser();
-  if(FIREBASE_CONFIG && firebaseAuth){ /* firebaseAuth.onAuthStateChanged set earlier */ }
+  saveLocalUser(currentUser);
+
   await loadAllLinks();
-  // if firebase exists and user is already authed, detect admin
-  if(firebaseDb && firebaseAuth && firebaseAuth.currentUser){
-    currentUser = { uid: firebaseAuth.currentUser.uid, displayName: firebaseAuth.currentUser.displayName || firebaseAuth.currentUser.uid };
-    saveLocalUser(currentUser);
-    await detectAdmin();
+
+  // if firebase auth already signed in, detect admin; otherwise create anon auth if configured
+  if(firebaseAuth && firebaseDb){
+    if(firebaseAuth.currentUser){
+      currentUser = { uid: firebaseAuth.currentUser.uid, displayName: firebaseAuth.currentUser.displayName || firebaseAuth.currentUser.uid };
+      saveLocalUser(currentUser);
+      await detectAdmin();
+    } else {
+      try{ await firebaseAuth.signInAnonymously(); }catch(e){ console.warn('anon sign-in failed', e); }
+    }
   } else {
-    // no firebase or not authed — just render with local user
+    // no firebase - just display; ownership enforced locally
     await detectAdmin();
   }
 })();
