@@ -20,6 +20,7 @@ body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,S
 .headerArea h1{margin:0;font-size:1.25rem;font-weight:700;text-align:center}
 .headerArea .sub{font-size:0.9rem;color:var(--muted);text-align:center}
 .headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center}
+.headerArea #loginStatus{font-size:0.78rem;color:var(--muted);margin-top:6px}
 
 /* controls */
 .controls{position:sticky;top:0;background:var(--card);z-index:55;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.03)}
@@ -84,6 +85,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
         <h1>LP/ALP Duty List</h1>
         <div class="sub">Madgaon Lobby</div>
         <div id="dateHeading">Loading date…</div>
+        <div id="loginStatus" aria-live="polite">Login: checking…</div>
       </div>
 
       <div class="controls" role="toolbar" aria-label="Date controls">
@@ -122,10 +124,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-/* === FIREBASE CONFIG (provided) ===
-   Your Firebase config has been embedded below.
-   Keep this file secure on your host.
-*/
+/* FIREBASE CONFIG (from you) */
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyA39vWi_90CUyj0davz4XAXqMey1aNM6FU",
   authDomain: "crewdutytable.firebaseapp.com",
@@ -136,7 +135,7 @@ const FIREBASE_CONFIG = {
   appId: "1:190634478615:web:28e998325f69fb8bf36052"
 };
 
-/* --- Files & keys --- */
+/* files and local storage key */
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json',
@@ -144,46 +143,50 @@ const linkFiles = [
 ];
 const LS_KEY = 'lp_alp_edits_owner_v1';
 
-/* --- State --- */
+/* state */
 let localEdits = loadLocalEdits();
 let allCrewData = [];
 let selectedDate = new Date();
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
 
-/* Initialize Firebase */
+/* init firebase */
 try {
   firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
   firebaseAuth = firebase.auth();
   firebaseDb = firebase.database();
   console.info('Firebase initialized');
-  // sign-in flow: try to preserve any existing session; else anonymous
+
   firebaseAuth.onAuthStateChanged(async user => {
-    if(user){
-      currentUser = { uid: user.uid, displayName: user.displayName || user.uid };
+    if (user){
+      // use Firebase user
+      currentUser = { uid: user.uid, displayName: user.displayName || user.email || user.uid, anon: user.isAnonymous || false };
       saveLocalUser(currentUser);
-      console.info('Authenticated as', currentUser.uid);
       await detectAdmin();
     } else {
+      // try anonymous sign-in
       try {
         const anon = await firebaseAuth.signInAnonymously();
-        currentUser = { uid: anon.user.uid, displayName: 'Anonymous' };
+        currentUser = { uid: anon.user.uid, displayName: 'Anonymous', anon: true };
         saveLocalUser(currentUser);
-        console.info('Signed in anonymously:', anon.user.uid);
         await detectAdmin();
       } catch(e){
         console.warn('Anonymous sign-in failed', e);
-        // fallback to local-only user
         currentUser = loadLocalUser() || createLocalUser();
+        await detectAdmin();
       }
     }
+    updateLoginStatusUI();
   });
-} catch (err) {
-  console.warn('Firebase init error', err);
-  firebaseApp = null; firebaseDb = null; firebaseAuth = null;
+} catch(e){
+  console.warn('Firebase init error', e);
+  firebaseApp = null; firebaseAuth = null; firebaseDb = null;
+  // local fallback
+  currentUser = loadLocalUser() || createLocalUser();
+  updateLoginStatusUI();
 }
 
-/* DOM */
+/* DOM refs */
 const dutyTable = document.getElementById('dutyTable');
 const mainTable = document.getElementById('mainTable');
 const tableWrap = document.querySelector('.tableWrap');
@@ -194,6 +197,7 @@ const nextBtn = document.getElementById('nextDay');
 const dateHeading = document.getElementById('dateHeading');
 const toast = document.getElementById('toast');
 const adminSignInBtn = document.getElementById('adminSignInBtn');
+const loginStatus = document.getElementById('loginStatus');
 
 /* helpers */
 function showToast(msg, t=1200){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
@@ -204,7 +208,7 @@ function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stri
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 
-/* ensure caret at end to help deletion */
+/* caret helper */
 function placeCaretAtEnd(el) {
   try {
     el.focus();
@@ -217,21 +221,42 @@ function placeCaretAtEnd(el) {
   } catch (e) {}
 }
 
-/* Format train token:
-   - If exactly 5 digits => .nowrap (no wrap)
-   - Else escape and add <wbr> before slashes so they can break */
+/* map linkId to readable label */
+function getShortLinkLabel(linkId) {
+  if (!linkId) return '';
+  const id = String(linkId).toLowerCase();
+  if (id.startsWith('link')) {
+    const num = id.replace(/\D/g, '');
+    return `MAO${num}`;
+  } else if (id.startsWith('rnlink')) {
+    const num = id.replace(/\D/g, '');
+    return `RN${num}`;
+  } else if (id.startsWith('ollink')) {
+    const num = id.replace(/\D/g, '');
+    return `OL${num}`;
+  } else if (id.startsWith('sllink')) {
+    const num = id.replace(/\D/g, '');
+    return `SL${num}`;
+  }
+  // if it's numeric like 1,2 etc, try convert
+  const digits = id.match(/\d+/);
+  if(digits){
+    return `L${digits[0]}`;
+  }
+  return String(linkId).toUpperCase();
+}
+
+/* format train token (keep 5-digit tokens unbroken) */
 function formatTrainToken(token){
   if(!token) return '';
   const cleaned = token.toString().trim();
-  if(/^\d{5}$/.test(cleaned)){ // pure 5-digit numeric -> keep on single line
+  if(/^\d{5}$/.test(cleaned)){
     return `<span class="nowrap">${escapeHtml(cleaned)}</span>`;
   }
-  // else add <wbr> before every slash to allow breaks
-  const escaped = escapeHtml(cleaned).replace(/\//g, '<wbr>/');
-  return escaped;
+  return escapeHtml(cleaned).replace(/\//g, '<wbr>/');
 }
 
-/* Set padding-top on .tableWrap so the thead (top:0) sits flush and no gap appears */
+/* table layout helpers */
 function setTableWrapPaddingAndHeader(){
   const header = document.querySelector('.headerArea');
   const controls = document.querySelector('.controls');
@@ -248,26 +273,6 @@ function setTableWrapPaddingAndHeader(){
   tableWrap.style.maxHeight = Math.max(120, window.innerHeight - reserved) + 'px';
   alignHeaderWidths();
 }
-
-  function getShortLinkLabel(linkId) {
-  if (!linkId) return '';
-  const id = linkId.toLowerCase();
-  if (id.startsWith('link')) {
-    const num = id.replace(/\D/g, '');
-    return `MAO${num}`;
-  } else if (id.startsWith('rnlink')) {
-    const num = id.replace(/\D/g, '');
-    return `RN${num}`;
-  } else if (id.startsWith('ollink')) {
-    const num = id.replace(/\D/g, '');
-    return `OL${num}`;
-  } else if (id.startsWith('sllink')) {
-    const num = id.replace(/\D/g, '');
-    return `SL${num}`;
-  }
-  return linkId.toUpperCase();
-  }
-
 function alignHeaderWidths(){
   const thead = mainTable.querySelector('thead');
   if(!thead) return;
@@ -303,7 +308,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* Load link JSON files */
+/* Load link JSON files (resilient) */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async f => {
@@ -356,17 +361,18 @@ async function renderCombinedDuties(){
       const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
       const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
       const owner = fb._updatedBy || local._updatedBy || null;
-      // When no edited name present, show the initial link number (linkId) instead of LP/ALP id
-// When no name entered, show mapped short link code (e.g. MAO1, RN2, etc.)
-const lpName =
-  (local.crewLPName && local.crewLPName.trim()) ||
-  (fb.crewLPName && fb.crewLPName.trim()) ||
-  getShortLinkLabel(crew.linkId);
 
-const alpName =
-  (local.crewALPName && local.crewALPName.trim()) ||
-  (fb.crewALPName && fb.crewALPName.trim()) ||
-  getShortLinkLabel(crew.linkId);
+      // Fallback now shows short link label (MAO1, RN2, etc.)
+      const lpName =
+        (local.crewLPName && local.crewLPName.trim()) ||
+        (fb.crewLPName && fb.crewLPName.trim()) ||
+        getShortLinkLabel(crew.linkId);
+
+      const alpName =
+        (local.crewALPName && local.crewALPName.trim()) ||
+        (fb.crewALPName && fb.crewALPName.trim()) ||
+        getShortLinkLabel(crew.linkId);
+
       rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, owner });
     }
   });
@@ -404,12 +410,11 @@ const alpName =
     if(el.__bound) return;
     el.__bound = true;
 
-    function isOwnedByCurrentUser(){
+    function getOwnerFromStore() {
       const link = el.dataset.link;
       const crewIndex = Number(el.dataset.crew);
       const local = (localEdits[link] && localEdits[link][crewIndex]) || {};
-      const fbOwner = (local && local._updatedBy) || null;
-      return fbOwner && currentUser && fbOwner === currentUser.uid;
+      return local._updatedBy || null;
     }
 
     el.addEventListener('focus', (ev)=>{
@@ -417,13 +422,16 @@ const alpName =
 
       const txt = el.textContent.trim();
 
+      // If content is initial default pattern (LPxxx / ALPxxx), clear for typing
       if(/^(LP|ALP)\d+/i.test(txt)){
         el.dataset._orig = txt;
         el.textContent = '';
         el.removeAttribute('data-must-clear');
       } else {
         el.dataset._orig = '';
-        if(txt !== '' && isOwnedByCurrentUser() && !isAdmin){
+        // If the cell already owned by current user, require delete-first for editing (non-admin)
+        const owner = getOwnerFromStore();
+        if(txt !== '' && owner && currentUser && owner === currentUser.uid && !isAdmin){
           el.setAttribute('data-must-clear','1');
           showToast('To change, delete the existing name first.');
           placeCaretAtEnd(el);
@@ -466,7 +474,7 @@ const alpName =
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* Commit handler (saves to local and optional Firebase) */
+/* Commit handler (saves to local and Firebase if available) */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
@@ -495,6 +503,7 @@ async function onEditableCommit(e){
     localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
     localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
   } else {
+    // deletion removes ownership and timestamps locally
     delete localEdits[linkId][crewIndex]['_updatedBy'];
     delete localEdits[linkId][crewIndex]['_updatedAt'];
   }
@@ -504,7 +513,7 @@ async function onEditableCommit(e){
   if(firebaseDb){
     try{
       const path = `/edits/${linkId}/${crewIndex}`;
-      const payload = { [field]: newVal };
+      const payload = { [field]: newVal || null };
       if(newVal){
         payload._updatedBy = userUid;
         payload._updatedAt = new Date().toISOString();
@@ -522,7 +531,7 @@ async function onEditableCommit(e){
   await renderCombinedDuties();
 }
 
-/* Admin sign-in UI */
+/* Admin sign-in UI (keeps same flow you used earlier) */
 if(adminSignInBtn){
   adminSignInBtn.addEventListener('click', async ()=>{
     if(!firebaseAuth){
@@ -559,14 +568,23 @@ async function detectAdmin(){
       if(snap.exists() && snap.val() === true) isAdmin = true;
     }
   }catch(e){ console.warn('admin detect err', e); }
+  updateLoginStatusUI();
   await renderCombinedDuties();
 }
 
-/* Helpers & init */
-function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
-function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
-function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
+/* update login status UI */
+function updateLoginStatusUI(){
+  const u = currentUser || loadLocalUser();
+  if(!u){ loginStatus.textContent = 'Not signed in'; adminSignInBtn.style.display = 'inline-block'; return; }
+  const idText = u.uid || 'unknown';
+  const anonText = u.anon ? ' (anonymous)' : (u.local ? ' (local)' : '');
+  loginStatus.textContent = `User: ${idText}${anonText} ${isAdmin? ' — Admin':''}`;
+  // keep admin button visible so admin can sign in/out; if you want to hide it for employees, uncomment:
+  // if(!isAdmin) adminSignInBtn.style.display = 'none'; else adminSignInBtn.style.display = 'inline-block';
+  adminSignInBtn.style.display = 'inline-block';
+}
 
+/* init */
 async function init(){
   setSelectedDate(new Date());
   currentUser = loadLocalUser() || createLocalUser();
@@ -576,6 +594,7 @@ async function init(){
   window.addEventListener('resize', () => setTimeout(setTableWrapPaddingAndHeader, 60));
   window.addEventListener('orientationchange', () => setTimeout(setTableWrapPaddingAndHeader, 140));
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(setTableWrapPaddingAndHeader, 80));
+  updateLoginStatusUI();
 }
 document.addEventListener('DOMContentLoaded', init);
 </script>
