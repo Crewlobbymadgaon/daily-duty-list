@@ -159,15 +159,20 @@ try {
 
   firebaseAuth.onAuthStateChanged(async user => {
     if (user){
-      // use Firebase user
-      currentUser = { uid: user.uid, displayName: user.displayName || user.email || user.uid, anon: user.isAnonymous || false };
+      // store email + displayName
+      currentUser = {
+        uid: user.uid,
+        displayName: user.displayName || user.email || user.uid,
+        email: user.email || null,
+        anon: user.isAnonymous || false
+      };
       saveLocalUser(currentUser);
       await detectAdmin();
     } else {
       // try anonymous sign-in
       try {
         const anon = await firebaseAuth.signInAnonymously();
-        currentUser = { uid: anon.user.uid, displayName: 'Anonymous', anon: true };
+        currentUser = { uid: anon.user.uid, displayName: 'Anonymous', anon: true, email: null };
         saveLocalUser(currentUser);
         await detectAdmin();
       } catch(e){
@@ -238,7 +243,6 @@ function getShortLinkLabel(linkId) {
     const num = id.replace(/\D/g, '');
     return `SL${num}`;
   }
-  // if it's numeric like 1,2 etc, try convert
   const digits = id.match(/\d+/);
   if(digits){
     return `L${digits[0]}`;
@@ -360,7 +364,7 @@ async function renderCombinedDuties(){
       const linkId = crew.linkId;
       const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
       const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
-      const owner = fb._updatedBy || local._updatedBy || null;
+      const owner = fb._UpdatedBy || fb._updatedBy || local._updatedBy || null;
 
       // Fallback now shows short link label (MAO1, RN2, etc.)
       const lpName =
@@ -391,8 +395,9 @@ async function renderCombinedDuties(){
       : `<div class="cell-center"><div class="train-stack"><div class="train-top">${outHtml}</div></div></div>`;
 
     const tr = document.createElement('tr');
-    const mayEditLP = (!r.owner) || (currentUser && r.owner === currentUser.uid) || isAdmin;
-    const mayEditALP = (!r.owner) || (currentUser && r.owner === currentUser.uid) || isAdmin;
+    // <-- ADMIN EDIT PERMISSION: admin always allowed -->
+    const mayEditLP = !!isAdmin || !r.owner || (currentUser && r.owner === currentUser.uid);
+    const mayEditALP = !!isAdmin || !r.owner || (currentUser && r.owner === currentUser.uid);
     const ownerTag = r.owner ? `<span class="ownerTag">${escapeHtml(r.owner)}</span>` : '';
 
     tr.innerHTML = `
@@ -531,7 +536,7 @@ async function onEditableCommit(e){
   await renderCombinedDuties();
 }
 
-/* Admin sign-in UI (keeps same flow you used earlier) */
+/* Admin sign-in UI */
 if(adminSignInBtn){
   adminSignInBtn.addEventListener('click', async ()=>{
     if(!firebaseAuth){
@@ -540,7 +545,7 @@ if(adminSignInBtn){
     }
     const choice = confirm('Use existing admin account to sign in? OK = Sign in, Cancel = Sign out');
     if(!choice){
-      try { await firebaseAuth.signOut(); showToast('Signed out'); } catch(e){ console.warn(e); }
+      try { await firebaseAuth.signOut(); showToast('Signed out'); await detectAdmin(); await renderCombinedDuties(); updateLoginStatusUI(); } catch(e){ console.warn(e); }
       return;
     }
     const email = prompt('Admin email:');
@@ -550,6 +555,9 @@ if(adminSignInBtn){
     try {
       await firebaseAuth.signInWithEmailAndPassword(email, pwd);
       showToast('Signed in');
+      await detectAdmin();
+      await renderCombinedDuties();
+      updateLoginStatusUI();
     } catch (err){
       alert('Sign-in failed: ' + (err.message || err));
     }
@@ -572,15 +580,17 @@ async function detectAdmin(){
   await renderCombinedDuties();
 }
 
-/* update login status UI */
+/* update login status UI (prefer email) */
 function updateLoginStatusUI(){
   const u = currentUser || loadLocalUser();
-  if(!u){ loginStatus.textContent = 'Not signed in'; adminSignInBtn.style.display = 'inline-block'; return; }
-  const idText = u.uid || 'unknown';
+  if(!u){ 
+    loginStatus.textContent = 'Not signed in'; 
+    adminSignInBtn.style.display = 'inline-block'; 
+    return; 
+  }
+  const name = u.email || u.displayName || u.uid || 'unknown';
   const anonText = u.anon ? ' (anonymous)' : (u.local ? ' (local)' : '');
-  loginStatus.textContent = `User: ${idText}${anonText} ${isAdmin? ' — Admin':''}`;
-  // keep admin button visible so admin can sign in/out; if you want to hide it for employees, uncomment:
-  // if(!isAdmin) adminSignInBtn.style.display = 'none'; else adminSignInBtn.style.display = 'inline-block';
+  loginStatus.textContent = `User: ${name}${anonText} ${isAdmin? ' — Admin':''}`;
   adminSignInBtn.style.display = 'inline-block';
 }
 
