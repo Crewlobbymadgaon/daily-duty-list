@@ -8,78 +8,139 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    :root{
-      --bg:#f4f7fb; --card:#ffffff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb; --radius:12px;
-      --divider:#d9e8ff;
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --accent: #0f172a;
+      --accent-2: #2563eb;
+      --radius: 12px;
+      --divider: #d9e8ff;
+      --border: #cdd4e1;
     }
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent)}
-    .wrap{max-width:1100px;margin:20px auto;padding:14px}
-    .card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);padding:18px}
-    header{text-align:center}
-    h1{margin:0;font-size:1.6rem;font-weight:700}
-    .sub{font-size:1rem;color:var(--muted);font-weight:600;margin-top:4px}
-    #dateHeading{font-size:1rem;font-weight:600;color:var(--accent-2);margin-top:8px}
-
-    .controls{text-align:center;margin:16px 0}
-    .date-icon-btn{
-      display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:50%;
-      width:48px;height:48px;font-size:1.4rem;cursor:pointer;box-shadow:0 4px 10px rgba(37,99,235,0.25);
-      transition:transform .08s ease;
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color: var(--accent);
     }
-    .date-icon-btn:active{transform:scale(0.96)}
-    input[type="date"].native-date{position:absolute;left:-9999px}
+    .wrap { max-width: 1100px; margin: 20px auto; padding: 14px; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+      padding: 18px;
+    }
+    header { text-align: center; }
+    h1 { margin: 0; font-size: 1.6rem; font-weight: 700; }
+    .sub { font-size: 1rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
+    #dateHeading { font-size: 1rem; font-weight: 600; color: var(--accent-2); margin-top: 8px; }
 
-    /* table container */
-    .tableWrap{overflow-x:auto;border-radius:10px;margin-top:12px;background:#fff;padding:6px}
-    table{width:100%;border-collapse:collapse;min-width:720px;table-layout:fixed}
-    thead th{background:#f8fafc;padding:12px 16px;text-align:center;color:var(--muted);font-weight:700;border-top:1px solid #f1f4f8;white-space:nowrap}
-    tbody td{padding:12px 16px;border-top:1px solid #f6f9fc;font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center}
-    tbody tr:nth-child(odd){background:transparent}
-    .no-data{text-align:center;color:var(--muted);padding:14px}
+    .controls { text-align: center; margin: 16px 0; }
+    .date-icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent-2);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      font-size: 1.4rem;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+      transition: transform .08s ease;
+    }
+    .date-icon-btn:active { transform: scale(0.96); }
+    input[type="date"].native-date { position: absolute; left: -9999px; }
 
-    /* Column widths: LP / ALP / Train get priority */
+    /* Table container */
+    .tableWrap {
+      overflow-x: auto;
+      border-radius: 10px;
+      margin-top: 12px;
+      background: #fff;
+      padding: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+      table-layout: fixed;
+      border: 1px solid var(--border);
+    }
+    thead th {
+      background: #f8fafc;
+      padding: 10px 12px;
+      text-align: center;
+      color: var(--muted);
+      font-weight: 700;
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    tbody td {
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      font-size: 0.95rem;
+      color: var(--accent);
+      vertical-align: middle;
+      text-align: center;
+    }
+    tbody tr:nth-child(odd) { background: #fbfdff; }
+    .no-data { text-align: center; color: var(--muted); padding: 14px; }
+
+    /* Column widths */
     thead th:nth-child(1), tbody td:nth-child(1) { width: 30%; }
     thead th:nth-child(2), tbody td:nth-child(2) { width: 30%; }
     thead th:nth-child(3), tbody td:nth-child(3) { width: 25%; }
     thead th:nth-child(4), tbody td:nth-child(4) { width: 7%; }
     thead th:nth-child(5), tbody td:nth-child(5) { width: 8%; }
 
-    /* center wrappers so content aligns vertically/horizontally */
-    .cell-center { display:flex; align-items:center; justify-content:center; min-height:40px; }
+    /* Center wrappers */
+    .cell-center { display: flex; align-items: center; justify-content: center; min-height: 40px; }
 
-    /* train stack styles (no bold) */
-    .train-stack{display:flex;flex-direction:column;align-items:center;gap:6px}
-    .train-top, .train-bottom{line-height:1.05;font-weight:400;color:var(--accent)}
-    .train-top{font-size:1rem}
-    .train-bottom{font-size:0.95rem;color:var(--muted)}
-    .train-divider{width:80%;height:1px;background:var(--divider);border-radius:1px;align-self:center}
+    /* Train stack */
+    .train-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+    .train-top, .train-bottom {
+      line-height: 1.1;
+      font-weight: 400;
+      color: var(--accent);
+      font-size: 0.95rem;
+    }
+    .train-divider {
+      width: 60%;
+      height: 1px;
+      background: var(--divider);
+      border-radius: 1px;
+    }
 
-    /* allow LP/ALP/trains to wrap and truncate */
+    /* LP/ALP/Train text wrap */
     tbody td:nth-child(1), tbody td:nth-child(2), tbody td:nth-child(3) {
-      white-space:normal;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      hyphens:auto;
-      word-break:break-word;
+      white-space: normal;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      hyphens: auto;
+      word-break: break-word;
     }
 
-    /* On smaller screens hide Dep & Link columns so LP/ALP/Train fit */
-    @media (max-width:600px){
-      table{min-width:0; table-layout:auto}
-      thead th, tbody td{padding:8px 10px;font-size:14px}
+    /* Mobile adjustments */
+    @media (max-width: 600px) {
+      table { min-width: 0; table-layout: auto; font-size: 14px; }
+      thead th, tbody td { padding: 8px 10px; }
+      /* Hide Dep and Link columns */
       thead th:nth-child(4), thead th:nth-child(5),
-      tbody td:nth-child(4), tbody td:nth-child(5) { display:none; }
-      .date-icon-btn{width:46px;height:46px;font-size:1.3rem}
-      .train-top{font-size:1rem}
-      .train-bottom{font-size:0.9rem}
-      /* keep LP/ALP/train centered and aligned */
-      .cell-center{min-height:42px}
-    }
-
-    @media (min-width:601px) and (max-width:900px){
-      table{min-width:680px}
-      thead th, tbody td{padding:10px 12px}
+      tbody td:nth-child(4), tbody td:nth-child(5) { display: none; }
+      .date-icon-btn { width: 46px; height: 46px; font-size: 1.3rem; }
+      .train-top, .train-bottom { font-size: 0.9rem; }
+      .train-divider { width: 50%; }
+      .cell-center { min-height: 42px; }
     }
   </style>
 </head>
@@ -117,11 +178,6 @@
   </div>
 
 <script>
-/* Loads multiple link files, flattens crew data, applies per-link weekly rotation,
-   and displays combined duties sorted by depTime. Train cell stacks outgoing/incoming
-   with a thin divider; cells centered horizontally & vertically.
-*/
-
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json',
@@ -143,18 +199,17 @@ datePicker.addEventListener('change', () => {
   renderCombinedDuties();
 });
 
-function updateDateHeading(){
+function updateDateHeading() {
   const d = selectedDate || new Date();
   dateHeading.textContent = `${d.toLocaleString('en-US',{weekday:'long'})}, ${d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`;
 }
-function setSelectedDate(d){
+function setSelectedDate(d) {
   selectedDate = d || new Date();
   const yyyy = selectedDate.getFullYear(), mm = String(selectedDate.getMonth()+1).padStart(2,'0'), dd = String(selectedDate.getDate()).padStart(2,'0');
   datePicker.value = `${yyyy}-${mm}-${dd}`;
   updateDateHeading();
 }
 
-// Load all link files in parallel; skip failures
 async function loadAllLinks() {
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async file => {
@@ -189,7 +244,6 @@ async function loadAllLinks() {
   renderCombinedDuties();
 }
 
-// Flattened rotation + filter + sort by depTime
 function renderCombinedDuties() {
   if (!allCrewData.length) {
     dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`;
@@ -198,7 +252,6 @@ function renderCombinedDuties() {
 
   const weekday = selectedDate.toLocaleString('en-US', { weekday: 'long' });
 
-  // Group crew entries by linkId so we can apply rotation per link
   const crewsByLink = allCrewData.reduce((acc, crew) => {
     (acc[crew.linkId] = acc[crew.linkId] || []).push(crew);
     return acc;
@@ -209,126 +262,81 @@ function renderCombinedDuties() {
   Object.values(crewsByLink).forEach(crewList => {
     if (!crewList.length) return;
 
-    // use the lastUpdatedDate from first entry of this link
     const lastUpdatedDate = crewList[0].lastUpdatedDate ? new Date(crewList[0].lastUpdatedDate) : new Date();
     const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const weeksPassed = Math.floor(diffDays / 7);
 
-    // duties arranged per row index (as in your rotation model)
     const dutiesPerRow = crewList.map(c => c.duties || {});
 
     for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
-      // rotated crew index for selected week
       const crewIndex = ((rowIndex - weeksPassed) % crewList.length + crewList.length) % crewList.length;
       const crew = crewList[crewIndex];
-
       const dutyForRow = dutiesPerRow[rowIndex][weekday] ?? '';
 
-      let outgoing = '';
-      let incoming = '';
-      let depTime = '';
-
+      let outgoing = '', incoming = '', depTime = '';
       if (dutyForRow && typeof dutyForRow === 'object' && (dutyForRow.outgoing || dutyForRow.incoming)) {
-        outgoing = (dutyForRow.outgoing || '').toString().trim();
-        incoming = (dutyForRow.incoming || '').toString().trim();
-        depTime = (dutyForRow.depTime || '').toString().trim();
-      } else if (typeof dutyForRow === 'string') {
-        outgoing = dutyForRow.trim();
-      }
+        outgoing = (dutyForRow.outgoing || '').trim();
+        incoming = (dutyForRow.incoming || '').trim();
+        depTime = (dutyForRow.depTime || '').trim();
+      } else if (typeof dutyForRow === 'string') outgoing = dutyForRow.trim();
 
-      // skip empty or REST
-      const combinedCheck = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
-      if (!combinedCheck || combinedCheck === 'REST') continue;
+      const check = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
+      if (!check || check === 'REST') continue;
 
-      // prefer the crew names if present, else use IDs
-      const lpName = (crew.crewLPName && crew.crewLPName.trim()) ? crew.crewLPName.trim() : (crew.crewLPId || '');
-      const alpName = (crew.crewALPName && crew.crewALPName.trim()) ? crew.crewALPName.trim() : (crew.crewALPId || '');
+      const lpName = crew.crewLPName?.trim() || crew.crewLPId || '';
+      const alpName = crew.crewALPName?.trim() || crew.crewALPId || '';
 
-      rows.push({
-        depTime,
-        outgoing,
-        incoming,
-        lpName,
-        alpName,
-        link: crew.linkId
-      });
+      rows.push({ depTime, outgoing, incoming, lpName, alpName, link: crew.linkId });
     }
   });
 
-  // parse time to minutes (HH:MM). invalid or missing => Infinity (sorted last)
   function timeToMinutes(t) {
-    if (!t || typeof t !== 'string') return Infinity;
+    if (!t) return Infinity;
     const m = t.match(/^(\d{1,2}):(\d{2})$/);
-    if (!m) return Infinity;
-    const hh = parseInt(m[1], 10), mm = parseInt(m[2], 10);
-    if (!isFinite(hh) || !isFinite(mm)) return Infinity;
-    return hh * 60 + mm;
+    return m ? +m[1]*60 + +m[2] : Infinity;
   }
 
-  rows.sort((a, b) => timeToMinutes(a.depTime) - timeToMinutes(b.depTime));
+  rows.sort((a,b)=>timeToMinutes(a.depTime)-timeToMinutes(b.depTime));
 
-  // render rows
   if (!rows.length) {
     dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`;
     return;
   }
 
   dutyTable.innerHTML = '';
-  rows.forEach(r => {
-    const tr = document.createElement('tr');
-
-    // build train cell HTML: if incoming exists, stack with divider, else show single line
-    const out = escapeHtml(r.outgoing || '');
-    const inc = escapeHtml(r.incoming || '');
-    let trainCellHtml = '';
-    if (inc) {
-      trainCellHtml = `
-        <div class="cell-center">
-          <div class="train-stack" role="group" aria-label="Train numbers">
-            <div class="train-top">${out}</div>
-            <div class="train-divider" aria-hidden="true"></div>
-            <div class="train-bottom">${inc}</div>
-          </div>
+  rows.forEach(r=>{
+    const out = escapeHtml(r.outgoing||''), inc = escapeHtml(r.incoming||'');
+    const trainCell = inc ? `
+      <div class="cell-center">
+        <div class="train-stack">
+          <div class="train-top">${out}</div>
+          <div class="train-divider"></div>
+          <div class="train-bottom">${inc}</div>
         </div>
-      `;
-    } else {
-      trainCellHtml = `<div class="cell-center"><div class="train-stack"><div class="train-top">${out}</div></div></div>`;
-    }
+      </div>` :
+      `<div class="cell-center"><div class="train-stack"><div class="train-top">${out}</div></div></div>`;
 
+    const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td data-label="Name of LP"><div class="cell-center">${escapeHtml(r.lpName)}</div></td>
-      <td data-label="Name of ALP"><div class="cell-center">${escapeHtml(r.alpName)}</div></td>
-      <td data-label="Train No">${trainCellHtml}</td>
-      <td data-label="Dep"><div class="cell-center">${escapeHtml(r.depTime || '')}</div></td>
-      <td data-label="Link No"><div class="cell-center">${escapeHtml(r.link)}</div></td>
+      <td><div class="cell-center">${escapeHtml(r.lpName)}</div></td>
+      <td><div class="cell-center">${escapeHtml(r.alpName)}</div></td>
+      <td>${trainCell}</td>
+      <td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>
+      <td><div class="cell-center">${escapeHtml(r.link)}</div></td>
     `;
     dutyTable.appendChild(tr);
   });
 }
 
-function escapeHtml(s) {
-  if (s == null) return '';
-  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g,c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
 }
 
-// init
-(function init() {
+(function init(){
   setSelectedDate(new Date());
-  loadAllLinks().catch(e => {
-    console.error('Error loading links', e);
-    dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Error loading data</td></tr>`;
-  });
+  loadAllLinks();
 })();
-
-function setSelectedDate(d) {
-  selectedDate = d || new Date();
-  const yyyy = selectedDate.getFullYear();
-  const mm = String(selectedDate.getMonth() + 1).padStart(2, '0');
-  const dd = String(selectedDate.getDate()).padStart(2, '0');
-  datePicker.value = `${yyyy}-${mm}-${dd}`;
-  updateDateHeading();
-}
 </script>
 </body>
 </html>
