@@ -6,54 +6,37 @@
 <title>LP/ALP Duty List — Madgaon Lobby (Firebase)</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb;
-  --radius:12px; --divider:#1f6feb; --border:#cdd4e1;
-}
+:root{--bg:#f4f7fb;--card:#fff;--muted:#6b7280;--accent:#0f172a;--accent-2:#2563eb;--radius:12px;--divider:#1f6feb;--border:#cdd4e1}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent);-webkit-font-smoothing:antialiased}
 .wrap{max-width:1100px;margin:0 auto;padding:14px}
 .card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);overflow:hidden}
-
-/* header & controls */
-.headerArea{position:sticky; top:0;background:var(--card);padding:14px 16px;border-bottom:1px solid rgba(0,0,0,0.04);z-index:60;display:flex;flex-direction:column;align-items:center;gap:6px;}
-.headerArea h1{margin:0;font-size:1.25rem;font-weight:700;text-align:center}
-.headerArea .sub{font-size:0.9rem;color:var(--muted);text-align:center}
-.headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center}
-
-/* controls */
-.controls{position:sticky;top:0;background:var(--card);z-index:55;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.03)}
+.headerArea{position:sticky;top:0;background:var(--card);padding:12px 16px;border-bottom:1px solid rgba(0,0,0,0.04);z-index:60;display:flex;flex-direction:column;align-items:center;gap:6px}
+.headerRow{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.headerLeft{display:flex;flex-direction:column;align-items:center}
+.hTitle{margin:0;font-size:1.2rem;font-weight:700;text-align:center}
+.hSub{font-size:0.9rem;color:var(--muted)}
+.status{font-size:0.85rem;color:var(--muted);margin-top:6px}
+.controls{position:sticky;top:56px;background:var(--card);z-index:55;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.03)}
 .nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:44px;height:36px;padding:0 10px;cursor:pointer}
 input[type="date"].native-date{position:absolute;left:-9999px}
-
-/* table container */
-.tableWrap{max-height:calc(100vh - 112px);overflow:auto;border-radius:0;background:#fff;padding:6px;position:relative}
-
-/* table */
+.tableWrap{max-height:calc(100vh - 140px);overflow:auto;border-radius:0;background:#fff;padding:6px;position:relative}
 table{width:100%;border-collapse:collapse;min-width:640px;table-layout:fixed;border:1px solid var(--border)}
 thead th{background:var(--card);padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);border-top:1px solid rgba(0,0,0,0.04);position:sticky;z-index:70;top:0;box-sizing:border-box}
 tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;word-break:break-word;overflow-wrap:anywhere}
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
-
-/* column widths */
 thead th:nth-child(1), td:nth-child(1){width:36%}
 thead th:nth-child(2), td:nth-child(2){width:36%}
 thead th:nth-child(3), td:nth-child(3){width:18%}
 thead th:nth-child(4), td:nth-child(4){width:5%}
 thead th:nth-child(5), td:nth-child(5){width:5%}
-
-/* train stack */
 .cell-center{display:flex;align-items:center;justify-content:center;min-height:44px}
 .train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:4px 6px;max-width:100%;box-sizing:border-box}
 .train-top,.train-bottom{font-weight:400;font-size:0.90rem;line-height:1;display:inline-block;text-align:center;white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}
-.train-divider{ width:90%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
-
-/* .nowrap class: keep pure 5-digit tokens in one line */
+.train-divider{ width:90%; height:2px; background:var(--divider); border-radius:2px; margin:0 }
 .nowrap{ white-space:nowrap; display:inline-block; }
-
-/* responsive tweaks */
 @media (min-width:900px){ .train-divider{ width:100%; max-width:180px } }
 @media (max-width:640px){
   table{min-width:0;table-layout:auto}
@@ -62,17 +45,11 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   .train-top,.train-bottom{font-size:0.86rem}
   .train-divider{height:1.5px; width:85%}
 }
-
-/* editable visuals */
 .editable{display:block;min-height:32px;padding:6px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:center}
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
-
-/* admin button (floating, small) */
 #adminSignInBtn{position:fixed;top:10px;right:10px;z-index:120;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
-
-/* toast */
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
 </style>
@@ -81,8 +58,13 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   <div class="wrap">
     <div class="card">
       <div class="headerArea" role="banner" aria-label="Header">
-        <h1>LP/ALP Duty List</h1>
-        <div class="sub">Madgaon Lobby</div>
+        <div class="headerRow">
+          <div class="headerLeft">
+            <h1 class="hTitle">LP/ALP Duty List</h1>
+            <div class="hSub">Madgaon Lobby</div>
+          </div>
+          <div id="loginStatus" class="status" aria-live="polite">Status: loading...</div>
+        </div>
         <div id="dateHeading">Loading date…</div>
       </div>
 
@@ -113,7 +95,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
     </div>
   </div>
 
-  <button id="adminSignInBtn" title="Admin sign-in">Admin</button>
+  <button id="adminSignInBtn" title="Admin sign-in" style="display:none">Admin</button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <!-- Firebase compat SDKs -->
@@ -122,10 +104,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-/* === FIREBASE CONFIG (provided) ===
-   Your Firebase config has been embedded below.
-   Keep this file secure on your host.
-*/
+/* ---------- CONFIG ---------- */
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyA39vWi_90CUyj0davz4XAXqMey1aNM6FU",
   authDomain: "crewdutytable.firebaseapp.com",
@@ -135,55 +114,59 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "190634478615",
   appId: "1:190634478615:web:28e998325f69fb8bf36052"
 };
-
-/* --- Files & keys --- */
-const linkFiles = [
-  'link1.json','link2.json','link3.json','link4.json',
-  'rnlink1.json','rnlink2.json','rnlink3.json',
-  'ollink1.json','sllink1.json'
-];
+const linkFiles = ['link1.json','link2.json','link3.json','link4.json','rnlink1.json','rnlink2.json','rnlink3.json','ollink1.json','sllink1.json'];
 const LS_KEY = 'lp_alp_edits_owner_v1';
-
-/* --- State --- */
+/* ---------- state ---------- */
 let localEdits = loadLocalEdits();
 let allCrewData = [];
 let selectedDate = new Date();
-let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
-let currentUser = null, isAdmin = false;
+let firebaseApp=null, firebaseAuth=null, firebaseDb=null;
+let currentUser=null, isAdmin=false, firebaseAvailable=false;
 
-/* Initialize Firebase */
+/* ---------- init firebase & auth ---------- */
 try {
   firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
   firebaseAuth = firebase.auth();
   firebaseDb = firebase.database();
   console.info('Firebase initialized');
-  // sign-in flow: try to preserve any existing session; else anonymous
-  firebaseAuth.onAuthStateChanged(async user => {
+  firebaseAuth.onAuthStateChanged(async user=>{
+    const prevLocalUser = loadLocalUser();
     if(user){
+      // user logged-in (might be anonymous or real)
       currentUser = { uid: user.uid, displayName: user.displayName || user.uid };
       saveLocalUser(currentUser);
-      console.info('Authenticated as', currentUser.uid);
+      // migrate any local ownership (local-xxx) to this firebase uid
+      if(prevLocalUser && prevLocalUser.uid && prevLocalUser.uid.startsWith('local-') && prevLocalUser.uid !== user.uid){
+        await migrateLocalOwnershipToFirebase(prevLocalUser.uid, user.uid);
+      }
       await detectAdmin();
+      await performFirebaseHealthCheck();
     } else {
+      // try sign-in anonymously
       try {
         const anon = await firebaseAuth.signInAnonymously();
         currentUser = { uid: anon.user.uid, displayName: 'Anonymous' };
         saveLocalUser(currentUser);
-        console.info('Signed in anonymously:', anon.user.uid);
         await detectAdmin();
+        await performFirebaseHealthCheck();
       } catch(e){
-        console.warn('Anonymous sign-in failed', e);
-        // fallback to local-only user
+        console.warn('Anon sign-in failed', e);
+        // fallback to local user
         currentUser = loadLocalUser() || createLocalUser();
+        updateLoginStatus();
+        firebaseDb = null; firebaseAvailable = false;
       }
     }
+    updateLoginStatus();
   });
-} catch (err) {
-  console.warn('Firebase init error', err);
-  firebaseApp = null; firebaseDb = null; firebaseAuth = null;
+} catch(e){
+  console.warn('Firebase init failed', e);
+  firebaseApp = firebaseDb = firebaseAuth = null;
+  currentUser = loadLocalUser() || createLocalUser();
+  updateLoginStatus();
 }
 
-/* DOM */
+/* ---------- DOM refs ---------- */
 const dutyTable = document.getElementById('dutyTable');
 const mainTable = document.getElementById('mainTable');
 const tableWrap = document.querySelector('.tableWrap');
@@ -194,89 +177,80 @@ const nextBtn = document.getElementById('nextDay');
 const dateHeading = document.getElementById('dateHeading');
 const toast = document.getElementById('toast');
 const adminSignInBtn = document.getElementById('adminSignInBtn');
+const loginStatus = document.getElementById('loginStatus');
 
-/* helpers */
-function showToast(msg, t=1200){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
-function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
+/* ---------- helpers ---------- */
+function showToast(msg,t=1200){ toast.textContent=msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'),t); }
+function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||'{}'); }catch(e){return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
-function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null}}
-function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
-function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
+function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
+function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner', JSON.stringify(u)); }catch(e){} }
+function createLocalUser(){ const uid='local-'+Math.random().toString(36).slice(2,9); const u={uid,displayName:`User-${uid.slice(-4)}`,local:true}; saveLocalUser(u); return u; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 
-/* ensure caret at end to help deletion */
-function placeCaretAtEnd(el) {
-  try {
-    el.focus();
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    range.collapse(false);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-  } catch (e) {}
+/* caret helper */
+function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
+
+/* train token formatting */
+function formatTrainToken(token){ if(!token) return ''; const cleaned=String(token).trim(); if(/^\d{5}$/.test(cleaned)) return `<span class="nowrap">${escapeHtml(cleaned)}</span>`; return escapeHtml(cleaned).replace(/\//g,'<wbr>/'); }
+
+/* ---------- UI: login status & admin button visibility ---------- */
+function updateLoginStatus(){
+  const u = currentUser || loadLocalUser();
+  const uidText = u ? u.uid : 'unknown';
+  const who = u && u.displayName ? u.displayName : (u ? u.uid : 'unknown');
+  loginStatus.textContent = `Signed in as: ${who}${isAdmin ? ' (Admin)' : ''}`;
+  // Admin sign-in button: show only if admin OR if ?showAdmin=1 in url
+  const urlParams = new URLSearchParams(location.search);
+  const showAdminFlag = urlParams.get('showAdmin') === '1';
+  if(isAdmin || showAdminFlag) adminSignInBtn.style.display = 'inline-block'; else adminSignInBtn.style.display = 'none';
 }
 
-/* Format train token:
-   - If exactly 5 digits => .nowrap (no wrap)
-   - Else escape and add <wbr> before slashes so they can break */
-function formatTrainToken(token){
-  if(!token) return '';
-  const cleaned = token.toString().trim();
-  if(/^\d{5}$/.test(cleaned)){ // pure 5-digit numeric -> keep on single line
-    return `<span class="nowrap">${escapeHtml(cleaned)}</span>`;
-  }
-  const escaped = escapeHtml(cleaned).replace(/\//g, '<wbr>/');
-  return escaped;
-}
-
-/* Set padding-top on .tableWrap to align sticky thead exactly */
-function setTableWrapPaddingAndHeader(){
-  const header = document.querySelector('.headerArea');
-  const controls = document.querySelector('.controls');
-  if(!header || !controls || !tableWrap) return;
-  const headerRect = header.getBoundingClientRect();
-  const controlsRect = controls.getBoundingClientRect();
-  const wrapRect = tableWrap.getBoundingClientRect();
-  let numericTop = Math.round(controlsRect.bottom - wrapRect.top);
-  numericTop = Math.max(0, numericTop);
-  tableWrap.style.paddingTop = numericTop + 'px';
-  tableWrap.style.boxSizing = 'border-box';
-  document.querySelectorAll('thead th').forEach(th => { th.style.top = '0px'; });
-  const reserved = Math.round(headerRect.height + controlsRect.height) + 28;
-  tableWrap.style.maxHeight = Math.max(120, window.innerHeight - reserved) + 'px';
-  alignHeaderWidths();
-}
-
-/* Align header widths to first row */
-function alignHeaderWidths(){
-  const thead = mainTable.querySelector('thead');
-  if(!thead) return;
-  const ths = Array.from(thead.querySelectorAll('th'));
-  const firstRow = mainTable.querySelector('tbody tr');
-  let widths = [];
-  if(firstRow){
-    const tds = Array.from(firstRow.querySelectorAll('td'));
-    if(tds.length === ths.length){
-      widths = tds.map(td => Math.round(td.getBoundingClientRect().width) || Math.round(ths[0].getBoundingClientRect().width));
+/* ---------- migration: local->firebase ownership transfer ---------- */
+async function migrateLocalOwnershipToFirebase(localUid, firebaseUid){
+  if(!localUid || !firebaseUid) return;
+  let migrated = 0;
+  for(const linkId of Object.keys(localEdits || {})){
+    for(const crewIndex of Object.keys(localEdits[linkId] || {})){
+      const entry = localEdits[linkId][crewIndex];
+      if(entry && entry._updatedBy === localUid){
+        // switch ownership in local store
+        entry._updatedBy = firebaseUid;
+        entry._updatedAt = new Date().toISOString();
+        // attempt to push to Firebase if available
+        try{
+          if(firebaseDb){ await firebaseDb.ref(`/edits/${linkId}/${crewIndex}`).update({
+            ...entry
+          }); }
+        }catch(e){
+          console.warn('Migration push failed', e);
+        }
+        migrated++;
+      }
     }
   }
-  if(widths.length !== ths.length){
-    widths = ths.map(th => Math.round(th.getBoundingClientRect().width) || 80);
-  }
-  ths.forEach((th, i) => {
-    const w = widths[i] || 60;
-    th.style.width = w + 'px';
-    th.style.minWidth = w + 'px';
-    th.style.maxWidth = w + 'px';
-    th.style.boxSizing = 'border-box';
-  });
-  const mainWidth = Math.round(mainTable.getBoundingClientRect().width);
-  mainTable.style.tableLayout = 'fixed';
-  mainTable.style.width = mainWidth + 'px';
+  if(migrated>0){ saveLocalEdits(); showToast(`Migrated ${migrated} local edits to your account`); }
 }
 
-/* Date controls */
+/* ---------- simple DB health check ---------- */
+async function performFirebaseHealthCheck(){
+  if(!firebaseDb) return;
+  try{
+    const testRef = firebaseDb.ref('/__healthcheck__');
+    const now = new Date().toISOString();
+    await testRef.set({ts:now});
+    await testRef.remove();
+    firebaseAvailable = true;
+    console.info('Firebase DB write OK');
+  }catch(err){
+    console.warn('Firebase DB check failed', err);
+    firebaseAvailable = false;
+    firebaseDb = null;
+    showToast('Firebase DB unavailable — running local-only');
+  }
+}
+
+/* ---------- date controls ---------- */
 dateBtn.addEventListener('click', ()=>{ datePicker.focus(); datePicker.click(); });
 datePicker.addEventListener('change', ()=>{ selectedDate = datePicker.value ? new Date(datePicker.value+'T00:00:00') : new Date(); setSelectedDate(selectedDate); renderCombinedDuties(); });
 prevBtn.addEventListener('click', ()=> changeDate(-1));
@@ -284,41 +258,38 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* Load link JSON files */
+/* ---------- load JSON link files ---------- */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
-  const fetches = linkFiles.map(async f => {
-    try{ const r = await fetch(f, {cache:'no-cache'}); if(!r.ok) throw new Error(f+' '+r.status); return await r.json(); } catch(e){ console.warn('Failed to load', f, e); return null; }
+  const fetches = linkFiles.map(async f=>{
+    try{ const r = await fetch(f, {cache:'no-cache'}); if(!r.ok) throw new Error(f+' '+r.status); return await r.json(); }catch(e){ console.warn('Failed to load', f, e); return null; }
   });
   const results = await Promise.all(fetches);
   allCrewData = [];
-  results.forEach((linkData, idx) => {
+  results.forEach((linkData, idx)=>{
     if(!linkData) return;
-    const linkId = linkData.linkId ?? (`file#${idx+1}`);
-    const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
+    const id = linkData.linkId ?? (`file#${idx+1}`);
+    const last = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
     const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
-    crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex}));
+    crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId:id, lastUpdatedDate:last, crewIndex}));
   });
   await renderCombinedDuties();
 }
 
-/* Render duties & inline editing (owner model with delete-first rule) */
+/* ---------- render + editing rules ---------- */
 async function renderCombinedDuties(){
-  if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
+  if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTimeout(setTableWrapPaddingAndHeader,20); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
-
   let fbEdits = {};
-  if(firebaseDb){
-    try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; }catch(e){ fbEdits = {}; }
+  if(firebaseAvailable && firebaseDb){
+    try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val()||{}; }catch(e){ fbEdits = {}; }
   }
-
-  const crewsByLink = allCrewData.reduce((acc,crew)=> { (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
+  const crewsByLink = allCrewData.reduce((acc,c)=>{ (acc[c.linkId]=acc[c.linkId]||[]).push(c); return acc; },{});
   const rows = [];
-
   Object.values(crewsByLink).forEach(crewList=>{
     if(!crewList.length) return;
-    const lastUpdatedDate = crewList[0].lastUpdatedDate ? new Date(crewList[0].lastUpdatedDate) : new Date();
-    const diffDays = Math.floor((selectedDate.getTime()-lastUpdatedDate.getTime())/(1000*60*60*24));
+    const lastUpdated = crewList[0].lastUpdatedDate ? new Date(crewList[0].lastUpdatedDate) : new Date();
+    const diffDays = Math.floor((selectedDate.getTime()-lastUpdated.getTime())/(1000*60*60*24));
     const weeksPassed = Math.floor(diffDays/7);
     const dutiesPerRow = crewList.map(c=>c.duties||{});
     for(let rowIndex=0; rowIndex<crewList.length; rowIndex++){
@@ -337,30 +308,27 @@ async function renderCombinedDuties(){
       const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
       const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
       const owner = fb._updatedBy || local._updatedBy || null;
-      const lpName = local.crewLPName?.trim() || fb.crewLPName?.trim() || crew.crewLPId || '';
-      const alpName = local.crewALPName?.trim() || fb.crewALPName?.trim() || crew.crewALPId || '';
-      rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, owner });
+      const lpName = (local.crewLPName && local.crewLPName.trim()) || (fb.crewLPName && fb.crewLPName.trim()) || crew.crewLPId || '';
+      const alpName = (local.crewALPName && local.crewALPName.trim()) || (fb.crewALPName && fb.crewALPName.trim()) || crew.crewALPId || '';
+      rows.push({ depTime, outgoing, incoming, lpName, alpName, link:linkId, crewIndex:crew.crewIndex, owner, crew });
     }
   });
 
-  function tmin(t){ if(!t) return Infinity; const m = t.match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1])*60 + (+m[2]) : Infinity; }
+  function tmin(t){ if(!t) return Infinity; const m=t.match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1])*60 + (+m[2]) : Infinity; }
   rows.sort((a,b)=> tmin(a.depTime) - tmin(b.depTime));
-
-  if(!rows.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`; setTableWrapPaddingAndHeader(); return; }
+  if(!rows.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`; setTimeout(setTableWrapPaddingAndHeader,20); return; }
 
   dutyTable.innerHTML = '';
   rows.forEach(r=>{
-    const outHtml = formatTrainToken(r.outgoing || '');
-    const incHtml = formatTrainToken(r.incoming || '');
-    const trainHtml = (incHtml)
-      ? `<div class="cell-center"><div class="train-stack" role="group"><div class="train-top">${outHtml}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${incHtml}</div></div></div>`
-      : `<div class="cell-center"><div class="train-stack"><div class="train-top">${outHtml}</div></div></div>`;
-
-    const tr = document.createElement('tr');
+    const outHtml = formatTrainToken(r.outgoing||'');
+    const incHtml = formatTrainToken(r.incoming||'');
+    const trainHtml = incHtml ? `<div class="cell-center"><div class="train-stack" role="group"><div class="train-top">${outHtml}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${incHtml}</div></div></div>` : `<div class="cell-center"><div class="train-stack"><div class="train-top">${outHtml}</div></div></div>`;
     const mayEditLP = (!r.owner) || (currentUser && r.owner === currentUser.uid) || isAdmin;
     const mayEditALP = (!r.owner) || (currentUser && r.owner === currentUser.uid) || isAdmin;
+    // For employees: hide admin sign-in (handled elsewhere). Cells editable only if mayEdit... true
     const ownerTag = r.owner ? `<span class="ownerTag">${escapeHtml(r.owner)}</span>` : '';
-
+    const tr = document.createElement('tr');
+    // note: show crew's original id if name empty (render uses crew.crewLPId / crew.crewALPId)
     tr.innerHTML = `
       <td><div class="cell-center"><div class="editable" contenteditable="${mayEditLP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="${mayEditLP? 'Edit LP name':'Owned by someone else'}">${escapeHtml(r.lpName)}</div></div></td>
       <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="${mayEditALP? 'Edit ALP name':'Owned by someone else'}">${escapeHtml(r.alpName)}</div></div></td>
@@ -371,86 +339,71 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  /* Attach editable behavior with "delete-first" rule */
+  // attach editable listeners (delete-first rule + immediate revert to crew id on empty)
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
 
     function isOwnedByCurrentUser(){
-      const link = el.dataset.link;
-      const crewIndex = Number(el.dataset.crew);
+      const link = el.dataset.link; const crewIndex = Number(el.dataset.crew);
       const local = (localEdits[link] && localEdits[link][crewIndex]) || {};
-      const fbOwner = (local && local._updatedBy) || null;
-      return fbOwner && currentUser && fbOwner === currentUser.uid;
+      const owner = local._updatedBy || null;
+      return owner && currentUser && owner === currentUser.uid;
     }
 
-    el.addEventListener('focus', (ev)=>{
-      if(el.getAttribute('contenteditable') === 'false'){ el.blur(); showToast('This cell is owned by someone else.'); return; }
-
+    el.addEventListener('focus', ev=>{
+      if(el.getAttribute('contenteditable')==='false'){ el.blur(); showToast('This cell is owned by someone else.'); return; }
       const txt = el.textContent.trim();
-
+      // if default id like LP### or ALP###, clear to help typing
       if(/^(LP|ALP)\d+/i.test(txt)){
         el.dataset._orig = txt;
         el.textContent = '';
         el.removeAttribute('data-must-clear');
-      } else {
+      }else{
         el.dataset._orig = '';
         if(txt !== '' && isOwnedByCurrentUser() && !isAdmin){
           el.setAttribute('data-must-clear','1');
           showToast('To change, delete the existing name first.');
           placeCaretAtEnd(el);
-        } else {
-          el.removeAttribute('data-must-clear');
-        }
+        } else el.removeAttribute('data-must-clear');
       }
     });
 
-    el.addEventListener('beforeinput', (ev)=>{
-      if(el.getAttribute('contenteditable') === 'false'){ ev.preventDefault(); return; }
+    el.addEventListener('beforeinput', ev=>{
+      if(el.getAttribute('contenteditable')==='false'){ ev.preventDefault(); return; }
       if(el.hasAttribute('data-must-clear')){
-        const allowTypes = [
-          'deleteContentBackward', 'deleteContentForward',
-          'deleteByCut', 'deleteByDrag',
-          'historyUndo', 'historyRedo'
-        ];
-        const t = ev.inputType || '';
-        if(allowTypes.includes(t)) return;
+        const allow = ['deleteContentBackward','deleteContentForward','deleteByCut','deleteByDrag','historyUndo','historyRedo'];
+        if(allow.includes(ev.inputType)) return;
         ev.preventDefault();
-        showToast('Please delete the existing name first, then type the new name.');
+        showToast('Please delete the existing name first, then type.');
       }
     });
 
-    el.addEventListener('keydown', (ev)=>{
-      if(ev.key === 'Escape'){
-        if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); }
-      } else if(ev.key === 'Enter'){
-        ev.preventDefault();
-        el.blur();
-      }
+    el.addEventListener('keydown', ev=>{
+      if(ev.key==='Escape'){ if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); } }
+      else if(ev.key==='Enter'){ ev.preventDefault(); el.blur(); }
     });
 
-    el.addEventListener('blur', async (ev)=>{
-      if(el.textContent.trim() === '') el.removeAttribute('data-must-clear');
+    el.addEventListener('blur', async ev=>{
+      if(el.textContent.trim()==='') el.removeAttribute('data-must-clear');
+      // commit
       await onEditableCommit(ev);
     });
   });
 
-  setTimeout(setTableWrapPaddingAndHeader, 20);
+  setTimeout(setTableWrapPaddingAndHeader,20);
 }
 
-/* Commit handler (saves to local and optional Firebase) */
+/* ---------- commit: local + firebase (with owner checks + empty revert) ---------- */
 async function onEditableCommit(e){
-  const el = e.currentTarget;
-  if(!el) return;
-  const linkId = el.dataset.link;
-  const crewIndex = Number(el.dataset.crew);
-  const field = el.dataset.field;
+  const el = e.currentTarget; if(!el) return;
+  const linkId = el.dataset.link; const crewIndex = Number(el.dataset.crew); const field = el.dataset.field;
   const newVal = el.textContent.trim();
-
   const existingLocal = (localEdits[linkId] && localEdits[linkId][crewIndex]) || {};
+  // check DB owner
   let fbOwner = null;
-  if(firebaseDb){
-    try{ const fbSnap = await firebaseDb.ref(`/edits/${linkId}/${crewIndex}/_updatedBy`).once('value'); fbOwner = fbSnap.exists() ? fbSnap.val() : null; }catch(e){ fbOwner = null; }
+  if(firebaseAvailable && firebaseDb){
+    try{ const snap = await firebaseDb.ref(`/edits/${linkId}/${crewIndex}/_updatedBy`).once('value'); fbOwner = snap.exists()? snap.val() : null; }catch(e){ fbOwner = null; }
   }
   const owner = fbOwner || existingLocal._updatedBy || null;
   if(owner && (!currentUser || owner !== currentUser.uid) && !isAdmin){
@@ -459,71 +412,66 @@ async function onEditableCommit(e){
     return;
   }
 
+  // user id for records
   const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
-  localEdits[linkId][crewIndex][field] = newVal;
-  if(newVal){
-    localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
-    localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
+
+  // If newVal empty -> clear owner and show initial id immediately (render uses crew id)
+  if(newVal === ''){
+    // remove fields and owner locally
+    delete localEdits[linkId][crewIndex][field];
+    delete localEdits[linkId][crewIndex]._updatedBy;
+    delete localEdits[linkId][crewIndex]._updatedAt;
   } else {
-    delete localEdits[linkId][crewIndex]['_updatedBy'];
-    delete localEdits[linkId][crewIndex]['_updatedAt'];
+    localEdits[linkId][crewIndex][field] = newVal;
+    localEdits[linkId][crewIndex]._updatedBy = userUid;
+    localEdits[linkId][crewIndex]._updatedAt = new Date().toISOString();
   }
   saveLocalEdits();
   showToast('Saved locally');
 
-  if(firebaseDb){
+  if(firebaseAvailable && firebaseDb){
     try{
       const path = `/edits/${linkId}/${crewIndex}`;
-      const payload = { [field]: newVal };
-      if(newVal){
-        payload._updatedBy = userUid;
-        payload._updatedAt = new Date().toISOString();
-      } else {
+      const payload = {};
+      if(newVal === ''){
+        payload[field] = null;
         payload._updatedBy = null;
         payload._updatedAt = null;
+      } else {
+        payload[field] = newVal;
+        payload._updatedBy = userUid;
+        payload._updatedAt = new Date().toISOString();
       }
       await firebaseDb.ref(path).update(payload);
       showToast('Synced to Firebase');
     }catch(err){
       console.warn('Firebase push failed', err);
+      // fallback: continue local-only
+      firebaseAvailable = false; firebaseDb = null;
+      showToast('Firebase push failed — local only');
     }
   }
 
   await renderCombinedDuties();
 }
 
-/* Admin sign-in UI */
-if(adminSignInBtn){
-  adminSignInBtn.addEventListener('click', async ()=>{
-    if(!firebaseAuth){
-      alert('Firebase not initialized.');
-      return;
-    }
-    const choice = confirm('Use existing admin account to sign in? OK = Sign in, Cancel = Sign out');
-    if(!choice){
-      try { await firebaseAuth.signOut(); showToast('Signed out'); } catch(e){ console.warn(e); }
-      return;
-    }
-    const email = prompt('Admin email:');
-    if(!email) return;
-    const pwd = prompt('Password:');
-    if(!pwd) return;
-    try {
-      await firebaseAuth.signInWithEmailAndPassword(email, pwd);
-      showToast('Signed in');
-    } catch (err){
-      alert('Sign-in failed: ' + (err.message || err));
-    }
-  });
-}
+/* ---------- admin sign-in (visible only when allowed) ---------- */
+adminSignInBtn.addEventListener('click', async ()=>{
+  if(!firebaseAuth){ alert('Firebase not initialized'); return; }
+  const choice = confirm('Admin sign in (OK) or Sign out (Cancel)?');
+  if(!choice){ try{ await firebaseAuth.signOut(); showToast('Signed out'); }catch(e){console.warn(e);} return; }
+  const email = prompt('Admin email:'); if(!email) return;
+  const pwd = prompt('Password:'); if(!pwd) return;
+  try{ await firebaseAuth.signInWithEmailAndPassword(email,pwd); showToast('Signed in as admin'); }catch(err){ alert('Sign-in failed: '+(err.message||err)); }
+});
 
-/* Admin detection: check /meta/admins/{uid} in DB */
+/* ---------- detect admin via DB meta ---------- */
 async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
-  const ADMIN_UIDS = [];
+  const ADMIN_UIDS = []; // optionally pre-fill UIDs
   try{
     if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
     if(firebaseDb && currentUser && currentUser.uid){
@@ -531,23 +479,26 @@ async function detectAdmin(){
       if(snap.exists() && snap.val() === true) isAdmin = true;
     }
   }catch(e){ console.warn('admin detect err', e); }
-  await renderCombinedDuties();
+  updateLoginStatus();
 }
 
-/* Helpers & init */
-function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
-function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
-function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
+/* ---------- table layout helpers ---------- */
+function setTableWrapPaddingAndHeader(){ const header=document.querySelector('.headerArea'); const controls=document.querySelector('.controls'); if(!header||!controls||!tableWrap) return; const headerRect=header.getBoundingClientRect(); const controlsRect=controls.getBoundingClientRect(); const wrapRect=tableWrap.getBoundingClientRect(); let numericTop = Math.round(controlsRect.bottom - wrapRect.top); numericTop = Math.max(0, numericTop); tableWrap.style.paddingTop = numericTop + 'px'; tableWrap.style.boxSizing='border-box'; document.querySelectorAll('thead th').forEach(th=>th.style.top='0px'); const reserved = Math.round(headerRect.height + controlsRect.height)+28; tableWrap.style.maxHeight = Math.max(120, window.innerHeight-reserved)+'px'; alignHeaderWidths(); }
+function alignHeaderWidths(){ const thead=mainTable.querySelector('thead'); if(!thead) return; const ths=Array.from(thead.querySelectorAll('th')); const firstRow=mainTable.querySelector('tbody tr'); let widths=[]; if(firstRow){ const tds=Array.from(firstRow.querySelectorAll('td')); if(tds.length===ths.length){ widths = tds.map(td=>Math.round(td.getBoundingClientRect().width)||Math.round(ths[0].getBoundingClientRect().width)); } } if(widths.length!==ths.length){ widths = ths.map(th=>Math.round(th.getBoundingClientRect().width)||80); } ths.forEach((th,i)=>{ const w=widths[i]||60; th.style.width=w+'px'; th.style.minWidth=w+'px'; th.style.maxWidth=w+'px'; th.style.boxSizing='border-box' }); const mainWidth=Math.round(mainTable.getBoundingClientRect().width); mainTable.style.tableLayout='fixed'; mainTable.style.width = mainWidth+'px'; }
 
+/* ---------- init ---------- */
 async function init(){
   setSelectedDate(new Date());
   currentUser = loadLocalUser() || createLocalUser();
   saveLocalUser(currentUser);
   localEdits = loadLocalEdits();
   await loadAllLinks();
-  window.addEventListener('resize', () => setTimeout(setTableWrapPaddingAndHeader, 60));
-  window.addEventListener('orientationchange', () => setTimeout(setTableWrapPaddingAndHeader, 140));
-  if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(setTableWrapPaddingAndHeader, 80));
+  window.addEventListener('resize', ()=> setTimeout(setTableWrapPaddingAndHeader,60));
+  window.addEventListener('orientationchange', ()=> setTimeout(setTableWrapPaddingAndHeader,140));
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=> setTimeout(setTableWrapPaddingAndHeader,80));
+  // show admin button if ?showAdmin=1 to allow sign-in when needed (keeps UI clean for employees)
+  const urlParams = new URLSearchParams(location.search);
+  if(urlParams.get('showAdmin')==='1') adminSignInBtn.style.display='inline-block';
 }
 document.addEventListener('DOMContentLoaded', init);
 </script>
