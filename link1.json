@@ -13,7 +13,7 @@
         "Sunday": "",
         "Monday": { "outgoing": "20645", "incoming": "20646", "depTime": "17:35" },
         "Tuesday": "",
-        "Wednesday": { "outgoing": "12052", "incoming": "12051", "depTime": "12:00" },
+        "Wednesday": { "outgoing": "12051", "incoming": "12051", "depTime": "12:00" },
         "Thursday": "",
         "Friday": "REST",
         "Saturday": { "outgoing": "12201", "incoming": "22476", "depTime": "04:10" }
