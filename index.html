@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>LP/ALP Duty List — Madgaon Lobby</title>
+<title>LP/ALP Duty List — Madgaon Lobby (gap fix)</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -15,8 +15,6 @@
   --radius:12px;
   --divider:#1f6feb;
   --border:#cdd4e1;
-  --header-h:0px;
-  --controls-h:0px;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent);-webkit-font-smoothing:antialiased}
@@ -39,7 +37,7 @@ body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,S
 /* controls sticky directly below header */
 .controls{
   position:sticky;
-  top:calc(var(--header-h,0px));
+  top:0; /* we measure and offset the thead relative to .tableWrap, so controls can remain at top of viewport under header */
   background:var(--card);
   z-index:55;
   display:flex;gap:8px;align-items:center;justify-content:center;
@@ -51,16 +49,19 @@ input[type="date"].native-date{position:absolute;left:-9999px}
 
 /* table container: scrollable */
 .tableWrap{
-  max-height:calc(100vh - var(--header-h,0px) - var(--controls-h,0px) - 28px);
+  max-height:calc(100vh - 112px); /* fallback; JS will override */
   overflow:auto;border-radius:0;background:#fff;padding:6px;position:relative;
 }
 
 /* table */
 table{width:100%;border-collapse:collapse;min-width:640px;table-layout:fixed;border:1px solid var(--border)}
 thead th{
-  background:#f8fafc;padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border:1px solid var(--border);white-space:nowrap;
-  position:sticky; z-index:50;
-  /* top is applied dynamically by JS */
+  background:var(--card);              /* opaque so rows never show through */
+  padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);
+  border-top:1px solid rgba(0,0,0,0.04); /* subtle top border to mask overlap */
+  position:sticky; z-index:70;
+  /* top will be set via JS inline (numeric px). */
+  box-sizing:border-box;
 }
 tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:hidden}
 tbody tr:nth-child(odd){background:#fbfdff}
@@ -82,23 +83,15 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   line-height:1;
   display:inline-block;
   text-align:center;
-  white-space:normal;         /* allow wrapping */
-  overflow-wrap:anywhere;    /* break long tokens */
+  white-space:normal;
+  overflow-wrap:anywhere;
   word-break:break-word;
   max-width:100%;
 }
-.train-divider{
-  width:90%;
-  height:2px;
-  background:var(--divider);
-  border-radius:2px;
-  margin:0;
-}
+.train-divider{ width:90%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
 
-/* make the divider longer for desktop but constrained on small screens */
-@media (min-width:900px){
-  .train-divider{ width:100%; max-width:180px }
-}
+/* responsive tweaks */
+@media (min-width:900px){ .train-divider{ width:100%; max-width:180px } }
 @media (max-width:640px){
   table{min-width:0;table-layout:auto}
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
@@ -116,7 +109,6 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 /* toast */
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
-
 </style>
 </head>
 <body>
@@ -164,8 +156,8 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-/* ========== CONFIG ========== */
-const FIREBASE_CONFIG = null; // paste config to enable firebase
+/* CONFIG — leave FIREBASE_CONFIG null to use localStorage only */
+const FIREBASE_CONFIG = null;
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json',
@@ -173,14 +165,14 @@ const linkFiles = [
 ];
 const LS_KEY = 'lp_alp_edits_owner_v1';
 
-/* ========== STATE ========== */
+/* state */
 let localEdits = loadLocalEdits();
 let allCrewData = [];
 let selectedDate = new Date();
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
 
-/* ========== Firebase (optional) ========== */
+/* optional firebase init */
 if(FIREBASE_CONFIG){
   try{
     firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
@@ -193,7 +185,7 @@ if(FIREBASE_CONFIG){
   }catch(e){ console.warn('Firebase init failed', e); firebaseApp=null; firebaseDb=null; firebaseAuth=null; }
 }
 
-/* ========== DOM refs ========== */
+/* DOM refs */
 const dutyTable = document.getElementById('dutyTable');
 const mainTable = document.getElementById('mainTable');
 const tableWrap = document.querySelector('.tableWrap');
@@ -204,8 +196,8 @@ const nextBtn = document.getElementById('nextDay');
 const dateHeading = document.getElementById('dateHeading');
 const toast = document.getElementById('toast');
 
-/* ========== Utilities ========== */
-function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
+/* helpers */
+function showToast(msg, t=1200){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
 function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
@@ -213,61 +205,62 @@ function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stri
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 
-/* ========== KEY FIX: compute top relative to tableWrap ========== */
-function updateHeaderPosition(){
+/* KEY FIX: compute top relative to the inside of the tableWrap and nudge 1px up to eliminate gap */
+function updateHeaderPositionAndWidths(){
   const header = document.querySelector('.headerArea');
   const controls = document.querySelector('.controls');
   if(!header || !controls || !tableWrap) return;
 
-  // bounding rects
   const headerRect = header.getBoundingClientRect();
   const controlsRect = controls.getBoundingClientRect();
   const wrapRect = tableWrap.getBoundingClientRect();
 
-  // controls bottom relative to viewport minus tableWrap top relative to viewport gives the px offset INSIDE .tableWrap
-  const numericTop = Math.max(0, Math.round(controlsRect.bottom - wrapRect.top));
+  // controls bottom relative to tableWrap top (px inside the scroll container)
+  let numericTop = Math.round(controlsRect.bottom - wrapRect.top);
 
-  // apply css vars for other layout usage
-  const headerH = Math.round(headerRect.height);
-  const controlsH = Math.round(controlsRect.height);
-  document.documentElement.style.setProperty('--header-h', headerH + 'px');
-  document.documentElement.style.setProperty('--controls-h', controlsH + 'px');
+  // NUDGE: move 1px up to avoid tiny subpixel gap showing table rows
+  numericTop = Math.max(0, numericTop - 1);
 
-  // set top on each thead th (sticky inside .tableWrap)
+  // apply top pixel value to every thead th
   document.querySelectorAll('thead th').forEach(th => {
     th.style.top = numericTop + 'px';
   });
 
-  // adjust container max-height
-  const reserved = numericTop + 28;
-  const maxH = Math.max(120, window.innerHeight - (headerH + controlsH) - 28);
-  tableWrap.style.maxHeight = Math.max(120, window.innerHeight - reserved) + 'px';
+  // adjust tableWrap max-height so scroll area remains correct
+  const headerH = Math.round(headerRect.height);
+  const controlsH = Math.round(controlsRect.height);
+  const reserved = (headerH + controlsH) + 28;
+  const maxH = Math.max(120, window.innerHeight - reserved);
+  tableWrap.style.maxHeight = maxH + 'px';
 
-  // align widths to avoid visual shift — measure and apply header widths
+  // ensure header th background/box covers any possible overlap
+  document.querySelectorAll('thead th').forEach(th => {
+    th.style.background = getComputedStyle(document.documentElement).getPropertyValue('--card') || '#fff';
+    th.style.borderTop = '1px solid rgba(0,0,0,0.04)';
+  });
+
+  // align column widths precisely
   alignHeaderWidths();
 }
 
-/* align header <th> widths to table cells so columns line up */
+/* align header <th> widths to first row cells (if available) or measure ths */
 function alignHeaderWidths(){
   const thead = mainTable.querySelector('thead');
   if(!thead) return;
   const ths = Array.from(thead.querySelectorAll('th'));
-  // measure width of each column by measuring the first body row cell if available
-  const firstBodyRow = mainTable.querySelector('tbody tr');
+  // measure widths of first visible body row cells if present
+  const firstRow = mainTable.querySelector('tbody tr');
   let widths = [];
-  if(firstBodyRow){
-    const tds = Array.from(firstBodyRow.querySelectorAll('td'));
+  if(firstRow){
+    const tds = Array.from(firstRow.querySelectorAll('td'));
     if(tds.length === ths.length){
       widths = tds.map(td => Math.round(td.getBoundingClientRect().width) || Math.round(ths[0].getBoundingClientRect().width));
     }
   }
-  // fallback to measuring ths directly
   if(widths.length !== ths.length){
     widths = ths.map(th => Math.round(th.getBoundingClientRect().width) || 80);
   }
-
-  // apply widths to ths (pixel-precise)
-  ths.forEach((th,i) => {
+  ths.forEach((th, i) => {
     const w = widths[i] || 60;
     th.style.width = w + 'px';
     th.style.minWidth = w + 'px';
@@ -276,7 +269,7 @@ function alignHeaderWidths(){
   });
 }
 
-/* ========== Date controls ========== */
+/* date controls */
 dateBtn.addEventListener('click', ()=>{ datePicker.focus(); datePicker.click(); });
 datePicker.addEventListener('change', ()=>{ selectedDate = datePicker.value ? new Date(datePicker.value+'T00:00:00') : new Date(); setSelectedDate(selectedDate); renderCombinedDuties(); });
 prevBtn.addEventListener('click', ()=> changeDate(-1));
@@ -284,7 +277,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* ========== Load links JSONs ========== */
+/* load link JSONs */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async f => {
@@ -302,12 +295,11 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* ========== Render duties & inline editing (owner model) ========== */
+/* render duties and inline editing */
 async function renderCombinedDuties(){
-  if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; updateHeaderPosition(); return; }
+  if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; updateHeaderPositionAndWidths(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
 
-  // get firebase edits snapshot if available (best-effort)
   let fbEdits = {};
   if(firebaseDb){
     try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; }catch(e){ fbEdits = {}; }
@@ -347,7 +339,7 @@ async function renderCombinedDuties(){
   function tmin(t){ if(!t) return Infinity; const m = t.match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1])*60 + (+m[2]) : Infinity; }
   rows.sort((a,b)=> tmin(a.depTime) - tmin(b.depTime));
 
-  if(!rows.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`; updateHeaderPosition(); return; }
+  if(!rows.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`; updateHeaderPositionAndWidths(); return; }
 
   dutyTable.innerHTML = '';
   rows.forEach(r=>{
@@ -384,11 +376,11 @@ async function renderCombinedDuties(){
     el.addEventListener('blur', onEditableCommit);
   });
 
-  // after render, update header position and widths
-  setTimeout(updateHeaderPosition, 20);
+  // after render, update header position (nudge) and widths
+  setTimeout(updateHeaderPositionAndWidths, 20);
 }
 
-/* ========== on edit commit ========== */
+/* on edit commit */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   const linkId = el.dataset.link;
@@ -424,11 +416,11 @@ async function onEditableCommit(e){
   await renderCombinedDuties();
 }
 
-/* ========== Admin detection (optional) ========== */
+/* admin detection */
 async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
-  const ADMIN_UIDS = []; // optionally list admin uids
+  const ADMIN_UIDS = [];
   try{
     if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
     if(firebaseDb){
@@ -439,7 +431,7 @@ async function detectAdmin(){
   await renderCombinedDuties();
 }
 
-/* ========== helpers & init ========== */
+/* helpers & init */
 function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
 function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
@@ -450,10 +442,10 @@ async function init(){
   saveLocalUser(currentUser);
   await loadAllLinks();
 
-  // recompute header top & widths on resize/font load/orientation
-  window.addEventListener('resize', () => { setTimeout(updateHeaderPosition, 60); });
-  window.addEventListener('orientationchange', () => setTimeout(updateHeaderPosition, 150));
-  if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(updateHeaderPosition, 80));
+  // recompute on resize / orientation / fonts
+  window.addEventListener('resize', () => setTimeout(updateHeaderPositionAndWidths, 60));
+  window.addEventListener('orientationchange', () => setTimeout(updateHeaderPositionAndWidths, 150));
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(updateHeaderPositionAndWidths, 80));
 }
 document.addEventListener('DOMContentLoaded', init);
 </script>
