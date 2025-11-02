@@ -1,1 +1,410 @@
 
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>LP/ALP Duty List — Madgaon Lobby (5-digit train no no-wrap)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb;
+  --radius:12px; --divider:#1f6feb; --border:#cdd4e1;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1100px;margin:0 auto;padding:14px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);overflow:hidden}
+
+/* header & controls */
+.headerArea{position:sticky; top:0;background:var(--card);padding:14px 16px;border-bottom:1px solid rgba(0,0,0,0.04);z-index:60;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.headerArea h1{margin:0;font-size:1.25rem;font-weight:700;text-align:center}
+.headerArea .sub{font-size:0.9rem;color:var(--muted);text-align:center}
+.headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center}
+
+/* controls */
+.controls{position:sticky;top:0;background:var(--card);z-index:55;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.03)}
+.nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:44px;height:36px;padding:0 10px;cursor:pointer}
+input[type="date"].native-date{position:absolute;left:-9999px}
+
+/* table container */
+.tableWrap{max-height:calc(100vh - 112px);overflow:auto;border-radius:0;background:#fff;padding:6px;position:relative}
+
+/* table */
+table{width:100%;border-collapse:collapse;min-width:640px;table-layout:fixed;border:1px solid var(--border)}
+thead th{background:var(--card);padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);border-top:1px solid rgba(0,0,0,0.04);position:sticky;z-index:70;top:0;box-sizing:border-box}
+tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;word-break:break-word;overflow-wrap:anywhere}
+tbody tr:nth-child(odd){background:#fbfdff}
+.no-data{text-align:center;color:var(--muted);padding:14px}
+
+/* column widths */
+thead th:nth-child(1), td:nth-child(1){width:36%}
+thead th:nth-child(2), td:nth-child(2){width:36%}
+thead th:nth-child(3), td:nth-child(3){width:18%}
+thead th:nth-child(4), td:nth-child(4){width:5%}
+thead th:nth-child(5), td:nth-child(5){width:5%}
+
+/* train stack */
+.cell-center{display:flex;align-items:center;justify-content:center;min-height:44px}
+.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:4px 6px;max-width:100%;box-sizing:border-box}
+.train-top,.train-bottom{font-weight:400;font-size:0.90rem;line-height:1;display:inline-block;text-align:center;white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}
+.train-divider{ width:90%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
+
+/* .nowrap class: keep pure 5-digit tokens in one line */
+.nowrap{ white-space:nowrap; display:inline-block; }
+
+/* responsive tweaks */
+@media (min-width:900px){ .train-divider{ width:100%; max-width:180px } }
+@media (max-width:640px){
+  table{min-width:0;table-layout:auto}
+  thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
+  thead th,tbody td{padding:8px}
+  .train-top,.train-bottom{font-size:0.86rem}
+  .train-divider{height:1.5px; width:85%}
+}
+
+/* editable visuals */
+.editable{display:block;min-height:32px;padding:6px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:center}
+.editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
+.editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
+.ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
+
+/* toast */
+.toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
+.toast.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+
+      <div class="headerArea" role="banner" aria-label="Header">
+        <h1>LP/ALP Duty List</h1>
+        <div class="sub">Madgaon Lobby</div>
+        <div id="dateHeading">Loading date…</div>
+      </div>
+
+      <div class="controls" role="toolbar" aria-label="Date controls">
+        <button id="prevDay" class="nav-btn" title="Previous day">◀</button>
+        <button id="dateBtn" class="date-icon-btn" title="Pick a date">📅</button>
+        <input id="datePicker" class="native-date" type="date" />
+        <button id="nextDay" class="nav-btn" title="Next day">▶</button>
+      </div>
+
+      <div class="tableWrap" aria-live="polite">
+        <table id="mainTable" aria-describedby="dateHeading">
+          <thead>
+            <tr>
+              <th>Name of LP</th>
+              <th>Name of ALP</th>
+              <th>Train No</th>
+              <th>Dep</th>
+              <th>Link No</th>
+            </tr>
+          </thead>
+          <tbody id="dutyTable">
+            <tr><td colspan="5" class="no-data">Loading data…</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Firebase optional -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+/* CONFIG: put your Firebase config object here if you want DB sync; otherwise keep null */
+const FIREBASE_CONFIG = null;
+const linkFiles = [
+  'link1.json','link2.json','link3.json','link4.json',
+  'rnlink1.json','rnlink2.json','rnlink3.json',
+  'ollink1.json','sllink1.json'
+];
+const LS_KEY = 'lp_alp_edits_owner_v1';
+
+let localEdits = loadLocalEdits();
+let allCrewData = [];
+let selectedDate = new Date();
+let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
+let currentUser = null, isAdmin = false;
+
+if(FIREBASE_CONFIG){
+  try{
+    firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseAuth = firebase.auth();
+    firebaseDb = firebase.database();
+    firebaseAuth.onAuthStateChanged(async user => {
+      if(user){ currentUser = { uid: user.uid, displayName: user.displayName || user.uid }; saveLocalUser(currentUser); await detectAdmin(); }
+      else { try{ await firebaseAuth.signInAnonymously(); }catch(e){ console.warn('anon sign-in failed', e); } }
+    });
+  }catch(e){ console.warn('Firebase init failed', e); firebaseApp=null; firebaseDb=null; firebaseAuth=null; }
+}
+
+/* DOM refs */
+const dutyTable = document.getElementById('dutyTable');
+const mainTable = document.getElementById('mainTable');
+const tableWrap = document.querySelector('.tableWrap');
+const dateBtn = document.getElementById('dateBtn');
+const datePicker = document.getElementById('datePicker');
+const prevBtn = document.getElementById('prevDay');
+const nextBtn = document.getElementById('nextDay');
+const dateHeading = document.getElementById('dateHeading');
+const toast = document.getElementById('toast');
+
+function showToast(msg, t=1200){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
+function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
+function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
+function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
+function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
+function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+
+/* Helper: return HTML for a token.
+   - If token is exactly 5 digits, wrap in .nowrap to keep one line.
+   - Otherwise escape and insert <wbr> before slashes so breaks can occur at '/'. */
+function formatTrainToken(token){
+  if(!token) return '';
+  const cleaned = token.toString().trim();
+  if(/^\d{5}$/.test(cleaned)){ // pure 5-digit numeric -> keep on single line
+    return `<span class="nowrap">${escapeHtml(cleaned)}</span>`;
+  }
+  // else add <wbr> before every slash to allow breaks
+  const escaped = escapeHtml(cleaned).replace(/\//g, '<wbr>/');
+  return escaped;
+}
+
+/* Set padding-top on .tableWrap so the thead (top:0) sits flush and no gap appears */
+function setTableWrapPaddingAndHeader(){
+  const header = document.querySelector('.headerArea');
+  const controls = document.querySelector('.controls');
+  if(!header || !controls || !tableWrap) return;
+  const headerRect = header.getBoundingClientRect();
+  const controlsRect = controls.getBoundingClientRect();
+  const wrapRect = tableWrap.getBoundingClientRect();
+  let numericTop = Math.round(controlsRect.bottom - wrapRect.top);
+  numericTop = Math.max(0, numericTop);
+  tableWrap.style.paddingTop = numericTop + 'px';
+  tableWrap.style.boxSizing = 'border-box';
+  document.querySelectorAll('thead th').forEach(th => { th.style.top = '0px'; });
+  const reserved = Math.round(headerRect.height + controlsRect.height) + 28;
+  tableWrap.style.maxHeight = Math.max(120, window.innerHeight - reserved) + 'px';
+  alignHeaderWidths();
+}
+
+function alignHeaderWidths(){
+  const thead = mainTable.querySelector('thead');
+  if(!thead) return;
+  const ths = Array.from(thead.querySelectorAll('th'));
+  const firstRow = mainTable.querySelector('tbody tr');
+  let widths = [];
+  if(firstRow){
+    const tds = Array.from(firstRow.querySelectorAll('td'));
+    if(tds.length === ths.length){
+      widths = tds.map(td => Math.round(td.getBoundingClientRect().width) || Math.round(ths[0].getBoundingClientRect().width));
+    }
+  }
+  if(widths.length !== ths.length){
+    widths = ths.map(th => Math.round(th.getBoundingClientRect().width) || 80);
+  }
+  ths.forEach((th, i) => {
+    const w = widths[i] || 60;
+    th.style.width = w + 'px';
+    th.style.minWidth = w + 'px';
+    th.style.maxWidth = w + 'px';
+    th.style.boxSizing = 'border-box';
+  });
+  const mainWidth = Math.round(mainTable.getBoundingClientRect().width);
+  mainTable.style.tableLayout = 'fixed';
+  mainTable.style.width = mainWidth + 'px';
+}
+
+/* Date controls */
+dateBtn.addEventListener('click', ()=>{ datePicker.focus(); datePicker.click(); });
+datePicker.addEventListener('change', ()=>{ selectedDate = datePicker.value ? new Date(datePicker.value+'T00:00:00') : new Date(); setSelectedDate(selectedDate); renderCombinedDuties(); });
+prevBtn.addEventListener('click', ()=> changeDate(-1));
+nextBtn.addEventListener('click', ()=> changeDate(1));
+function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
+function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
+
+/* Load JSON link files */
+async function loadAllLinks(){
+  dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
+  const fetches = linkFiles.map(async f => {
+    try{ const r = await fetch(f, {cache:'no-cache'}); if(!r.ok) throw new Error(f+' '+r.status); return await r.json(); } catch(e){ console.warn('Failed to load', f, e); return null; }
+  });
+  const results = await Promise.all(fetches);
+  allCrewData = [];
+  results.forEach((linkData, idx) => {
+    if(!linkData) return;
+    const linkId = linkData.linkId ?? (`file#${idx+1}`);
+    const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
+    const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
+    crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex}));
+  });
+  await renderCombinedDuties();
+}
+
+/* Render duties and inline editing */
+async function renderCombinedDuties(){
+  if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
+  const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
+
+  let fbEdits = {};
+  if(firebaseDb){
+    try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; }catch(e){ fbEdits = {}; }
+  }
+
+  const crewsByLink = allCrewData.reduce((acc,crew)=> { (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
+  const rows = [];
+
+  Object.values(crewsByLink).forEach(crewList=>{
+    if(!crewList.length) return;
+    const lastUpdatedDate = crewList[0].lastUpdatedDate ? new Date(crewList[0].lastUpdatedDate) : new Date();
+    const diffDays = Math.floor((selectedDate.getTime()-lastUpdatedDate.getTime())/(1000*60*60*24));
+    const weeksPassed = Math.floor(diffDays/7);
+    const dutiesPerRow = crewList.map(c=>c.duties||{});
+    for(let rowIndex=0; rowIndex<crewList.length; rowIndex++){
+      const crewIndex = ((rowIndex - weeksPassed) % crewList.length + crewList.length) % crewList.length;
+      const crew = crewList[crewIndex];
+      const dutyForRow = dutiesPerRow[rowIndex][weekday] ?? '';
+      let outgoing='', incoming='', depTime='';
+      if(dutyForRow && typeof dutyForRow === 'object' && (dutyForRow.outgoing||dutyForRow.incoming)){
+        outgoing = (dutyForRow.outgoing||'').toString().trim();
+        incoming = (dutyForRow.incoming||'').toString().trim();
+        depTime = (dutyForRow.depTime||'').toString().trim();
+      } else if(typeof dutyForRow === 'string') outgoing = dutyForRow.trim();
+      const combined = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
+      if(!combined || combined === 'REST') continue;
+      const linkId = crew.linkId;
+      const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
+      const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
+      const owner = fb._updatedBy || local._updatedBy || null;
+      const lpName = local.crewLPName?.trim() || fb.crewLPName?.trim() || crew.crewLPId || '';
+      const alpName = local.crewALPName?.trim() || fb.crewALPName?.trim() || crew.crewALPId || '';
+      rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, owner });
+    }
+  });
+
+  function tmin(t){ if(!t) return Infinity; const m = t.match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1])*60 + (+m[2]) : Infinity; }
+  rows.sort((a,b)=> tmin(a.depTime) - tmin(b.depTime));
+
+  if(!rows.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`; setTableWrapPaddingAndHeader(); return; }
+
+  dutyTable.innerHTML = '';
+  rows.forEach(r=>{
+    // Use formatTrainToken for each token (keeps 5-digit tokens unbreakable, others get <wbr> before slashes)
+    const outHtml = formatTrainToken(r.outgoing || '');
+    const incHtml = formatTrainToken(r.incoming || '');
+    const trainHtml = (incHtml)
+      ? `<div class="cell-center"><div class="train-stack" role="group"><div class="train-top">${outHtml}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${incHtml}</div></div></div>`
+      : `<div class="cell-center"><div class="train-stack"><div class="train-top">${outHtml}</div></div></div>`;
+
+    const tr = document.createElement('tr');
+    const mayEditLP = (!r.owner) || (currentUser && r.owner === currentUser.uid) || isAdmin;
+    const mayEditALP = (!r.owner) || (currentUser && r.owner === currentUser.uid) || isAdmin;
+    const ownerTag = r.owner ? `<span class="ownerTag">${escapeHtml(r.owner)}</span>` : '';
+
+    tr.innerHTML = `
+      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditLP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="${mayEditLP? 'Edit LP name':'Owned by someone else'}">${escapeHtml(r.lpName)}</div></div></td>
+      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="${mayEditALP? 'Edit ALP name':'Owned by someone else'}">${escapeHtml(r.alpName)}</div></div></td>
+      <td>${trainHtml}</td>
+      <td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>
+      <td><div class="cell-center">${escapeHtml(r.link)} ${ownerTag}</div></td>
+    `;
+    dutyTable.appendChild(tr);
+  });
+
+  // attach editable behavior
+  document.querySelectorAll('.editable').forEach(el=>{
+    if(el.__bound) return;
+    el.__bound = true;
+    el.addEventListener('focus', (ev)=>{
+      if(el.getAttribute('contenteditable') === 'false'){ el.blur(); showToast('This cell is owned by someone else.'); return; }
+      const txt = el.textContent.trim();
+      if(/^(LP|ALP)\d+/i.test(txt)){ el.dataset._orig = txt; el.textContent = ''; } else { el.dataset._orig = ''; }
+    });
+    el.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape'){ if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); } } else if(ev.key==='Enter'){ ev.preventDefault(); el.blur(); } });
+    el.addEventListener('blur', onEditableCommit);
+  });
+
+  // after render: set padding & widths
+  setTimeout(setTableWrapPaddingAndHeader, 20);
+}
+
+/* Commit edits */
+async function onEditableCommit(e){
+  const el = e.currentTarget;
+  const linkId = el.dataset.link;
+  const crewIndex = Number(el.dataset.crew);
+  const field = el.dataset.field;
+  const newVal = el.textContent.trim();
+
+  const existingLocal = (localEdits[linkId] && localEdits[linkId][crewIndex]) || {};
+  let fbOwner = null;
+  if(firebaseDb){
+    try{ const fbSnap = await firebaseDb.ref(`/edits/${linkId}/${crewIndex}/_updatedBy`).once('value'); fbOwner = fbSnap.exists() ? fbSnap.val() : null; }catch(e){ fbOwner = null; }
+  }
+  const owner = fbOwner || existingLocal._updatedBy || null;
+  if(owner && (!currentUser || owner !== currentUser.uid) && !isAdmin){
+    showToast('Not allowed: owned by ' + owner);
+    await renderCombinedDuties();
+    return;
+  }
+
+  const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
+  if(!localEdits[linkId]) localEdits[linkId] = {};
+  if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
+  localEdits[linkId][crewIndex][field] = newVal;
+  localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
+  localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
+  saveLocalEdits();
+  showToast('Saved locally');
+
+  if(firebaseDb){
+    try{ const path = `/edits/${linkId}/${crewIndex}`; const payload = { [field]: newVal, _updatedBy: userUid, _updatedAt: new Date().toISOString() }; await firebaseDb.ref(path).update(payload); showToast('Synced to Firebase'); }catch(err){ console.warn('Firebase push failed', err); }
+  }
+
+  await renderCombinedDuties();
+}
+
+/* Admin detection (optional) */
+async function detectAdmin(){
+  currentUser = currentUser || loadLocalUser() || createLocalUser();
+  isAdmin = false;
+  const ADMIN_UIDS = [];
+  try{
+    if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
+    if(firebaseDb){
+      const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value');
+      if(snap.exists() && snap.val() === true) isAdmin = true;
+    }
+  }catch(e){ console.warn('admin detect err', e); }
+  await renderCombinedDuties();
+}
+
+/* Helpers & init */
+function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
+function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
+function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
+
+async function init(){
+  setSelectedDate(new Date());
+  currentUser = loadLocalUser() || createLocalUser();
+  saveLocalUser(currentUser);
+  localEdits = loadLocalEdits();
+  await loadAllLinks();
+  window.addEventListener('resize', () => setTimeout(setTableWrapPaddingAndHeader, 60));
+  window.addEventListener('orientationchange', () => setTimeout(setTableWrapPaddingAndHeader, 140));
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(setTableWrapPaddingAndHeader, 80));
+}
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
