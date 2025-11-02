@@ -3,20 +3,16 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>LP/ALP Duty List — Madgaon Lobby (sticky top + bottom headers)</title>
+<title>LP/ALP Duty List — Madgaon Lobby (aligned sticky headers)</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#f4f7fb;--card:#fff;--muted:#6b7280;--accent:#0f172a;--accent-2:#2563eb;
-  --radius:12px;--divider:#1f6feb;--border:#cdd4e1;
-  --header-h:0px; --controls-h:0px;
-}
+:root{ --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb; --radius:12px; --divider:#1f6feb; --border:#cdd4e1; --header-h:0px; --controls-h:0px; }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent)}
 .wrap{max-width:1100px;margin:0 auto;padding:14px}
 .card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);overflow:hidden}
 
-/* Header & controls */
+/* header & controls */
 .headerArea{position:sticky;top:0;background:var(--card);padding:18px 16px;border-bottom:1px solid rgba(0,0,0,0.04);z-index:60;display:flex;flex-direction:column;justify-content:center}
 .headerArea h1{margin:0;font-size:1.4rem;font-weight:700;text-align:center}
 .headerArea .sub{font-size:0.95rem;color:var(--muted);text-align:center;margin-top:6px}
@@ -27,19 +23,11 @@ body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,S
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:48px;height:38px;padding:0 10px;cursor:pointer}
 input[type="date"].native-date{position:absolute;left:-9999px}
 
-/* Table area */
-.tableWrap{
-  max-height:calc(100vh - var(--header-h) - var(--controls-h) - 28px);
-  overflow:auto;border-radius:0;background:#fff;padding:6px;position:relative;
-}
-table{width:100%;border-collapse:collapse;min-width:680px;table-layout:fixed;border:1px solid var(--border)}
-thead th{
-  background:#f8fafc;padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border:1px solid var(--border);white-space:nowrap;
-  position:sticky; z-index:50;
-  /* top will be set by JS (inline) */
-}
+/* table area */
+.tableWrap{max-height:calc(100vh - var(--header-h) - var(--controls-h) - 28px);overflow:auto;border-radius:0;background:#fff;padding:6px;position:relative}
+table{width:100%;border-collapse:collapse;min-width:640px;table-layout:fixed;border:1px solid var(--border)}
+thead th{background:#f8fafc;padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border:1px solid var(--border);white-space:nowrap;position:sticky;z-index:50}
 .floatingFooter{position:sticky;bottom:0;z-index:52;display:none;background:#fff}
-/* The floatingFooter contains a small table with just the header row; style to match thead */
 .floatingFooter table{width:100%;border-collapse:collapse}
 .floatingFooter th{background:#f8fafc;padding:8px 12px;border:1px solid var(--border);font-weight:700;text-align:center}
 
@@ -58,7 +46,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 .train-top,.train-bottom{font-weight:400;font-size:0.9rem;display:inline-block}
 .train-divider{width:100%;max-width:180px;height:2px;background:var(--divider);border-radius:2px}
 
-/* editable visuals */
+/* editable */
 .editable{display:block;min-height:34px;padding:6px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text}
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.12);border:1px dashed rgba(37,99,235,0.25)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
@@ -93,7 +81,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
       </div>
 
       <div class="tableWrap" aria-live="polite">
-        <table id="mainTable">
+        <table id="mainTable" aria-describedby="dateHeading">
           <thead>
             <tr>
               <th>Name of LP</th>
@@ -108,7 +96,6 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
           </tbody>
         </table>
 
-        <!-- floating footer header (cloned by JS) -->
         <div id="floatingFooter" class="floatingFooter" aria-hidden="true"></div>
       </div>
     </div>
@@ -116,14 +103,16 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- Firebase option -->
+  <!-- Firebase optional -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-/* ---------- Config ---------- */
-const FIREBASE_CONFIG = null; // paste your firebase config to enable sync
+/* -------------------------
+  CONFIG: set your firebase config or leave null (localStorage only)
+*/
+const FIREBASE_CONFIG = null;
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json',
@@ -131,14 +120,14 @@ const linkFiles = [
 ];
 const LS_KEY = 'lp_alp_edits_owner_v1';
 
-/* ---------- State ---------- */
+/* ---------- state ---------- */
 let localEdits = loadLocalEdits();
 let allCrewData = [];
 let selectedDate = new Date();
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
 
-/* ---------- Init Firebase (optional) ---------- */
+/* ---------- firebase init optional ---------- */
 if(FIREBASE_CONFIG){
   try{
     firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
@@ -163,8 +152,8 @@ const nextBtn = document.getElementById('nextDay');
 const dateHeading = document.getElementById('dateHeading');
 const toast = document.getElementById('toast');
 
-/* ---------- Utilities ---------- */
-function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
+/* ---------- helpers ---------- */
+function showToast(msg, t=1300){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
 function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
@@ -172,27 +161,34 @@ function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stri
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 
-/* ---------- Sticky measurement and floating footer ---------- */
-function updateStickyLayout(){
+/* ---------- Measurement & alignment ---------- */
+function measureAndApplyLayout(){
   const header = document.querySelector('.headerArea');
   const controls = document.querySelector('.controls');
   if(!header || !controls || !tableWrap) return;
+
   const headerH = Math.round(header.getBoundingClientRect().height);
   const controlsH = Math.round(controls.getBoundingClientRect().height);
   document.documentElement.style.setProperty('--header-h', headerH + 'px');
   document.documentElement.style.setProperty('--controls-h', controlsH + 'px');
 
-  // numeric top for table headers
   const numericTop = headerH + controlsH;
+  // apply top px to each thead th
   document.querySelectorAll('thead th').forEach(th => th.style.top = numericTop + 'px');
 
-  // adjust tableWrap maxHeight precisely
+  // set tableWrap max height
   const reserved = numericTop + 28;
   const maxH = Math.max(120, window.innerHeight - reserved);
   tableWrap.style.maxHeight = maxH + 'px';
+
+  // ensure floating footer clone exists
+  ensureFloatingFooter();
+
+  // align column widths: measure thead th computed widths and apply as inline widths
+  alignHeaderWidths();
 }
 
-// create floating footer header by cloning thead
+// clone thead into floatingFooter once
 function ensureFloatingFooter(){
   if(floatingFooter.dataset.inited === '1') return;
   const thead = mainTable.querySelector('thead');
@@ -201,32 +197,58 @@ function ensureFloatingFooter(){
   cloneTable.setAttribute('aria-hidden','true');
   const theadClone = thead.cloneNode(true);
   cloneTable.appendChild(theadClone);
-  floatingFooter.innerHTML = ''; // clear
+  floatingFooter.innerHTML = '';
   floatingFooter.appendChild(cloneTable);
   floatingFooter.dataset.inited = '1';
 }
 
-// show/hide floating footer depending on scroll position in .tableWrap
+// copy computed widths from main thead/th to both thead th and floating footer th
+function alignHeaderWidths(){
+  const thead = mainTable.querySelector('thead');
+  if(!thead) return;
+  const ths = Array.from(thead.querySelectorAll('th'));
+  const footerTable = floatingFooter.querySelector('table');
+  const footerThs = footerTable ? Array.from(footerTable.querySelectorAll('th')) : [];
+
+  // measure widths of the real columns by using getBoundingClientRect on each th
+  const widths = ths.map(th => {
+    const w = Math.round(th.getBoundingClientRect().width);
+    return Math.max(40, w); // minimum width fallback
+  });
+
+  // apply widths (pixel) to thead th and footer th (and also set table layout: fixed columns)
+  ths.forEach((th, i) => {
+    th.style.width = widths[i] + 'px';
+    th.style.minWidth = widths[i] + 'px';
+    th.style.maxWidth = widths[i] + 'px';
+    th.style.boxSizing = 'border-box';
+  });
+  footerThs.forEach((th, i) => {
+    if(widths[i]) { th.style.width = widths[i] + 'px'; th.style.minWidth = widths[i] + 'px'; th.style.maxWidth = widths[i] + 'px'; th.style.boxSizing = 'border-box'; }
+  });
+
+  // also set cloned table's table-layout and column widths to match
+  if(footerTable){
+    footerTable.style.tableLayout = 'fixed';
+    footerTable.style.width = mainTable.getBoundingClientRect().width + 'px';
+  }
+}
+
+/* show/hide floating footer when near bottom */
 function handleTableWrapScroll(){
   if(!tableWrap || !mainTable) return;
   ensureFloatingFooter();
-
   const scrollTop = tableWrap.scrollTop;
   const clientH = tableWrap.clientHeight;
   const scrollH = tableWrap.scrollHeight;
-
-  // threshold px before bottom to show footer (adjustable)
-  const threshold = 6;
-
-  // Show floating footer when near or at bottom of the table content
+  const threshold = 8;
   const atBottom = (scrollTop + clientH) >= (scrollH - threshold);
-
-  // alternatively, show footer if tableWrap scrollHeight <= clientH (table fits entirely)
   const tableFits = scrollH <= clientH + 2;
-
   if(atBottom || tableFits){
     floatingFooter.style.display = 'block';
     floatingFooter.setAttribute('aria-hidden','false');
+    // ensure footer widths updated to match any scrollbars/changes
+    alignHeaderWidths();
   } else {
     floatingFooter.style.display = 'none';
     floatingFooter.setAttribute('aria-hidden','true');
@@ -259,12 +281,11 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* ---------- Render duties & inline editing (owner model) ---------- */
+/* ---------- Render & inline editing (owner model) ---------- */
 async function renderCombinedDuties(){
-  if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; updateStickyLayout(); handleTableWrapScroll(); return; }
+  if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; measureAndApplyLayout(); handleTableWrapScroll(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
 
-  // fetch firebase edits to know owners (if DB present)
   let fbEdits = {};
   if(firebaseDb){
     try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; }catch(e){ fbEdits = {}; }
@@ -292,13 +313,11 @@ async function renderCombinedDuties(){
       const combined = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
       if(!combined || combined === 'REST') continue;
       const linkId = crew.linkId;
-
       const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
       const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
       const owner = fb._updatedBy || local._updatedBy || null;
       const lpName = local.crewLPName?.trim() || fb.crewLPName?.trim() || crew.crewLPId || '';
       const alpName = local.crewALPName?.trim() || fb.crewALPName?.trim() || crew.crewALPId || '';
-
       rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, owner });
     }
   });
@@ -306,7 +325,7 @@ async function renderCombinedDuties(){
   function tmin(t){ if(!t) return Infinity; const m = t.match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1])*60 + (+m[2]) : Infinity; }
   rows.sort((a,b)=> tmin(a.depTime) - tmin(b.depTime));
 
-  if(!rows.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`; updateStickyLayout(); handleTableWrapScroll(); return; }
+  if(!rows.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`; measureAndApplyLayout(); handleTableWrapScroll(); return; }
 
   dutyTable.innerHTML = '';
   rows.forEach(r=>{
@@ -339,13 +358,12 @@ async function renderCombinedDuties(){
     el.addEventListener('blur', onEditableCommit);
   });
 
-  // after re-render, update sticky positions and floating footer
-  updateStickyLayout();
-  ensureFloatingFooter();
+  // after render: measure & align
+  measureAndApplyLayout();
   handleTableWrapScroll();
 }
 
-/* ---------- Commit handler (claim owner + save) ---------- */
+/* ---------- Editing commit ---------- */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   const linkId = el.dataset.link;
@@ -377,7 +395,7 @@ async function onEditableCommit(e){
   await renderCombinedDuties();
 }
 
-/* ---------- Admin detect (optional) ---------- */
+/* ---------- Admin detect ---------- */
 async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
@@ -393,18 +411,15 @@ async function init(){
   saveLocalUser(currentUser);
   await loadAllLinks();
 
-  // wire scroll event to .tableWrap to toggle floating footer
-  tableWrap.addEventListener('scroll', () => {
-    handleTableWrapScroll();
-  });
+  // wire scroll event to .tableWrap
+  tableWrap.addEventListener('scroll', () => handleTableWrapScroll());
 
-  // measure sticky layout on load and after fonts, resize
-  updateStickyLayout();
-  if(document.fonts && document.fonts.ready) document.fonts.ready.then(updateStickyLayout);
-  window.addEventListener('resize', () => { updateStickyLayout(); handleTableWrapScroll(); });
-  window.addEventListener('orientationchange', () => setTimeout(()=>{ updateStickyLayout(); handleTableWrapScroll(); }, 120));
+  // measure on load and when fonts/resizes/orientation change
+  measureAndApplyLayout();
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(measureAndApplyLayout);
+  window.addEventListener('resize', () => { measureAndApplyLayout(); handleTableWrapScroll(); });
+  window.addEventListener('orientationchange', () => setTimeout(()=>{ measureAndApplyLayout(); handleTableWrapScroll(); }, 120));
 
-  // if firebase present, ensure admin detection runs when auth ready
   if(firebaseAuth && firebaseDb){
     if(firebaseAuth.currentUser){ currentUser = { uid: firebaseAuth.currentUser.uid, displayName: firebaseAuth.currentUser.displayName || firebaseAuth.currentUser.uid }; saveLocalUser(currentUser); await detectAdmin(); }
     else { try{ await firebaseAuth.signInAnonymously(); }catch(e){ console.warn('anon sign-in failed', e); } }
@@ -413,12 +428,6 @@ async function init(){
   }
 }
 document.addEventListener('DOMContentLoaded', init);
-
-/* ---------- Helpers re-used ---------- */
-function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
-function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
-function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
-
 </script>
 </body>
 </html>
