@@ -1,10 +1,9 @@
-
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>LP/ALP Duty List — Madgaon Lobby (5-digit train no no-wrap)</title>
+<title>LP/ALP Duty List — Madgaon Lobby</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -78,7 +77,6 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 <body>
   <div class="wrap">
     <div class="card">
-
       <div class="headerArea" role="banner" aria-label="Header">
         <h1>LP/ALP Duty List</h1>
         <div class="sub">Madgaon Lobby</div>
@@ -114,14 +112,16 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- Firebase optional -->
+  <!-- Firebase (compat) optional - include if needed -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-/* CONFIG: put your Firebase config object here if you want DB sync; otherwise keep null */
+/* --- CONFIG --- put your Firebase config object here to enable realtime sync, otherwise keep null --- */
 const FIREBASE_CONFIG = null;
+
+/* --- Files & keys --- */
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json',
@@ -129,12 +129,14 @@ const linkFiles = [
 ];
 const LS_KEY = 'lp_alp_edits_owner_v1';
 
+/* --- State --- */
 let localEdits = loadLocalEdits();
 let allCrewData = [];
 let selectedDate = new Date();
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
 
+/* Init Firebase if provided */
 if(FIREBASE_CONFIG){
   try{
     firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
@@ -147,7 +149,7 @@ if(FIREBASE_CONFIG){
   }catch(e){ console.warn('Firebase init failed', e); firebaseApp=null; firebaseDb=null; firebaseAuth=null; }
 }
 
-/* DOM refs */
+/* DOM */
 const dutyTable = document.getElementById('dutyTable');
 const mainTable = document.getElementById('mainTable');
 const tableWrap = document.querySelector('.tableWrap');
@@ -158,6 +160,7 @@ const nextBtn = document.getElementById('nextDay');
 const dateHeading = document.getElementById('dateHeading');
 const toast = document.getElementById('toast');
 
+/* helpers */
 function showToast(msg, t=1200){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
@@ -166,21 +169,33 @@ function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stri
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 
-/* Helper: return HTML for a token.
-   - If token is exactly 5 digits, wrap in .nowrap to keep one line.
-   - Otherwise escape and insert <wbr> before slashes so breaks can occur at '/'. */
+/* ensure caret at end to help deletion */
+function placeCaretAtEnd(el) {
+  try {
+    el.focus();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  } catch (e) {}
+}
+
+/* Format train token:
+   - If exactly 5 digits => .nowrap (no wrap)
+   - Else escape and add <wbr> before slashes so they can break */
 function formatTrainToken(token){
   if(!token) return '';
   const cleaned = token.toString().trim();
   if(/^\d{5}$/.test(cleaned)){ // pure 5-digit numeric -> keep on single line
     return `<span class="nowrap">${escapeHtml(cleaned)}</span>`;
   }
-  // else add <wbr> before every slash to allow breaks
   const escaped = escapeHtml(cleaned).replace(/\//g, '<wbr>/');
   return escaped;
 }
 
-/* Set padding-top on .tableWrap so the thead (top:0) sits flush and no gap appears */
+/* Set padding-top on .tableWrap to align sticky thead exactly */
 function setTableWrapPaddingAndHeader(){
   const header = document.querySelector('.headerArea');
   const controls = document.querySelector('.controls');
@@ -198,6 +213,7 @@ function setTableWrapPaddingAndHeader(){
   alignHeaderWidths();
 }
 
+/* Align header widths to first row */
 function alignHeaderWidths(){
   const thead = mainTable.querySelector('thead');
   if(!thead) return;
@@ -233,7 +249,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* Load JSON link files */
+/* Load link JSON files */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async f => {
@@ -251,7 +267,7 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* Render duties and inline editing */
+/* Render duties & inline editing (owner model with delete-first rule) */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
@@ -299,7 +315,6 @@ async function renderCombinedDuties(){
 
   dutyTable.innerHTML = '';
   rows.forEach(r=>{
-    // Use formatTrainToken for each token (keeps 5-digit tokens unbreakable, others get <wbr> before slashes)
     const outHtml = formatTrainToken(r.outgoing || '');
     const incHtml = formatTrainToken(r.incoming || '');
     const trainHtml = (incHtml)
@@ -321,31 +336,90 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  // attach editable behavior
+  /* Attach editable behavior with "delete-first" rule for name changes */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
+
+    function isOwnedByCurrentUser(){
+      const link = el.dataset.link;
+      const crewIndex = Number(el.dataset.crew);
+      const local = (localEdits[link] && localEdits[link][crewIndex]) || {};
+      const fbOwner = (local && local._updatedBy) || null;
+      return fbOwner && currentUser && fbOwner === currentUser.uid;
+    }
+
     el.addEventListener('focus', (ev)=>{
       if(el.getAttribute('contenteditable') === 'false'){ el.blur(); showToast('This cell is owned by someone else.'); return; }
+
       const txt = el.textContent.trim();
-      if(/^(LP|ALP)\d+/i.test(txt)){ el.dataset._orig = txt; el.textContent = ''; } else { el.dataset._orig = ''; }
+
+      if(/^(LP|ALP)\d+/i.test(txt)){
+        // default id - clear immediately so user can type
+        el.dataset._orig = txt;
+        el.textContent = '';
+        el.removeAttribute('data-must-clear');
+      } else {
+        el.dataset._orig = '';
+        // if cell already has a name and owner is current user -> require delete first
+        if(txt !== '' && isOwnedByCurrentUser() && !isAdmin){
+          el.setAttribute('data-must-clear','1');
+          showToast('To change, delete the existing name first.');
+          placeCaretAtEnd(el);
+        } else {
+          el.removeAttribute('data-must-clear');
+        }
+      }
     });
-    el.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape'){ if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); } } else if(ev.key==='Enter'){ ev.preventDefault(); el.blur(); } });
-    el.addEventListener('blur', onEditableCommit);
+
+    // beforeinput to block typing/paste when delete-first flag is set
+    el.addEventListener('beforeinput', (ev)=>{
+      if(el.getAttribute('contenteditable') === 'false'){ ev.preventDefault(); return; }
+      if(el.hasAttribute('data-must-clear')){
+        const allowTypes = [
+          'deleteContentBackward', 'deleteContentForward',
+          'deleteByCut', 'deleteByDrag',
+          'historyUndo', 'historyRedo'
+        ];
+        const t = ev.inputType || '';
+        if(allowTypes.includes(t)) return; // allow deletions
+        // otherwise block insertion
+        ev.preventDefault();
+        showToast('Please delete the existing name first, then type the new name.');
+      }
+    });
+
+    el.addEventListener('keydown', (ev)=>{
+      if(ev.key === 'Escape'){
+        if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); }
+      } else if(ev.key === 'Enter'){
+        ev.preventDefault();
+        el.blur();
+      }
+    });
+
+    el.addEventListener('blur', async (ev)=>{
+      // if user cleared the content, remove must-clear to allow typing next time
+      if(el.textContent.trim() === '') el.removeAttribute('data-must-clear');
+      // commit changes
+      await onEditableCommit(ev);
+    });
   });
 
-  // after render: set padding & widths
+  // final layout adjustments
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* Commit edits */
+/* Commit handler (saves to local and optional Firebase) */
 async function onEditableCommit(e){
   const el = e.currentTarget;
+  if(!el) return;
   const linkId = el.dataset.link;
   const crewIndex = Number(el.dataset.crew);
   const field = el.dataset.field;
   const newVal = el.textContent.trim();
 
+  // check existing owner (firebase or local)
   const existingLocal = (localEdits[linkId] && localEdits[linkId][crewIndex]) || {};
   let fbOwner = null;
   if(firebaseDb){
@@ -362,15 +436,38 @@ async function onEditableCommit(e){
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
   localEdits[linkId][crewIndex][field] = newVal;
-  localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
-  localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
+  // If user typed a name, set/update ownership. If they cleared the cell, remove ownership fields (allow others)
+  if(newVal){
+    localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
+    localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
+  } else {
+    // clear owner metadata when cell emptied
+    delete localEdits[linkId][crewIndex]['_updatedBy'];
+    delete localEdits[linkId][crewIndex]['_updatedAt'];
+  }
   saveLocalEdits();
   showToast('Saved locally');
 
   if(firebaseDb){
-    try{ const path = `/edits/${linkId}/${crewIndex}`; const payload = { [field]: newVal, _updatedBy: userUid, _updatedAt: new Date().toISOString() }; await firebaseDb.ref(path).update(payload); showToast('Synced to Firebase'); }catch(err){ console.warn('Firebase push failed', err); }
+    try{
+      const path = `/edits/${linkId}/${crewIndex}`;
+      const payload = { [field]: newVal };
+      if(newVal){
+        payload._updatedBy = userUid;
+        payload._updatedAt = new Date().toISOString();
+      } else {
+        // to remove keys in Firebase, set them to null
+        payload._updatedBy = null;
+        payload._updatedAt = null;
+      }
+      await firebaseDb.ref(path).update(payload);
+      showToast('Synced to Firebase');
+    }catch(err){
+      console.warn('Firebase push failed', err);
+    }
   }
 
+  // re-render to reflect ownership changes and enforce rules
   await renderCombinedDuties();
 }
 
@@ -378,7 +475,7 @@ async function onEditableCommit(e){
 async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
-  const ADMIN_UIDS = [];
+  const ADMIN_UIDS = []; // add known admin UIDs here if you want local override
   try{
     if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
     if(firebaseDb){
@@ -400,6 +497,7 @@ async function init(){
   saveLocalUser(currentUser);
   localEdits = loadLocalEdits();
   await loadAllLinks();
+  // recalc on resize/orientation/fonts
   window.addEventListener('resize', () => setTimeout(setTableWrapPaddingAndHeader, 60));
   window.addEventListener('orientationchange', () => setTimeout(setTableWrapPaddingAndHeader, 140));
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(setTableWrapPaddingAndHeader, 80));
