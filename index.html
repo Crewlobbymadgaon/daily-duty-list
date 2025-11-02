@@ -337,8 +337,9 @@ async function renderCombinedDuties(){
       const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
       const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
       const owner = fb._updatedBy || local._updatedBy || null;
-      const lpName = local.crewLPName?.trim() || fb.crewLPName?.trim() || crew.crewLPId || '';
-      const alpName = local.crewALPName?.trim() || fb.crewALPName?.trim() || crew.crewALPId || '';
+      // When no edited name present, show the initial link number (linkId) instead of LP/ALP id
+const lpName = (local.crewLPName && local.crewLPName.trim()) || (fb.crewLPName && fb.crewLPName.trim()) || String(crew.linkId || '');
+const alpName = (local.crewALPName && local.crewALPName.trim()) || (fb.crewALPName && fb.crewALPName.trim()) || String(crew.linkId || '');
       rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, owner });
     }
   });
