@@ -29,34 +29,53 @@
     .date-icon-btn:active{transform:scale(0.96)}
     input[type="date"].native-date{position:absolute;left:-9999px}
 
-    /* table container allows horizontal scroll on small screens */
+    /* table container allows horizontal scroll on small screens when needed */
     .tableWrap{overflow-x:auto;border-radius:10px;margin-top:12px;background:linear-gradient(#fff,#fff);padding:6px}
-    table{width:100%;border-collapse:collapse;min-width:820px}
+    table{width:100%;border-collapse:collapse;min-width:720px;table-layout:fixed}
     thead th{background:#f8fafc;padding:12px 16px;text-align:left;color:var(--muted);font-weight:700;border-top:1px solid #f1f4f8;white-space:nowrap}
-    tbody td{padding:12px 16px;border-top:1px solid #f6f9fc;font-size:0.95rem;color:var(--accent);white-space:nowrap}
+    tbody td{padding:12px 16px;border-top:1px solid #f6f9fc;font-size:0.95rem;color:var(--accent);vertical-align:top}
     tbody tr:nth-child(odd){background:transparent}
     .no-data{text-align:center;color:var(--muted);padding:14px}
 
-    /* On smaller screens reduce padding & font-size but keep table columns */
-    @media (max-width:900px){
-      table{min-width:780px}
-      thead th, tbody td{padding:10px 12px}
-      body{font-size:14px}
+    /* Column widths: LP / ALP / Train get priority */
+    thead th:nth-child(1), tbody td:nth-child(1) { width: 30%; }
+    thead th:nth-child(2), tbody td:nth-child(2) { width: 30%; }
+    thead th:nth-child(3), tbody td:nth-child(3) { width: 25%; }
+    thead th:nth-child(4), tbody td:nth-child(4) { width: 7%; }
+    thead th:nth-child(5), tbody td:nth-child(5) { width: 8%; }
+
+    /* make LP/ALP/trains wrap and truncate if too long */
+    tbody td:nth-child(1), tbody td:nth-child(2), tbody td:nth-child(3) {
+      white-space:normal;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      hyphens:auto;
     }
+
+    /* On smaller screens keep columns but hide Dep & Link to ensure LP/ALP/Train fit
+       and reduce padding/font-size to display more content. */
     @media (max-width:600px){
-      table{min-width:700px}
-      thead th, tbody td{padding:8px 10px;font-size:13px}
+      table{min-width:0; table-layout:auto}
+      thead th, tbody td{padding:8px 10px;font-size:14px}
+      /* hide Dep (4) and Link No (5) columns */
+      thead th:nth-child(4), thead th:nth-child(5),
+      tbody td:nth-child(4), tbody td:nth-child(5) {
+        display:none;
+      }
+      /* ensure LP/ALP/Train occupy available width and wrap nicely */
+      thead th:nth-child(1), tbody td:nth-child(1),
+      thead th:nth-child(2), tbody td:nth-child(2),
+      thead th:nth-child(3), tbody td:nth-child(3) {
+        width: auto;
+      }
+      /* slightly smaller date icon */
       .date-icon-btn{width:46px;height:46px;font-size:1.3rem}
     }
 
-    /* optional: visual hint that table scrolls horizontally */
-    .tableWrap::after{
-      content:'';
-      position:relative;
-      display:block;
-      height:0;
-      pointer-events:none;
-      /* no visible overlay — kept for easy customisation if you want a gradient edge */
+    /* Mid-size screens (tablet) reduce min-width */
+    @media (min-width:601px) and (max-width:900px){
+      table{min-width:680px}
+      thead th, tbody td{padding:10px 12px}
     }
   </style>
 </head>
@@ -95,8 +114,8 @@
 
 <script>
 /* Loads multiple link files, flattens crew data, applies per-link weekly rotation,
-   and displays combined duties sorted by depTime. Table stays columnar on all screens
-   and scrolls horizontally on small devices.
+   and displays combined duties sorted by depTime. On small screens Dep & Link columns are hidden
+   so Name of LP / Name of ALP / Train No fit and remain visible.
 */
 
 const linkFiles = [
@@ -166,7 +185,7 @@ async function loadAllLinks() {
   renderCombinedDuties();
 }
 
-// rotation + flatten + filter + sort
+// Flattened rotation + filter + sort by depTime
 function renderCombinedDuties() {
   if (!allCrewData.length) {
     dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`;
@@ -175,6 +194,7 @@ function renderCombinedDuties() {
 
   const weekday = selectedDate.toLocaleString('en-US', { weekday: 'long' });
 
+  // Group crew entries by linkId so we can apply rotation per link
   const crewsByLink = allCrewData.reduce((acc, crew) => {
     (acc[crew.linkId] = acc[crew.linkId] || []).push(crew);
     return acc;
@@ -185,16 +205,20 @@ function renderCombinedDuties() {
   Object.values(crewsByLink).forEach(crewList => {
     if (!crewList.length) return;
 
+    // use the lastUpdatedDate from first entry of this link
     const lastUpdatedDate = crewList[0].lastUpdatedDate ? new Date(crewList[0].lastUpdatedDate) : new Date();
     const diffMs = selectedDate.getTime() - lastUpdatedDate.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     const weeksPassed = Math.floor(diffDays / 7);
 
+    // duties arranged per row index (as in your rotation model)
     const dutiesPerRow = crewList.map(c => c.duties || {});
 
     for (let rowIndex = 0; rowIndex < crewList.length; rowIndex++) {
+      // rotated crew index for selected week
       const crewIndex = ((rowIndex - weeksPassed) % crewList.length + crewList.length) % crewList.length;
       const crew = crewList[crewIndex];
+
       const dutyForRow = dutiesPerRow[rowIndex][weekday] ?? '';
 
       let trainNo = '';
@@ -209,8 +233,10 @@ function renderCombinedDuties() {
         trainNo = dutyForRow.trim();
       }
 
+      // skip empty or REST
       if (!trainNo || trainNo.toUpperCase() === 'REST') continue;
 
+      // prefer the crew names if present, else use IDs
       const lpName = (crew.crewLPName && crew.crewLPName.trim()) ? crew.crewLPName.trim() : (crew.crewLPId || '');
       const alpName = (crew.crewALPName && crew.crewALPName.trim()) ? crew.crewALPName.trim() : (crew.crewALPId || '');
 
@@ -224,6 +250,7 @@ function renderCombinedDuties() {
     }
   });
 
+  // parse time to minutes (HH:MM). invalid or missing => Infinity (sorted last)
   function timeToMinutes(t) {
     if (!t || typeof t !== 'string') return Infinity;
     const m = t.match(/^(\d{1,2}):(\d{2})$/);
@@ -235,6 +262,7 @@ function renderCombinedDuties() {
 
   rows.sort((a, b) => timeToMinutes(a.depTime) - timeToMinutes(b.depTime));
 
+  // render rows
   if (!rows.length) {
     dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`;
     return;
@@ -268,6 +296,7 @@ function escapeHtml(s) {
   });
 })();
 
+// helper to set date input
 function setSelectedDate(d) {
   selectedDate = d || new Date();
   const yyyy = selectedDate.getFullYear();
