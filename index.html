@@ -3,10 +3,14 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>LP/ALP Duty List — Madgaon Lobby (aligned sticky headers)</title>
+<title>LP/ALP Duty List — Madgaon Lobby</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root{ --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb; --radius:12px; --divider:#1f6feb; --border:#cdd4e1; --header-h:0px; --controls-h:0px; }
+:root{
+  --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb;
+  --radius:12px; --divider:#1f6feb; --border:#cdd4e1;
+  --header-h:0px; --controls-h:0px;
+}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent)}
 .wrap{max-width:1100px;margin:0 auto;padding:14px}
@@ -23,14 +27,14 @@ body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,S
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:48px;height:38px;padding:0 10px;cursor:pointer}
 input[type="date"].native-date{position:absolute;left:-9999px}
 
-/* table area */
+/* table area (single sticky header at top of table) */
 .tableWrap{max-height:calc(100vh - var(--header-h) - var(--controls-h) - 28px);overflow:auto;border-radius:0;background:#fff;padding:6px;position:relative}
 table{width:100%;border-collapse:collapse;min-width:640px;table-layout:fixed;border:1px solid var(--border)}
-thead th{background:#f8fafc;padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border:1px solid var(--border);white-space:nowrap;position:sticky;z-index:50}
-.floatingFooter{position:sticky;bottom:0;z-index:52;display:none;background:#fff}
-.floatingFooter table{width:100%;border-collapse:collapse}
-.floatingFooter th{background:#f8fafc;padding:8px 12px;border:1px solid var(--border);font-weight:700;text-align:center}
-
+thead th{
+  background:#f8fafc;padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border:1px solid var(--border);white-space:nowrap;
+  position:sticky; z-index:50;
+  /* numeric top set via JS for pixel-precise stacking */
+}
 tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center}
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
@@ -46,7 +50,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 .train-top,.train-bottom{font-weight:400;font-size:0.9rem;display:inline-block}
 .train-divider{width:100%;max-width:180px;height:2px;background:var(--divider);border-radius:2px}
 
-/* editable */
+/* editable visuals */
 .editable{display:block;min-height:34px;padding:6px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text}
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.12);border:1px dashed rgba(37,99,235,0.25)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
@@ -95,55 +99,58 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
             <tr><td colspan="5" class="no-data">Loading data…</td></tr>
           </tbody>
         </table>
-
-        <div id="floatingFooter" class="floatingFooter" aria-hidden="true"></div>
       </div>
     </div>
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- Firebase optional -->
+  <!-- Firebase optional - include only if you plan to sync -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-/* -------------------------
-  CONFIG: set your firebase config or leave null (localStorage only)
+/* ==========================
+  Paste FIREBASE_CONFIG if you want DB sync; otherwise leave null.
 */
 const FIREBASE_CONFIG = null;
+
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json',
   'ollink1.json','sllink1.json'
 ];
-const LS_KEY = 'lp_alp_edits_owner_v1';
 
-/* ---------- state ---------- */
+const LS_KEY = 'lp_alp_edits_owner_v1';
 let localEdits = loadLocalEdits();
 let allCrewData = [];
 let selectedDate = new Date();
+
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
 
-/* ---------- firebase init optional ---------- */
+/* Firebase optional init */
 if(FIREBASE_CONFIG){
   try{
     firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
     firebaseAuth = firebase.auth();
     firebaseDb = firebase.database();
     firebaseAuth.onAuthStateChanged(async user => {
-      if(user){ currentUser = { uid: user.uid, displayName: user.displayName || user.uid }; saveLocalUser(currentUser); await detectAdmin(); }
-      else { try{ await firebaseAuth.signInAnonymously(); }catch(e){ console.warn('anon sign-in failed', e); } }
+      if(user){
+        currentUser = { uid: user.uid, displayName: user.displayName || user.uid };
+        saveLocalUser(currentUser);
+        await detectAdmin();
+      } else {
+        try{ await firebaseAuth.signInAnonymously(); }catch(e){ console.warn('anon sign-in failed', e); }
+      }
     });
-  }catch(e){ console.warn('firebase init failed', e); firebaseApp=null; firebaseDb=null; firebaseAuth=null; }
+  } catch(e){ console.warn('Firebase init failed', e); firebaseApp=null; firebaseDb=null; firebaseAuth=null; }
 }
 
-/* ---------- DOM refs ---------- */
+/* DOM refs */
 const dutyTable = document.getElementById('dutyTable');
 const mainTable = document.getElementById('mainTable');
-const floatingFooter = document.getElementById('floatingFooter');
 const tableWrap = document.querySelector('.tableWrap');
 const dateBtn = document.getElementById('dateBtn');
 const datePicker = document.getElementById('datePicker');
@@ -152,8 +159,8 @@ const nextBtn = document.getElementById('nextDay');
 const dateHeading = document.getElementById('dateHeading');
 const toast = document.getElementById('toast');
 
-/* ---------- helpers ---------- */
-function showToast(msg, t=1300){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
+/* Utilities */
+function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
 function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
@@ -161,101 +168,63 @@ function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stri
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 
-/* ---------- Measurement & alignment ---------- */
-function measureAndApplyLayout(){
+/* ---- Measurement: compute numeric top for thead and align column widths ---- */
+function applyHeaderPositionAndWidths(){
   const header = document.querySelector('.headerArea');
   const controls = document.querySelector('.controls');
   if(!header || !controls || !tableWrap) return;
 
   const headerH = Math.round(header.getBoundingClientRect().height);
   const controlsH = Math.round(controls.getBoundingClientRect().height);
+
+  // put values into CSS vars
   document.documentElement.style.setProperty('--header-h', headerH + 'px');
   document.documentElement.style.setProperty('--controls-h', controlsH + 'px');
 
+  // numeric top for thead cells is headerH + controlsH
   const numericTop = headerH + controlsH;
-  // apply top px to each thead th
-  document.querySelectorAll('thead th').forEach(th => th.style.top = numericTop + 'px');
+  document.querySelectorAll('thead th').forEach(th => {
+    th.style.top = numericTop + 'px';
+  });
 
-  // set tableWrap max height
+  // adjust tableWrap max-height to fit viewport under sticky elements
   const reserved = numericTop + 28;
   const maxH = Math.max(120, window.innerHeight - reserved);
   tableWrap.style.maxHeight = maxH + 'px';
 
-  // ensure floating footer clone exists
-  ensureFloatingFooter();
-
-  // align column widths: measure thead th computed widths and apply as inline widths
-  alignHeaderWidths();
-}
-
-// clone thead into floatingFooter once
-function ensureFloatingFooter(){
-  if(floatingFooter.dataset.inited === '1') return;
-  const thead = mainTable.querySelector('thead');
-  if(!thead) return;
-  const cloneTable = document.createElement('table');
-  cloneTable.setAttribute('aria-hidden','true');
-  const theadClone = thead.cloneNode(true);
-  cloneTable.appendChild(theadClone);
-  floatingFooter.innerHTML = '';
-  floatingFooter.appendChild(cloneTable);
-  floatingFooter.dataset.inited = '1';
-}
-
-// copy computed widths from main thead/th to both thead th and floating footer th
-function alignHeaderWidths(){
+  // align column widths: measure real column widths from thead th and enforce same widths
   const thead = mainTable.querySelector('thead');
   if(!thead) return;
   const ths = Array.from(thead.querySelectorAll('th'));
-  const footerTable = floatingFooter.querySelector('table');
-  const footerThs = footerTable ? Array.from(footerTable.querySelectorAll('th')) : [];
+  const widths = ths.map(th => Math.round(th.getBoundingClientRect().width) || 60);
 
-  // measure widths of the real columns by using getBoundingClientRect on each th
-  const widths = ths.map(th => {
-    const w = Math.round(th.getBoundingClientRect().width);
-    return Math.max(40, w); // minimum width fallback
-  });
-
-  // apply widths (pixel) to thead th and footer th (and also set table layout: fixed columns)
   ths.forEach((th, i) => {
-    th.style.width = widths[i] + 'px';
-    th.style.minWidth = widths[i] + 'px';
-    th.style.maxWidth = widths[i] + 'px';
+    const w = widths[i];
+    th.style.width = w + 'px';
+    th.style.minWidth = w + 'px';
+    th.style.maxWidth = w + 'px';
     th.style.boxSizing = 'border-box';
   });
-  footerThs.forEach((th, i) => {
-    if(widths[i]) { th.style.width = widths[i] + 'px'; th.style.minWidth = widths[i] + 'px'; th.style.maxWidth = widths[i] + 'px'; th.style.boxSizing = 'border-box'; }
-  });
 
-  // also set cloned table's table-layout and column widths to match
-  if(footerTable){
-    footerTable.style.tableLayout = 'fixed';
-    footerTable.style.width = mainTable.getBoundingClientRect().width + 'px';
-  }
+  // ensure table uses fixed layout and width remains correct
+  const mainWidth = Math.round(mainTable.getBoundingClientRect().width);
+  mainTable.style.tableLayout = 'fixed';
+  mainTable.style.width = mainWidth + 'px';
 }
 
-/* show/hide floating footer when near bottom */
-function handleTableWrapScroll(){
-  if(!tableWrap || !mainTable) return;
-  ensureFloatingFooter();
-  const scrollTop = tableWrap.scrollTop;
-  const clientH = tableWrap.clientHeight;
-  const scrollH = tableWrap.scrollHeight;
-  const threshold = 8;
-  const atBottom = (scrollTop + clientH) >= (scrollH - threshold);
-  const tableFits = scrollH <= clientH + 2;
-  if(atBottom || tableFits){
-    floatingFooter.style.display = 'block';
-    floatingFooter.setAttribute('aria-hidden','false');
-    // ensure footer widths updated to match any scrollbars/changes
-    alignHeaderWidths();
+/* Recalculate after fonts load, resize, orientation change, or content change */
+document.addEventListener('DOMContentLoaded', () => {
+  applyHeaderPositionAndWidths();
+  if(document.fonts && document.fonts.ready){
+    document.fonts.ready.then(() => { applyHeaderPositionAndWidths(); });
   } else {
-    floatingFooter.style.display = 'none';
-    floatingFooter.setAttribute('aria-hidden','true');
+    setTimeout(applyHeaderPositionAndWidths, 200);
   }
-}
+});
+window.addEventListener('resize', () => { applyHeaderPositionAndWidths(); });
+window.addEventListener('orientationchange', () => setTimeout(applyHeaderPositionAndWidths, 120));
 
-/* ---------- Date controls ---------- */
+/* ---- Date controls ---- */
 dateBtn.addEventListener('click', ()=>{ datePicker.focus(); datePicker.click(); });
 datePicker.addEventListener('change', ()=>{ selectedDate = datePicker.value ? new Date(datePicker.value+'T00:00:00') : new Date(); setSelectedDate(selectedDate); renderCombinedDuties(); });
 prevBtn.addEventListener('click', ()=> changeDate(-1));
@@ -263,7 +232,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* ---------- Load link JSONs ---------- */
+/* ---- Load JSON link files ---- */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async f => {
@@ -281,11 +250,12 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* ---------- Render & inline editing (owner model) ---------- */
+/* ---- Render duties + inline editing (owner model) ---- */
 async function renderCombinedDuties(){
-  if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; measureAndApplyLayout(); handleTableWrapScroll(); return; }
+  if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; applyHeaderPositionAndWidths(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
 
+  // fetch firebase edits if DB present
   let fbEdits = {};
   if(firebaseDb){
     try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; }catch(e){ fbEdits = {}; }
@@ -313,11 +283,13 @@ async function renderCombinedDuties(){
       const combined = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
       if(!combined || combined === 'REST') continue;
       const linkId = crew.linkId;
+
       const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
       const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
       const owner = fb._updatedBy || local._updatedBy || null;
       const lpName = local.crewLPName?.trim() || fb.crewLPName?.trim() || crew.crewLPId || '';
       const alpName = local.crewALPName?.trim() || fb.crewALPName?.trim() || crew.crewALPId || '';
+
       rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, owner });
     }
   });
@@ -325,7 +297,7 @@ async function renderCombinedDuties(){
   function tmin(t){ if(!t) return Infinity; const m = t.match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1])*60 + (+m[2]) : Infinity; }
   rows.sort((a,b)=> tmin(a.depTime) - tmin(b.depTime));
 
-  if(!rows.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`; measureAndApplyLayout(); handleTableWrapScroll(); return; }
+  if(!rows.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`; applyHeaderPositionAndWidths(); return; }
 
   dutyTable.innerHTML = '';
   rows.forEach(r=>{
@@ -349,6 +321,7 @@ async function renderCombinedDuties(){
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
+
     el.addEventListener('focus', (ev)=>{
       if(el.getAttribute('contenteditable') === 'false'){ el.blur(); showToast('This cell is owned by someone else.'); return; }
       const txt = el.textContent.trim();
@@ -358,12 +331,11 @@ async function renderCombinedDuties(){
     el.addEventListener('blur', onEditableCommit);
   });
 
-  // after render: measure & align
-  measureAndApplyLayout();
-  handleTableWrapScroll();
+  // after content changes, recompute header top & widths
+  applyHeaderPositionAndWidths();
 }
 
-/* ---------- Editing commit ---------- */
+/* ---- Commit handler ---- */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   const linkId = el.dataset.link;
@@ -377,7 +349,12 @@ async function onEditableCommit(e){
     try{ const fbSnap = await firebaseDb.ref(`/edits/${linkId}/${crewIndex}/_updatedBy`).once('value'); fbOwner = fbSnap.exists() ? fbSnap.val() : null; }catch(e){ fbOwner = null; }
   }
   const owner = fbOwner || existingLocal._updatedBy || null;
-  if(owner && (!currentUser || owner !== currentUser.uid) && !isAdmin){ showToast('Not allowed: owned by ' + owner); await renderCombinedDuties(); return; }
+
+  if(owner && (!currentUser || owner !== currentUser.uid) && !isAdmin){
+    showToast('Not allowed: owned by ' + owner);
+    await renderCombinedDuties();
+    return;
+  }
 
   const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
   if(!localEdits[linkId]) localEdits[linkId] = {};
@@ -389,45 +366,59 @@ async function onEditableCommit(e){
   showToast('Saved locally');
 
   if(firebaseDb){
-    try{ const path = `/edits/${linkId}/${crewIndex}`; const payload = { [field]: newVal, _updatedBy: userUid, _updatedAt: new Date().toISOString() }; await firebaseDb.ref(path).update(payload); showToast('Synced to Firebase'); }catch(err){ console.warn('Firebase push failed', err); }
+    try{
+      const path = `/edits/${linkId}/${crewIndex}`;
+      const payload = { [field]: newVal, _updatedBy: userUid, _updatedAt: new Date().toISOString() };
+      await firebaseDb.ref(path).update(payload);
+      showToast('Synced to Firebase');
+    }catch(err){
+      console.warn('Firebase push failed', err);
+    }
   }
 
   await renderCombinedDuties();
 }
 
-/* ---------- Admin detect ---------- */
+/* ---- Admin detection (optional) ---- */
 async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
-  const ADMIN_UIDS = [];
-  try{ if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true; if(firebaseDb){ const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value'); if(snap.exists() && snap.val() === true) isAdmin = true; } }catch(e){ console.warn('admin detect err', e); }
+  const ADMIN_UIDS = []; // optionally add admin uids here
+  try{
+    if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
+    if(firebaseDb){
+      const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value');
+      if(snap.exists() && snap.val() === true) isAdmin = true;
+    }
+  }catch(e){ console.warn('admin detect err', e); }
   await renderCombinedDuties();
 }
 
-/* ---------- Init ---------- */
+/* ---- Helpers & init ---- */
+function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
+function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
+function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
+
 async function init(){
   setSelectedDate(new Date());
   currentUser = loadLocalUser() || createLocalUser();
   saveLocalUser(currentUser);
   await loadAllLinks();
 
-  // wire scroll event to .tableWrap
-  tableWrap.addEventListener('scroll', () => handleTableWrapScroll());
-
-  // measure on load and when fonts/resizes/orientation change
-  measureAndApplyLayout();
-  if(document.fonts && document.fonts.ready) document.fonts.ready.then(measureAndApplyLayout);
-  window.addEventListener('resize', () => { measureAndApplyLayout(); handleTableWrapScroll(); });
-  window.addEventListener('orientationchange', () => setTimeout(()=>{ measureAndApplyLayout(); handleTableWrapScroll(); }, 120));
-
   if(firebaseAuth && firebaseDb){
-    if(firebaseAuth.currentUser){ currentUser = { uid: firebaseAuth.currentUser.uid, displayName: firebaseAuth.currentUser.displayName || firebaseAuth.currentUser.uid }; saveLocalUser(currentUser); await detectAdmin(); }
-    else { try{ await firebaseAuth.signInAnonymously(); }catch(e){ console.warn('anon sign-in failed', e); } }
+    if(firebaseAuth.currentUser){
+      currentUser = { uid: firebaseAuth.currentUser.uid, displayName: firebaseAuth.currentUser.displayName || firebaseAuth.currentUser.uid };
+      saveLocalUser(currentUser);
+      await detectAdmin();
+    } else {
+      try{ await firebaseAuth.signInAnonymously(); }catch(e){ console.warn('anon sign-in failed', e); }
+    }
   } else {
     await detectAdmin();
   }
 }
 document.addEventListener('DOMContentLoaded', init);
+
 </script>
 </body>
 </html>
