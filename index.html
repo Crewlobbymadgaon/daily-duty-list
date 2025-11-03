@@ -14,47 +14,32 @@
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent);-webkit-font-smoothing:antialiased}
 .wrap{max-width:1100px;margin:0 auto;padding:14px}
 .card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);overflow:hidden}
-
-/* header & controls */
 .headerArea{position:sticky; top:0;background:var(--card);padding:14px 16px;border-bottom:1px solid rgba(0,0,0,0.04);z-index:60;display:flex;flex-direction:column;align-items:center;gap:6px;}
 .headerArea h1{margin:0;font-size:1.25rem;font-weight:700;text-align:center}
 .headerArea .sub{font-size:0.9rem;color:var(--muted);text-align:center}
 .headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center}
 .headerArea #loginStatus{font-size:0.78rem;color:var(--muted);margin-top:6px}
-
-/* controls */
+.headerArea #adminUid{font-size:0.72rem;color:#374151;margin-top:4px}
 .controls{position:sticky;top:0;background:var(--card);z-index:55;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.03)}
 .nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:44px;height:36px;padding:0 10px;cursor:pointer}
 input[type="date"].native-date{position:absolute;left:-9999px}
-
-/* table container */
 .tableWrap{max-height:calc(100vh - 112px);overflow:auto;border-radius:0;background:#fff;padding:6px;position:relative}
-
-/* table */
 table{width:100%;border-collapse:collapse;min-width:640px;table-layout:fixed;border:1px solid var(--border)}
 thead th{background:var(--card);padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);border-top:1px solid rgba(0,0,0,0.04);position:sticky;z-index:70;top:0;box-sizing:border-box}
 tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;word-break:break-word;overflow-wrap:anywhere}
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
-
-/* column widths */
 thead th:nth-child(1), td:nth-child(1){width:36%}
 thead th:nth-child(2), td:nth-child(2){width:36%}
 thead th:nth-child(3), td:nth-child(3){width:18%}
 thead th:nth-child(4), td:nth-child(4){width:5%}
 thead th:nth-child(5), td:nth-child(5){width:5%}
-
-/* train stack */
 .cell-center{display:flex;align-items:center;justify-content:center;min-height:44px}
 .train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:4px 6px;max-width:100%;box-sizing:border-box}
 .train-top,.train-bottom{font-weight:400;font-size:0.90rem;line-height:1;display:inline-block;text-align:center;white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}
 .train-divider{ width:90%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
-
-/* .nowrap class: keep pure 5-digit tokens in one line */
 .nowrap{ white-space:nowrap; display:inline-block; }
-
-/* responsive tweaks */
 @media (min-width:900px){ .train-divider{ width:100%; max-width:180px } }
 @media (max-width:640px){
   table{min-width:0;table-layout:auto}
@@ -63,19 +48,13 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   .train-top,.train-bottom{font-size:0.86rem}
   .train-divider{height:1.5px; width:85%}
 }
-
-/* editable visuals */
 .editable{display:block;min-height:32px;padding:6px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:center}
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
-.ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
-
-/* admin button (floating, small) */
 #adminSignInBtn{position:fixed;top:10px;right:10px;z-index:120;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
-
-/* toast */
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
+.ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
 </style>
 </head>
 <body>
@@ -86,6 +65,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
         <div class="sub">Madgaon Lobby</div>
         <div id="dateHeading">Loading date…</div>
         <div id="loginStatus" aria-live="polite">Login: checking…</div>
+        <div id="adminUid" aria-hidden="true" title="Admin UID will appear here after sign-in"></div>
       </div>
 
       <div class="controls" role="toolbar" aria-label="Date controls">
@@ -118,7 +98,6 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   <button id="adminSignInBtn" title="Admin sign-in">Admin</button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- Firebase compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -150,20 +129,18 @@ let selectedDate = new Date();
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
 
-/* initialize firebase */
+/* init firebase */
 try {
   firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
   firebaseAuth = firebase.auth();
   firebaseDb = firebase.database();
 
-  // Prefer LOCAL persistence (use catch so no top-level await needed)
   if (firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
-    firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(pErr => console.warn('setPersistence err', pErr));
+    firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
   }
 
-  // IMPORTANT: Do NOT auto sign-in anonymously. Employees are view-only.
-  // We only respond to auth state changes for admin sign-in/out.
-  firebaseAuth.onAuthStateChanged(async user => {
+  // We do NOT auto-login anonymously: visitors remain view-only.
+  firebaseAuth.onAuthStateChanged(async (user) => {
     if (user){
       currentUser = {
         uid: user.uid,
@@ -171,19 +148,15 @@ try {
         email: user.email || null,
         anon: user.isAnonymous || false
       };
-      saveLocalUser(currentUser);
-      await detectAdmin();
     } else {
-      // No Firebase auth user by default for visitors — keep them as local viewer
       currentUser = loadLocalUser() || createLocalUser();
-      await detectAdmin();
     }
+    await detectAdmin();
     updateLoginStatusUI();
     await renderCombinedDuties();
   });
 } catch(e){
   console.warn('Firebase init error', e);
-  firebaseApp = null; firebaseAuth = null; firebaseDb = null;
   currentUser = loadLocalUser() || createLocalUser();
   updateLoginStatusUI();
 }
@@ -200,64 +173,33 @@ const dateHeading = document.getElementById('dateHeading');
 const toast = document.getElementById('toast');
 const adminSignInBtn = document.getElementById('adminSignInBtn');
 const loginStatus = document.getElementById('loginStatus');
+const adminUidEl = document.getElementById('adminUid');
 
 /* helpers */
-function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
+function showToast(msg, t=1800){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
 function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
 function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `Viewer-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
 
-/* caret helper */
-function placeCaretAtEnd(el) {
-  try {
-    el.focus();
-    const range = document.createRange();
-    range.selectNodeContents(el);
-    range.collapse(false);
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-  } catch (e) {}
-}
-
-/* mapping for link names */
+/* mapping */
 function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase();
-  if (id.startsWith('link')) {
-    const num = id.replace(/\D/g, '');
-    return `MAO${num}`;
-  } else if (id.startsWith('rnlink')) {
-    const num = id.replace(/\D/g, '');
-    return `RN${num}`;
-  } else if (id.startsWith('ollink')) {
-    const num = id.replace(/\D/g, '');
-    return `OL${num}`;
-  } else if (id.startsWith('sllink')) {
-    const num = id.replace(/\D/g, '');
-    return `SL${num}`;
-  }
+  if (id.startsWith('link')) { const num = id.replace(/\D/g, ''); return `MAO${num}`; }
+  if (id.startsWith('rnlink')) { const num = id.replace(/\D/g, ''); return `RN${num}`; }
+  if (id.startsWith('ollink')) { const num = id.replace(/\D/g, ''); return `OL${num}`; }
+  if (id.startsWith('sllink')) { const num = id.replace(/\D/g, ''); return `SL${num}`; }
   const digits = id.match(/\d+/);
-  if(digits){
-    return `L${digits[0]}`;
-  }
+  if(digits) return `L${digits[0]}`;
   return String(linkId).toUpperCase();
 }
+function formatTrainToken(token){ if(!token) return ''; const cleaned = token.toString().trim(); if(/^\d{5}$/.test(cleaned)){ return `<span class="nowrap">${escapeHtml(cleaned)}</span>`; } return escapeHtml(cleaned).replace(/\//g,'<wbr>/'); }
 
-/* format train token (keep 5-digit tokens on one line) */
-function formatTrainToken(token){
-  if(!token) return '';
-  const cleaned = token.toString().trim();
-  if(/^\d{5}$/.test(cleaned)){
-    return `<span class="nowrap">${escapeHtml(cleaned)}</span>`;
-  }
-  return escapeHtml(cleaned).replace(/\//g, '<wbr>/');
-}
-
-/* UI layout helpers */
+/* layout helpers */
 function setTableWrapPaddingAndHeader(){
   const header = document.querySelector('.headerArea');
   const controls = document.querySelector('.controls');
@@ -289,13 +231,7 @@ function alignHeaderWidths(){
   if(widths.length !== ths.length){
     widths = ths.map(th => Math.round(th.getBoundingClientRect().width) || 80);
   }
-  ths.forEach((th, i) => {
-    const w = widths[i] || 60;
-    th.style.width = w + 'px';
-    th.style.minWidth = w + 'px';
-    th.style.maxWidth = w + 'px';
-    th.style.boxSizing = 'border-box';
-  });
+  ths.forEach((th,i)=>{ const w = widths[i] || 60; th.style.width = w+'px'; th.style.minWidth = w+'px'; th.style.maxWidth = w+'px'; th.style.boxSizing='border-box'; });
   const mainWidth = Math.round(mainTable.getBoundingClientRect().width);
   mainTable.style.tableLayout = 'fixed';
   mainTable.style.width = mainWidth + 'px';
@@ -309,47 +245,41 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* Debugging-friendly Load JSON link files */
+/* Load JSON link files (debug friendly) */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async (f, idx) => {
     try {
       console.log('Fetching', f);
       const r = await fetch(f, {cache:'no-cache'});
-      if (!r.ok) {
+      if (!r.ok){
         const text = await r.text().catch(()=>'<no body>');
-        console.error(`Failed to fetch ${f}: ${r.status} ${r.statusText}`, text);
-        return { __error: true, file: f, status: r.status, statusText: r.statusText, body: text };
+        console.error(`Failed to fetch ${f}:`, r.status, r.statusText, text);
+        return { __error:true, file:f, status:r.status, statusText:r.statusText, body:text };
       }
-      try {
-        const json = await r.json();
-        console.log('Loaded', f, json && (json.linkId || '(no linkId)'));
-        return json;
-      } catch (parseErr) {
+      const json = await r.json().catch(async (err)=>{
         const txt = await r.text().catch(()=>'<no body>');
-        console.error('JSON parse error for', f, parseErr, 'response body:', txt);
-        return { __error: true, file: f, parseErr: (parseErr && parseErr.message), body: txt };
-      }
-    } catch (netErr) {
-      console.error('Network/fetch error for', f, netErr);
-      return { __error: true, file: f, networkErr: (netErr && netErr.message) };
+        return { __error:true, file:f, parseErr: (err && err.message), body: txt };
+      });
+      return json;
+    } catch(err){
+      console.error('Fetch error', f, err);
+      return { __error:true, file:f, err: (err && err.message) };
     }
   });
 
   const results = await Promise.all(fetches);
   allCrewData = [];
-
   const anySuccess = results.some(r => r && !r.__error);
-  if (!anySuccess) {
+  if(!anySuccess){
     dutyTable.innerHTML = '';
-    results.forEach((res)=>{
-      const msg = res && res.__error ? `${res.file} — ${res.status || ''} ${res.statusText || ''} ${res.networkErr || ''} ${res.parseErr || ''}` : 'Unknown error';
+    results.forEach(res=>{
+      const msg = res && res.__error ? `${res.file} — ${res.status||''} ${res.parseErr||res.err||''}` : 'Unknown error';
       const tr = document.createElement('tr');
       tr.innerHTML = `<td colspan="5" class="no-data">Failed to load: ${escapeHtml(msg)}</td>`;
       dutyTable.appendChild(tr);
     });
     setTableWrapPaddingAndHeader();
-    console.warn('All link files failed to load', results);
     return;
   }
 
@@ -364,21 +294,18 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* RENDER + ownership logic:
-   - Owner source order: firebase edits -> local edits
-   - Editing now allowed only if isAdmin (admin can edit all)
-*/
+/* Render + ownership: only admin may edit (client-side); employees view only.
+   Note: server rules must permit admin writes (see earlier messages). */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
 
-  // load firebase edits snapshot (if available)
   let fbEdits = {};
   if(firebaseDb){
-    try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; }catch(e){ fbEdits = {}; }
+    try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; }catch(e){ fbEdits = {}; console.warn('fbEdits load failed', e); }
   }
 
-  const crewsByLink = allCrewData.reduce((acc,crew)=> { (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
+  const crewsByLink = allCrewData.reduce((acc,crew)=>{ (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
   const rows = [];
 
   Object.values(crewsByLink).forEach(crewList=>{
@@ -404,9 +331,9 @@ async function renderCombinedDuties(){
       const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
       const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
       const ownerUid = fb._updatedBy || local._updatedBy || null;
-      const ownerName = (fb._updatedByName || local._updatedByName) || ownerUid;
+      // ownerName should NOT be shown to employees — we'll only display for admin
+      const ownerName = (fb._updatedByName || local._updatedByName) || null;
 
-      // show edited name if present; else show mapped link label
       const lpName =
         (local.crewLPName && local.crewLPName.trim()) ||
         (fb.crewLPName && fb.crewLPName.trim()) ||
@@ -436,41 +363,38 @@ async function renderCombinedDuties(){
 
     const tr = document.createElement('tr');
 
-    // NEW: only admin can edit. Employees/viewers cannot edit any cell.
+    // Only admin can edit
     const mayEditLP = !!isAdmin;
     const mayEditALP = !!isAdmin;
-    const ownerTag = r.ownerName ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
+    // show owner tag only if admin (so employees never see names/UIDs)
+    const ownerTag = (isAdmin && r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
     tr.innerHTML = `
       <td><div class="cell-center"><div class="editable" contenteditable="${mayEditLP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="${mayEditLP? 'Edit LP name':'View only'}">${escapeHtml(r.lpName)}</div></div></td>
       <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="${mayEditALP? 'Edit ALP name':'View only'}">${escapeHtml(r.alpName)}</div></div></td>
       <td>${trainHtml}</td>
       <td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>
-      <td><div class="cell-center" title="${escapeHtml(r.ownerUid || '')}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>
+      <td><div class="cell-center" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>
     `;
     dutyTable.appendChild(tr);
   });
 
-  /* Attach editable behavior
-     - Block focus if not admin (view-only)
-  */
+  /* Attach editable behavior - block focus for non-admins */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
 
     el.addEventListener('focus', (ev)=>{
       if(!isAdmin){
-        // view-only visitors cannot focus/edit
         el.blur();
         showToast('View only — admin can edit.');
         return;
       }
-      // admin can proceed
+      // admin editing: clear placeholder label for convenience
       const txt = el.textContent.trim();
       if(/^(MAO|RN|OL|SL|L)\d+/i.test(txt) || /^(LP|ALP)\d+/i.test(txt)){
         el.dataset._orig = txt;
         el.textContent = '';
-        el.removeAttribute('data-must-clear');
       } else {
         el.dataset._orig = '';
       }
@@ -486,7 +410,11 @@ async function renderCombinedDuties(){
     });
 
     el.addEventListener('blur', async (ev)=>{
-      // only admin should reach commit; re-check server-side rights in handler
+      // guard again: only admin should be allowed to commit
+      if(!isAdmin){
+        await renderCombinedDuties();
+        return;
+      }
       await onEditableCommit(ev);
     });
   });
@@ -494,11 +422,10 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* Commit handler */
+/* Commit handler (admin only) */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
-  // extra guard: only allow commit if admin
   if(!isAdmin){
     showToast('Only admin can make changes.');
     await renderCombinedDuties();
@@ -510,11 +437,10 @@ async function onEditableCommit(e){
   const field = el.dataset.field;
   const newVal = el.textContent.trim();
 
-  // proceed with admin commit logic — admin edits override owner
   const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
   const userReadable = (currentUser && (currentUser.email || currentUser.displayName)) || userUid;
 
-  // If clearing
+  // clear
   if(!newVal){
     if(localEdits[linkId] && localEdits[linkId][crewIndex]) {
       delete localEdits[linkId][crewIndex].crewLPName;
@@ -537,21 +463,22 @@ async function onEditableCommit(e){
         payload._updatedAt = null;
         await firebaseDb.ref(path).update(payload);
         showToast('Cleared on Firebase');
-      }catch(err){ console.warn('Firebase clear failed', err); }
+      }catch(err){
+        console.error('Firebase clear failed', err);
+        showToast('Firebase clear failed: ' + (err.message || err));
+      }
     }
     await renderCombinedDuties();
     return;
   }
 
-  // Admin sets value and owner to admin uid (admin override)
+  // set value + owner to admin
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
-
   localEdits[linkId][crewIndex][field] = newVal;
   localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
   localEdits[linkId][crewIndex]['_updatedByName'] = userReadable;
   localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
-
   saveLocalEdits();
   showToast('Saved locally');
 
@@ -561,7 +488,10 @@ async function onEditableCommit(e){
       const payload = { [field]: newVal, _updatedBy: userUid, _updatedByName: userReadable, _updatedAt: new Date().toISOString() };
       await firebaseDb.ref(path).update(payload);
       showToast('Synced to Firebase');
-    }catch(err){ console.warn('Firebase push failed', err); showToast('Sync failed'); }
+    }catch(err){
+      console.error('Firebase push failed', err);
+      showToast('Firebase sync failed: ' + (err.message || 'see console'));
+    }
   }
 
   await renderCombinedDuties();
@@ -599,7 +529,14 @@ if(adminSignInBtn){
       await detectAdmin();
       await renderCombinedDuties();
       updateLoginStatusUI();
+      // show admin uid in header to copy to /meta/admins
+      if(currentUser && currentUser.uid) {
+        adminUidEl.textContent = `Signed in UID: ${currentUser.uid} — copy this into /meta/admins/<UID> = true`;
+        adminUidEl.setAttribute('aria-hidden','false');
+      }
+      console.log('Admin signed in:', currentUser);
     } catch (err){
+      console.error('Sign-in failed', err);
       alert('Sign-in failed: ' + (err.message || err));
     }
   });
@@ -610,24 +547,27 @@ async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
   try{
-    const ADMIN_UIDS = []; // optional local override
+    const ADMIN_UIDS = [];
     if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
     if(firebaseDb && currentUser && currentUser.uid){
       const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value');
       if(snap.exists() && snap.val() === true) isAdmin = true;
     }
   }catch(e){ console.warn('admin detect err', e); }
+  console.log('detectAdmin -> currentUser.uid=', currentUser && currentUser.uid, 'isAdmin=', isAdmin);
   updateLoginStatusUI();
 }
 
 /* login status UI */
 function updateLoginStatusUI(){
   const u = currentUser || loadLocalUser();
-  if(!u){ loginStatus.textContent = 'Not signed in'; adminSignInBtn.style.display = 'inline-block'; return; }
-  const name = u.email || u.displayName || u.uid || 'unknown';
+  if(!u){ loginStatus.textContent = 'Not signed in'; adminSignInBtn.style.display = 'inline-block'; adminUidEl.textContent=''; return; }
+  const name = (isAdmin ? (u.email || u.displayName || u.uid) : 'Viewer (no name shown)');
   const anonText = u.anon ? ' (anonymous)' : (u.local ? ' (local)' : '');
   loginStatus.textContent = `User: ${name}${anonText} ${isAdmin? ' — Admin':''}`;
   adminSignInBtn.style.display = 'inline-block';
+  // if not admin, hide adminUid field
+  if(!isAdmin) adminUidEl.textContent = '';
 }
 
 /* init */
