@@ -156,6 +156,14 @@ try {
   firebaseAuth = firebase.auth();
   firebaseDb = firebase.database();
 
+  // prefer LOCAL persistence so anonymous session persists across reloads
+  try {
+    await firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+  } catch (pErr) {
+    // ignore if not supported
+    console.warn('setPersistence err', pErr);
+  }
+
   firebaseAuth.onAuthStateChanged(async user => {
     if (user){
       currentUser = {
@@ -167,17 +175,21 @@ try {
       saveLocalUser(currentUser);
       await detectAdmin();
     } else {
+      // Auto anonymous sign-in: each browser will get a persistent anonymous uid
       try {
         const anon = await firebaseAuth.signInAnonymously();
         currentUser = { uid: anon.user.uid, displayName: 'Anonymous', anon: true, email: null };
         saveLocalUser(currentUser);
         await detectAdmin();
       } catch(e){
+        // fallback to local user (rare)
         currentUser = loadLocalUser() || createLocalUser();
         await detectAdmin();
       }
     }
     updateLoginStatusUI();
+    // re-render duties after auth change so contenteditable flags refresh
+    await renderCombinedDuties();
   });
 } catch(e){
   console.warn('Firebase init error', e);
@@ -367,7 +379,8 @@ async function renderCombinedDuties(){
 
       const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
       const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
-      const owner = fb._updatedBy || local._updatedBy || null;
+      const ownerUid = fb._updatedBy || local._updatedBy || null;
+      const ownerName = (fb._updatedByName || local._updatedByName) || ownerUid;
 
       // show edited name if present; else show mapped link label
       const lpName =
@@ -380,7 +393,7 @@ async function renderCombinedDuties(){
         (fb.crewALPName && fb.crewALPName.trim()) ||
         getShortLinkLabel(crew.linkId);
 
-      rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, owner });
+      rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, ownerUid, ownerName });
     }
   });
 
@@ -400,16 +413,16 @@ async function renderCombinedDuties(){
     const tr = document.createElement('tr');
 
     // determine edit permission: admin always allowed; else allowed if unowned OR owned by current user
-    const mayEditLP = !!isAdmin || !r.owner || (currentUser && r.owner === currentUser.uid);
-    const mayEditALP = !!isAdmin || !r.owner || (currentUser && r.owner === currentUser.uid);
-    const ownerTag = r.owner ? `<span class="ownerTag">${escapeHtml(r.owner)}</span>` : '';
+    const mayEditLP = !!isAdmin || !r.ownerUid || (currentUser && r.ownerUid === currentUser.uid);
+    const mayEditALP = !!isAdmin || !r.ownerUid || (currentUser && r.ownerUid === currentUser.uid);
+    const ownerTag = r.ownerName ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
     tr.innerHTML = `
       <td><div class="cell-center"><div class="editable" contenteditable="${mayEditLP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="${mayEditLP? 'Edit LP name':'Owned by someone else'}">${escapeHtml(r.lpName)}</div></div></td>
       <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="${mayEditALP? 'Edit ALP name':'Owned by someone else'}">${escapeHtml(r.alpName)}</div></div></td>
       <td>${trainHtml}</td>
       <td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>
-      <td><div class="cell-center">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>
+      <td><div class="cell-center" title="${escapeHtml(r.ownerUid || '')}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>
     `;
     dutyTable.appendChild(tr);
   });
@@ -478,6 +491,7 @@ async function onEditableCommit(e){
   }
 
   const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
+  const userReadable = (currentUser && (currentUser.email || currentUser.displayName)) || userUid;
 
   // If newVal is empty => clear name and remove ownership
   if(!newVal){
@@ -485,6 +499,7 @@ async function onEditableCommit(e){
       delete localEdits[linkId][crewIndex].crewLPName;
       delete localEdits[linkId][crewIndex].crewALPName;
       delete localEdits[linkId][crewIndex]._updatedBy;
+      delete localEdits[linkId][crewIndex]._updatedByName;
       delete localEdits[linkId][crewIndex]._updatedAt;
       // if the object is empty, remove
       if(Object.keys(localEdits[linkId][crewIndex]).length === 0) delete localEdits[linkId][crewIndex];
@@ -498,6 +513,7 @@ async function onEditableCommit(e){
         const payload = {};
         payload[field] = null;
         payload._updatedBy = null;
+        payload._updatedByName = null;
         payload._updatedAt = null;
         await firebaseDb.ref(path).update(payload);
         showToast('Cleared on Firebase');
@@ -512,9 +528,10 @@ async function onEditableCommit(e){
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
 
   localEdits[linkId][crewIndex][field] = newVal;
-  // If no owner previously or owner equals currentUser, set owner to currentUser.uid
+  // If no owner previously or owner equals currentUser, set owner to currentUser.uid and readable name
   if(!owner || owner === userUid || isAdmin){
     localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
+    localEdits[linkId][crewIndex]['_updatedByName'] = userReadable;
     localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
   }
   saveLocalEdits();
@@ -523,7 +540,7 @@ async function onEditableCommit(e){
   if(firebaseDb){
     try{
       const path = `/edits/${linkId}/${crewIndex}`;
-      const payload = { [field]: newVal, _updatedBy: userUid, _updatedAt: new Date().toISOString() };
+      const payload = { [field]: newVal, _updatedBy: userUid, _updatedByName: userReadable, _updatedAt: new Date().toISOString() };
       await firebaseDb.ref(path).update(payload);
       showToast('Synced to Firebase');
     }catch(err){ console.warn('Firebase push failed', err); }
@@ -549,7 +566,18 @@ if(adminSignInBtn){
     const pwd = prompt('Password:');
     if(!pwd) return;
     try {
-      await firebaseAuth.signInWithEmailAndPassword(email, pwd);
+      const cred = await firebaseAuth.signInWithEmailAndPassword(email, pwd);
+      // refresh currentUser with Firebase user info (so email/displayName are available)
+      const fbUser = firebaseAuth.currentUser || (cred && cred.user);
+      if(fbUser){
+        currentUser = {
+          uid: fbUser.uid,
+          displayName: fbUser.displayName || fbUser.email || fbUser.uid,
+          email: fbUser.email || null,
+          anon: !!fbUser.isAnonymous
+        };
+        saveLocalUser(currentUser);
+      }
       showToast('Signed in');
       await detectAdmin();
       await renderCombinedDuties();
