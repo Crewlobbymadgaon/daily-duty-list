@@ -161,6 +161,8 @@ try {
     firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(pErr => console.warn('setPersistence err', pErr));
   }
 
+  // IMPORTANT: Do NOT auto sign-in anonymously. Employees are view-only.
+  // We only respond to auth state changes for admin sign-in/out.
   firebaseAuth.onAuthStateChanged(async user => {
     if (user){
       currentUser = {
@@ -172,15 +174,9 @@ try {
       saveLocalUser(currentUser);
       await detectAdmin();
     } else {
-      try {
-        const anon = await firebaseAuth.signInAnonymously();
-        currentUser = { uid: anon.user.uid, displayName: 'Anonymous', anon: true, email: null };
-        saveLocalUser(currentUser);
-        await detectAdmin();
-      } catch(e){
-        currentUser = loadLocalUser() || createLocalUser();
-        await detectAdmin();
-      }
+      // No Firebase auth user by default for visitors — keep them as local viewer
+      currentUser = loadLocalUser() || createLocalUser();
+      await detectAdmin();
     }
     updateLoginStatusUI();
     await renderCombinedDuties();
@@ -206,12 +202,12 @@ const adminSignInBtn = document.getElementById('adminSignInBtn');
 const loginStatus = document.getElementById('loginStatus');
 
 /* helpers */
-function showToast(msg, t=1200){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
+function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
 function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
 function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
-function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `User-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
+function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `Viewer-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 
 /* caret helper */
@@ -370,10 +366,7 @@ async function loadAllLinks(){
 
 /* RENDER + ownership logic:
    - Owner source order: firebase edits -> local edits
-   - Editing allowed if: isAdmin OR owner === null OR owner === currentUser.uid
-   - When committing:
-       * If cell was unowned and user added a non-empty name -> set owner to current user
-       * If user deletes the name (empty), remove owner (both local+firebase)
+   - Editing now allowed only if isAdmin (admin can edit all)
 */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
@@ -443,14 +436,14 @@ async function renderCombinedDuties(){
 
     const tr = document.createElement('tr');
 
-    // determine edit permission: admin always allowed; else allowed if unowned OR owned by current user
-    const mayEditLP = !!isAdmin || !r.ownerUid || (currentUser && r.ownerUid === currentUser.uid);
-    const mayEditALP = !!isAdmin || !r.ownerUid || (currentUser && r.ownerUid === currentUser.uid);
+    // NEW: only admin can edit. Employees/viewers cannot edit any cell.
+    const mayEditLP = !!isAdmin;
+    const mayEditALP = !!isAdmin;
     const ownerTag = r.ownerName ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
     tr.innerHTML = `
-      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditLP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="${mayEditLP? 'Edit LP name':'Owned by someone else'}">${escapeHtml(r.lpName)}</div></div></td>
-      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="${mayEditALP? 'Edit ALP name':'Owned by someone else'}">${escapeHtml(r.alpName)}</div></div></td>
+      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditLP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="${mayEditLP? 'Edit LP name':'View only'}">${escapeHtml(r.lpName)}</div></div></td>
+      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="${mayEditALP? 'Edit ALP name':'View only'}">${escapeHtml(r.alpName)}</div></div></td>
       <td>${trainHtml}</td>
       <td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>
       <td><div class="cell-center" title="${escapeHtml(r.ownerUid || '')}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>
@@ -459,18 +452,21 @@ async function renderCombinedDuties(){
   });
 
   /* Attach editable behavior
-     - If user types into an unowned cell and commits, ownership is assigned to them.
-     - If user clears a cell (deletes the name) commit removes ownership.
-     - Non-admins cannot edit cells owned by others (they will be contenteditable=false).
+     - Block focus if not admin (view-only)
   */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
 
     el.addEventListener('focus', (ev)=>{
-      if(el.getAttribute('contenteditable') === 'false'){ el.blur(); showToast('This cell is owned by someone else.'); return; }
+      if(!isAdmin){
+        // view-only visitors cannot focus/edit
+        el.blur();
+        showToast('View only — admin can edit.');
+        return;
+      }
+      // admin can proceed
       const txt = el.textContent.trim();
-      // if showing initial mapped label (MAO1 etc) clear on focus for convenience
       if(/^(MAO|RN|OL|SL|L)\d+/i.test(txt) || /^(LP|ALP)\d+/i.test(txt)){
         el.dataset._orig = txt;
         el.textContent = '';
@@ -490,6 +486,7 @@ async function renderCombinedDuties(){
     });
 
     el.addEventListener('blur', async (ev)=>{
+      // only admin should reach commit; re-check server-side rights in handler
       await onEditableCommit(ev);
     });
   });
@@ -501,30 +498,23 @@ async function renderCombinedDuties(){
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
+  // extra guard: only allow commit if admin
+  if(!isAdmin){
+    showToast('Only admin can make changes.');
+    await renderCombinedDuties();
+    return;
+  }
+
   const linkId = el.dataset.link;
   const crewIndex = Number(el.dataset.crew);
   const field = el.dataset.field;
   const newVal = el.textContent.trim();
 
-  // determine current owner (firebase -> local)
-  let fbOwner = null;
-  if(firebaseDb){
-    try{ const fbSnap = await firebaseDb.ref(`/edits/${linkId}/${crewIndex}/_updatedBy`).once('value'); fbOwner = fbSnap.exists() ? fbSnap.val() : null; }catch(e){ fbOwner = null; }
-  }
-  const local = (localEdits[linkId] && localEdits[linkId][crewIndex]) || {};
-  const owner = fbOwner || local._updatedBy || null;
-
-  // permission check
-  if(owner && (!currentUser || owner !== currentUser.uid) && !isAdmin){
-    showToast('Not allowed: owned by ' + owner);
-    await renderCombinedDuties();
-    return;
-  }
-
+  // proceed with admin commit logic — admin edits override owner
   const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
   const userReadable = (currentUser && (currentUser.email || currentUser.displayName)) || userUid;
 
-  // If newVal is empty => clear name and remove ownership
+  // If clearing
   if(!newVal){
     if(localEdits[linkId] && localEdits[linkId][crewIndex]) {
       delete localEdits[linkId][crewIndex].crewLPName;
@@ -532,7 +522,6 @@ async function onEditableCommit(e){
       delete localEdits[linkId][crewIndex]._updatedBy;
       delete localEdits[linkId][crewIndex]._updatedByName;
       delete localEdits[linkId][crewIndex]._updatedAt;
-      // if the object is empty, remove
       if(Object.keys(localEdits[linkId][crewIndex]).length === 0) delete localEdits[linkId][crewIndex];
     }
     saveLocalEdits();
@@ -554,17 +543,15 @@ async function onEditableCommit(e){
     return;
   }
 
-  // Otherwise, newVal non-empty: set the name and ensure owner is set to current user (unless admin editing for someone else)
+  // Admin sets value and owner to admin uid (admin override)
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
 
   localEdits[linkId][crewIndex][field] = newVal;
-  // If no owner previously or owner equals currentUser, set owner to currentUser.uid and readable name
-  if(!owner || owner === userUid || isAdmin){
-    localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
-    localEdits[linkId][crewIndex]['_updatedByName'] = userReadable;
-    localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
-  }
+  localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
+  localEdits[linkId][crewIndex]['_updatedByName'] = userReadable;
+  localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
+
   saveLocalEdits();
   showToast('Saved locally');
 
@@ -574,7 +561,7 @@ async function onEditableCommit(e){
       const payload = { [field]: newVal, _updatedBy: userUid, _updatedByName: userReadable, _updatedAt: new Date().toISOString() };
       await firebaseDb.ref(path).update(payload);
       showToast('Synced to Firebase');
-    }catch(err){ console.warn('Firebase push failed', err); }
+    }catch(err){ console.warn('Firebase push failed', err); showToast('Sync failed'); }
   }
 
   await renderCombinedDuties();
@@ -598,7 +585,6 @@ if(adminSignInBtn){
     if(!pwd) return;
     try {
       const cred = await firebaseAuth.signInWithEmailAndPassword(email, pwd);
-      // refresh currentUser with Firebase user info (so email/displayName are available)
       const fbUser = firebaseAuth.currentUser || (cred && cred.user);
       if(fbUser){
         currentUser = {
@@ -624,8 +610,7 @@ async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
   try{
-    // Optional: local ADMIN_UIDS list
-    const ADMIN_UIDS = [];
+    const ADMIN_UIDS = []; // optional local override
     if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
     if(firebaseDb && currentUser && currentUser.uid){
       const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value');
