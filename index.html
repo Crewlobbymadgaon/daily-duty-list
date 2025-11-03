@@ -156,12 +156,9 @@ try {
   firebaseAuth = firebase.auth();
   firebaseDb = firebase.database();
 
-  // prefer LOCAL persistence so anonymous session persists across reloads
-  try {
-    await firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
-  } catch (pErr) {
-    // ignore if not supported
-    console.warn('setPersistence err', pErr);
+  // Prefer LOCAL persistence (use catch so no top-level await needed)
+  if (firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
+    firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(pErr => console.warn('setPersistence err', pErr));
   }
 
   firebaseAuth.onAuthStateChanged(async user => {
@@ -175,20 +172,17 @@ try {
       saveLocalUser(currentUser);
       await detectAdmin();
     } else {
-      // Auto anonymous sign-in: each browser will get a persistent anonymous uid
       try {
         const anon = await firebaseAuth.signInAnonymously();
         currentUser = { uid: anon.user.uid, displayName: 'Anonymous', anon: true, email: null };
         saveLocalUser(currentUser);
         await detectAdmin();
       } catch(e){
-        // fallback to local user (rare)
         currentUser = loadLocalUser() || createLocalUser();
         await detectAdmin();
       }
     }
     updateLoginStatusUI();
-    // re-render duties after auth change so contenteditable flags refresh
     await renderCombinedDuties();
   });
 } catch(e){
@@ -319,21 +313,58 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* Load JSON link files */
+/* Debugging-friendly Load JSON link files */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
-  const fetches = linkFiles.map(async f => {
-    try{ const r = await fetch(f, {cache:'no-cache'}); if(!r.ok) throw new Error(f+' '+r.status); return await r.json(); } catch(e){ console.warn('Failed to load', f, e); return null; }
+  const fetches = linkFiles.map(async (f, idx) => {
+    try {
+      console.log('Fetching', f);
+      const r = await fetch(f, {cache:'no-cache'});
+      if (!r.ok) {
+        const text = await r.text().catch(()=>'<no body>');
+        console.error(`Failed to fetch ${f}: ${r.status} ${r.statusText}`, text);
+        return { __error: true, file: f, status: r.status, statusText: r.statusText, body: text };
+      }
+      try {
+        const json = await r.json();
+        console.log('Loaded', f, json && (json.linkId || '(no linkId)'));
+        return json;
+      } catch (parseErr) {
+        const txt = await r.text().catch(()=>'<no body>');
+        console.error('JSON parse error for', f, parseErr, 'response body:', txt);
+        return { __error: true, file: f, parseErr: (parseErr && parseErr.message), body: txt };
+      }
+    } catch (netErr) {
+      console.error('Network/fetch error for', f, netErr);
+      return { __error: true, file: f, networkErr: (netErr && netErr.message) };
+    }
   });
+
   const results = await Promise.all(fetches);
   allCrewData = [];
+
+  const anySuccess = results.some(r => r && !r.__error);
+  if (!anySuccess) {
+    dutyTable.innerHTML = '';
+    results.forEach((res)=>{
+      const msg = res && res.__error ? `${res.file} — ${res.status || ''} ${res.statusText || ''} ${res.networkErr || ''} ${res.parseErr || ''}` : 'Unknown error';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td colspan="5" class="no-data">Failed to load: ${escapeHtml(msg)}</td>`;
+      dutyTable.appendChild(tr);
+    });
+    setTableWrapPaddingAndHeader();
+    console.warn('All link files failed to load', results);
+    return;
+  }
+
   results.forEach((linkData, idx) => {
-    if(!linkData) return;
+    if(!linkData || linkData.__error) return;
     const linkId = linkData.linkId ?? (`file#${idx+1}`);
     const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
     const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
     crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex}));
   });
+
   await renderCombinedDuties();
 }
 
