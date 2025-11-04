@@ -19,7 +19,7 @@ body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,S
 .headerArea .sub{font-size:0.9rem;color:var(--muted);text-align:center}
 .headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center}
 .headerArea #loginStatus{font-size:0.78rem;color:var(--muted);margin-top:6px}
-.headerArea #adminUid{font-size:0.72rem;color:#374151;margin-top:4px}
+.headerArea #notice{font-size:0.78rem;color:#6b7280;margin-top:4px}
 .controls{position:sticky;top:0;background:var(--card);z-index:55;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.03)}
 .nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:44px;height:36px;padding:0 10px;cursor:pointer}
@@ -64,8 +64,9 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
         <h1>LP/ALP Duty List</h1>
         <div class="sub">Madgaon Lobby</div>
         <div id="dateHeading">Loading date…</div>
-        <div id="loginStatus" aria-live="polite">Login: checking…</div>
-        <div id="adminUid" aria-hidden="true" title="Admin UID will appear here after sign-in"></div>
+        <!-- loginStatus kept intentionally minimal; visitors see nothing -->
+        <div id="loginStatus" aria-live="polite"></div>
+        <div id="notice">Sign in as admin to edit the names (view-only for employees).</div>
       </div>
 
       <div class="controls" role="toolbar" aria-label="Date controls">
@@ -135,11 +136,12 @@ try {
   firebaseAuth = firebase.auth();
   firebaseDb = firebase.database();
 
+  // Keep persistence local for admin
   if (firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
     firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
   }
 
-  // We do NOT auto-login anonymously: visitors remain view-only.
+  // no anonymous auto sign-in: visitors stay view-only.
   firebaseAuth.onAuthStateChanged(async (user) => {
     if (user){
       currentUser = {
@@ -149,6 +151,7 @@ try {
         anon: user.isAnonymous || false
       };
     } else {
+      // visitors get a local viewer id (not shown)
       currentUser = loadLocalUser() || createLocalUser();
     }
     await detectAdmin();
@@ -173,10 +176,10 @@ const dateHeading = document.getElementById('dateHeading');
 const toast = document.getElementById('toast');
 const adminSignInBtn = document.getElementById('adminSignInBtn');
 const loginStatus = document.getElementById('loginStatus');
-const adminUidEl = document.getElementById('adminUid');
+const notice = document.getElementById('notice');
 
 /* helpers */
-function showToast(msg, t=1800){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
+function showToast(msg, t=1600){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
 function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
@@ -294,8 +297,7 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* Render + ownership: only admin may edit (client-side); employees view only.
-   Note: server rules must permit admin writes (see earlier messages). */
+/* Render + ownership: only admin may edit (client-side); employees view only. */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
@@ -331,7 +333,6 @@ async function renderCombinedDuties(){
       const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
       const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
       const ownerUid = fb._updatedBy || local._updatedBy || null;
-      // ownerName should NOT be shown to employees — we'll only display for admin
       const ownerName = (fb._updatedByName || local._updatedByName) || null;
 
       const lpName =
@@ -379,15 +380,15 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  /* Attach editable behavior - block focus for non-admins */
+  /* Attach editable behavior - block focus for non-admins (NO TOAST on each click) */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
 
     el.addEventListener('focus', (ev)=>{
       if(!isAdmin){
+        // silently blur for visitors (no toast spam)
         el.blur();
-        showToast('View only — admin can edit.');
         return;
       }
       // admin editing: clear placeholder label for convenience
@@ -427,7 +428,6 @@ async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
   if(!isAdmin){
-    showToast('Only admin can make changes.');
     await renderCombinedDuties();
     return;
   }
@@ -465,7 +465,7 @@ async function onEditableCommit(e){
         showToast('Cleared on Firebase');
       }catch(err){
         console.error('Firebase clear failed', err);
-        showToast('Firebase clear failed: ' + (err.message || err));
+        showToast('Firebase clear failed');
       }
     }
     await renderCombinedDuties();
@@ -490,7 +490,7 @@ async function onEditableCommit(e){
       showToast('Synced to Firebase');
     }catch(err){
       console.error('Firebase push failed', err);
-      showToast('Firebase sync failed: ' + (err.message || 'see console'));
+      showToast('Firebase sync failed');
     }
   }
 
@@ -529,11 +529,6 @@ if(adminSignInBtn){
       await detectAdmin();
       await renderCombinedDuties();
       updateLoginStatusUI();
-      // show admin uid in header to copy to /meta/admins
-      if(currentUser && currentUser.uid) {
-        adminUidEl.textContent = `Signed in UID: ${currentUser.uid} — copy this into /meta/admins/<UID> = true`;
-        adminUidEl.setAttribute('aria-hidden','false');
-      }
       console.log('Admin signed in:', currentUser);
     } catch (err){
       console.error('Sign-in failed', err);
@@ -547,7 +542,7 @@ async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
   try{
-    const ADMIN_UIDS = [];
+    const ADMIN_UIDS = []; // optional local override
     if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
     if(firebaseDb && currentUser && currentUser.uid){
       const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value');
@@ -560,14 +555,23 @@ async function detectAdmin(){
 
 /* login status UI */
 function updateLoginStatusUI(){
+  // Visitors: hide all user details. Admins: minimal admin indicator.
   const u = currentUser || loadLocalUser();
-  if(!u){ loginStatus.textContent = 'Not signed in'; adminSignInBtn.style.display = 'inline-block'; adminUidEl.textContent=''; return; }
-  const name = (isAdmin ? (u.email || u.displayName || u.uid) : 'Viewer (no name shown)');
-  const anonText = u.anon ? ' (anonymous)' : (u.local ? ' (local)' : '');
-  loginStatus.textContent = `User: ${name}${anonText} ${isAdmin? ' — Admin':''}`;
+  if(!u){
+    loginStatus.textContent = '';
+    notice.style.display = '';
+    adminSignInBtn.style.display = 'inline-block';
+    return;
+  }
+  if(isAdmin){
+    loginStatus.textContent = 'Admin — editing enabled';
+    notice.style.display = 'none';
+  } else {
+    loginStatus.textContent = '';
+    // keep the persistent small notice for visitors
+    notice.style.display = '';
+  }
   adminSignInBtn.style.display = 'inline-block';
-  // if not admin, hide adminUid field
-  if(!isAdmin) adminUidEl.textContent = '';
 }
 
 /* init */
