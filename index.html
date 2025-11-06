@@ -10,7 +10,8 @@
   --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb;
   --radius:12px; --divider:#1f6feb; --border:#cdd4e1; --pill-border: rgba(0,0,0,0.06);
   --row-height:64px; /* uniform row height */
-  --train-col-width:120px; /* FIXED train column width (adjust if needed) */
+  --train-col-width:120px; /* FIXED train column width */
+  --pill-space:36px; /* reserved vertical space for top pills */
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -42,11 +43,11 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
 /* cell centering and consistent internal spacing */
 .cell-center{display:flex;align-items:center;justify-content:center;height:100%;position:relative;padding:8px 6px;box-sizing:border-box}
 
-/* LINK PILL (top-left of LP cell) and DEP pill (top-right of train cell) share outline */
+/* LINK PILL: absolute top-left (keeps name below) */
 .lp-cell{ position:relative; padding-top:6px; box-sizing:border-box; }
 .link-pill{
   position:absolute;
-  top:6px;
+  top:8px;
   left:8px;
   display:inline-flex;
   align-items:center;
@@ -56,7 +57,6 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
   font-weight:700;
   font-size:0.72rem;
   text-transform:uppercase;
-  letter-spacing:0.3px;
   background:transparent;
   border:1.5px solid var(--pill-border);
   color:var(--muted);
@@ -65,10 +65,12 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
   z-index:160;
   min-width:46px;
 }
-.train-cell{ position:relative; padding-top:6px; box-sizing:border-box; }
+
+/* TRAIN CELL: reserve extra top space so the dep-pill has its own area */
+.train-cell{ position:relative; padding-top:var(--pill-space); box-sizing:border-box; }
 .dep-pill{
   position:absolute;
-  top:6px;
+  top:8px;
   right:8px;
   background:transparent;
   border:1.5px solid var(--pill-border);
@@ -83,11 +85,11 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
 }
 
 /* Train number styling:
-   - exact 5-digit numbers are kept on a single line (nowrap)
-   - other tokens may wrap at <wbr>
-   - we constrain the visual width to the fixed cell width so wrapping occurs if needed
+   - exact 5-digit numbers stay on single line (nowrap)
+   - other tokens wrap (we add <wbr> at slashes)
+   - keep the stack compact (smaller gap & tighter margins)
 */
-.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:4px 6px;max-width:100%;box-sizing:border-box}
+.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:2px 6px;max-width:100%;box-sizing:border-box}
 .train-number{
   font-weight:700;
   font-size:0.9rem;
@@ -95,11 +97,15 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
   display:inline-block;
   text-align:center;
   width:100%;
-  max-width:calc(var(--train-col-width) - 16px); /* leave space for padding/pill */
+  max-width:calc(var(--train-col-width) - 16px); /* leave padding */
   white-space:normal;
   word-break:break-word;
 }
 .train-number.nowrap{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* tighter top/bottom margins for compact look */
+.train-top{ margin:0; padding-top:2px; }
+.train-bottom{ margin:0; padding-bottom:2px; font-weight:700; font-size:0.9rem; }
 
 /* small divider */
 .train-divider{ width:60%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
@@ -113,13 +119,14 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
 .toast.show{opacity:1;transform:translateY(0)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
 
-/* mobile adjustments: slightly reduce train column width on narrow screens */
+/* mobile adjustments */
 @media (max-width:640px){
-  :root{ --train-col-width:110px; --row-height:60px; }
+  :root{ --train-col-width:110px; --row-height:60px; --pill-space:32px; }
   table{min-width:0;table-layout:auto}
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
   thead th,tbody td{padding:6px}
   .train-number{font-size:0.86rem; max-width:calc(var(--train-col-width) - 16px)}
+  .train-number.nowrap{ font-size:0.9rem }
   .link-pill{font-size:0.64rem;padding:3px 6px;left:6px;top:6px}
   .dep-pill{font-size:0.64rem;padding:3px 6px;right:6px;top:6px}
   .cell-center{min-height:56px}
@@ -314,7 +321,7 @@ function alignHeaderWidths(){
   mainTable.style.width = mainWidth + 'px';
 }
 
-/* Date controls */
+/* date controls */
 dateBtn.addEventListener('click', ()=>{ datePicker.focus(); datePicker.click(); });
 datePicker.addEventListener('change', ()=>{ selectedDate = datePicker.value ? new Date(datePicker.value+'T00:00:00') : new Date(); setSelectedDate(selectedDate); renderCombinedDuties(); });
 prevBtn.addEventListener('click', ()=> changeDate(-1));
@@ -322,7 +329,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* Load JSON link files */
+/* load JSON link files */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async (f, idx) => {
@@ -369,7 +376,7 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* Render */
+/* render */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
@@ -440,7 +447,7 @@ async function renderCombinedDuties(){
     const mayEditALP = !!isAdmin;
     const ownerTag = (isAdmin && r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
-    // pill uses MAO/RN etc derived from linkId
+    // pill uses MAO/RN etc. derived from linkId
     const linkLabel = escapeHtml(getShortLinkLabel(r.link));
 
     const lpCell = `
@@ -467,7 +474,7 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  /* editable handlers */
+  /* editable handlers (unchanged) */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
@@ -505,7 +512,7 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* Commit handler */
+/* Commit handler (unchanged) */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
@@ -577,7 +584,7 @@ async function onEditableCommit(e){
   await renderCombinedDuties();
 }
 
-/* admin sign-in & detection */
+/* admin sign-in & detection (unchanged) */
 if(adminSignInBtn){
   adminSignInBtn.addEventListener('click', async ()=>{
     if(!firebaseAuth){ alert('Firebase not initialized.'); return; }
