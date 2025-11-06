@@ -15,6 +15,7 @@
   --radius:12px;
   --divider:#1f6feb;
   --border:#cdd4e1;
+  --pill-border: rgba(0,0,0,0.06); /* unified pill outline */
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -37,16 +38,18 @@ tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;colo
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
 
-/* columns adjusted: give LP & ALP more space, reduce Train column */
-thead th:nth-child(1), td:nth-child(1){width:34%}
-thead th:nth-child(2), td:nth-child(2){width:34%}
-thead th:nth-child(3), td:nth-child(3){width:18%}
-thead th:nth-child(4), td:nth-child(4){width:6%}
-thead th:nth-child(5), td:nth-child(5){width:8%}
+/* column widths: increase LP/ALP, reduce Train column */
+thead th:nth-child(1), td:nth-child(1){width:44%}
+thead th:nth-child(2), td:nth-child(2){width:44%}
+thead th:nth-child(3), td:nth-child(3){width:8%}
+thead th:nth-child(4), td:nth-child(4){width:2%}
+thead th:nth-child(5), td:nth-child(5){width:2%}
 
-.cell-center{display:flex;align-items:center;justify-content:center;min-height:44px;position:relative}
+/* make rows uniform: ensure consistent min height across cells */
+tbody td, thead th { box-sizing:border-box; }
+.cell-center{display:flex;align-items:center;justify-content:center;min-height:64px;position:relative} /* uniform height */
 
-/* LP: link pill absolute top-left, outline only (styles matched to dep-pill) */
+/* LP link pill absolute top-left; outline identical to dep-pill */
 .lp-cell{ position:relative; padding-top:8px; }
 .link-pill{
   position:absolute;
@@ -56,14 +59,14 @@ thead th:nth-child(5), td:nth-child(5){width:8%}
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  padding:4px 8px;               /* matched to dep-pill */
+  padding:4px 8px;
   border-radius:999px;
   font-weight:700;
   font-size:0.72rem;
   text-transform:uppercase;
   letter-spacing:0.3px;
-  background:transparent;         /* outline-only */
-  border:1.5px solid rgba(0,0,0,0.06); /* will be overridden inline with colorForLinkId() */
+  background:transparent;
+  border:1.5px solid var(--pill-border); /* same outline as dep */
   color:var(--muted);
   pointer-events:none;
   white-space:nowrap;
@@ -73,7 +76,7 @@ thead th:nth-child(5), td:nth-child(5){width:8%}
   min-width:48px;
 }
 
-/* Dep time pill: top-right of train cell (style matched to link-pill) */
+/* Dep pill (top-right of train cell) - same outline as link-pill */
 .train-cell{ position:relative; padding-top:8px; }
 .dep-pill{
   position:absolute;
@@ -81,7 +84,7 @@ thead th:nth-child(5), td:nth-child(5){width:8%}
   right:8px;
   transform: translateY(-10%);
   background:transparent;
-  border:1.5px solid rgba(0,0,0,0.06);
+  border:1.5px solid var(--pill-border); /* unified */
   padding:4px 8px;
   border-radius:999px;
   font-size:0.72rem;
@@ -92,16 +95,16 @@ thead th:nth-child(5), td:nth-child(5){width:8%}
   z-index:150;
 }
 
-/* Train stack: reduced padding so train cell smaller; both numbers same style */
-.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:8px 4px;max-width:100%;box-sizing:border-box}
-.train-number{ font-family: inherit; font-weight:700; font-size:0.92rem; line-height:1; white-space:nowrap; display:inline-block; text-align:center; }
-.train-top{ margin-top:8px; } /* smaller top offset */
-.train-bottom{ margin-top:4px; font-weight:700; font-size:0.92rem; white-space:nowrap; }
+/* Train stack: smaller cell so names have more room; train numbers same style */
+.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:6px 4px;max-width:100%;box-sizing:border-box}
+.train-number{ font-family: inherit; font-weight:700; font-size:0.88rem; line-height:1; white-space:nowrap; display:inline-block; text-align:center; }
+.train-top{ margin-top:8px; }
+.train-bottom{ margin-top:4px; font-weight:700; font-size:0.88rem; white-space:nowrap; }
 
 /* divider */
-.train-divider{ width:80%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
+.train-divider{ width:70%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
 
-/* LP/ALP editable bold, left aligned so names show properly */
+/* LP/ALP editable bold and left-aligned for readability */
 .editable{display:block;min-height:32px;padding:8px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:left;font-weight:700}
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
@@ -115,11 +118,12 @@ thead th:nth-child(5), td:nth-child(5){width:8%}
   table{min-width:0;table-layout:auto}
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
   thead th,tbody td{padding:8px}
-  .train-number{font-size:0.86rem}
+  .train-number{font-size:0.82rem}
   .link-pill{font-size:0.64rem;padding:3px 6px;left:6px;top:6px}
   .dep-pill{font-size:0.64rem;padding:3px 6px;right:6px;top:6px}
   .train-stack{padding:6px 3px}
   .editable{padding:6px;font-size:0.95rem}
+  .cell-center{min-height:56px}
 }
 </style>
 </head>
@@ -200,11 +204,9 @@ try {
   firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
   firebaseAuth = firebase.auth();
   firebaseDb = firebase.database();
-
   if (firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
     firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
   }
-
   firebaseAuth.onAuthStateChanged(async (user) => {
     if (user){
       currentUser = {
@@ -263,21 +265,21 @@ function getShortLinkLabel(linkId) {
   return String(linkId).toUpperCase();
 }
 
-/* format train token: wrap number(s) in .train-number so both numbers share same font & never wrap */
+/* format train token (single-line, identical style) */
 function formatTrainToken(token){ 
   if(!token) return ''; 
   const cleaned = token.toString().trim(); 
   return `<span class="train-number">${escapeHtml(cleaned)}</span>`; 
 }
 
-/* deterministic color for link pill */
+/* deterministic color generator kept (not applied to pill border now) */
 function colorForLinkId(id){
   if(!id) id = 'default';
   let h = 0;
   for(let i=0;i<id.length;i++) h = (h*31 + id.charCodeAt(i)) % 360;
   const hue = h;
-  const border = `hsl(${hue} 75% 45%)`;  // colored border
-  const text = `hsl(${hue} 75% 28%)`;    // colored text
+  const border = `hsl(${hue} 75% 45%)`;
+  const text = `hsl(${hue} 75% 28%)`;
   return { border, text };
 }
 
@@ -445,15 +447,13 @@ async function renderCombinedDuties(){
     const mayEditALP = !!isAdmin;
     const ownerTag = (isAdmin && r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
-    // link pill label & color - outline only and always using MAO/RN style
+    // link pill label (MAO1 etc.)
     const linkLabel = escapeHtml(getShortLinkLabel(r.link));
-    const colors = colorForLinkId(String(r.link));
-    const pillInlineStyle = `border-color:${colors.border}; color:${colors.text}; background:transparent;`;
 
-    // LP cell: absolute pill (top-left) + name below (pill won't disturb name)
+    // LP cell: pill at top-left (outline same as dep) + name below
     const lpCell = `
       <td class="lp-cell">
-        <div class="link-pill" style="${pillInlineStyle}" title="${linkLabel}">${linkLabel}</div>
+        <div class="link-pill" title="${linkLabel}">${linkLabel}</div>
         <div style="padding-top:6px">
           <div class="editable" contenteditable="${mayEditLP? 'true':'false'}"
             data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName"
@@ -475,7 +475,7 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  /* editable handlers */
+  /* attach editable handlers (unchanged) */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
@@ -513,7 +513,7 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* Commit handler (admin only) - unchanged logic */
+/* Commit handler (admin only) - unchanged */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
@@ -585,22 +585,17 @@ async function onEditableCommit(e){
   await renderCombinedDuties();
 }
 
-/* Admin sign-in UI (unchanged) */
+/* Admin sign-in & detection & init (unchanged) */
 if(adminSignInBtn){
   adminSignInBtn.addEventListener('click', async ()=>{
-    if(!firebaseAuth){
-      alert('Firebase not initialized.');
-      return;
-    }
+    if(!firebaseAuth){ alert('Firebase not initialized.'); return; }
     const choice = confirm('Use existing admin account to sign in? OK = Sign in, Cancel = Sign out');
     if(!choice){
       try { await firebaseAuth.signOut(); showToast('Signed out'); await detectAdmin(); await renderCombinedDuties(); updateLoginStatusUI(); } catch(e){ console.warn(e); }
       return;
     }
-    const email = prompt('Admin email:');
-    if(!email) return;
-    const pwd = prompt('Password:');
-    if(!pwd) return;
+    const email = prompt('Admin email:'); if(!email) return;
+    const pwd = prompt('Password:'); if(!pwd) return;
     try {
       const cred = await firebaseAuth.signInWithEmailAndPassword(email, pwd);
       const fbUser = firebaseAuth.currentUser || (cred && cred.user);
@@ -617,49 +612,32 @@ if(adminSignInBtn){
       await detectAdmin();
       await renderCombinedDuties();
       updateLoginStatusUI();
-      console.log('Admin signed in:', currentUser);
     } catch (err){
-      console.error('Sign-in failed', err);
       alert('Sign-in failed: ' + (err.message || err));
     }
   });
 }
 
-/* Admin detection */
 async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
   try{
-    const ADMIN_UIDS = []; // optional local override
+    const ADMIN_UIDS = [];
     if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
     if(firebaseDb && currentUser && currentUser.uid){
       const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value');
       if(snap.exists() && snap.val() === true) isAdmin = true;
     }
-  }catch(e){ console.warn('admin detect err', e); }
+  }catch(e){ console.warn(e); }
   updateLoginStatusUI();
 }
-
-/* login status UI */
 function updateLoginStatusUI(){
   const u = currentUser || loadLocalUser();
-  if(!u){
-    loginStatus.textContent = '';
-    notice.style.display = '';
-    adminSignInBtn.style.display = 'inline-block';
-    return;
-  }
-  if(isAdmin){
-    loginStatus.textContent = 'Admin — editing enabled';
-    notice.style.display = 'none';
-  } else {
-    loginStatus.textContent = '';
-    notice.style.display = '';
-  }
+  if(!u){ loginStatus.textContent = ''; notice.style.display = ''; adminSignInBtn.style.display = 'inline-block'; return; }
+  if(isAdmin){ loginStatus.textContent = 'Admin — editing enabled'; notice.style.display = 'none'; }
+  else { loginStatus.textContent = ''; notice.style.display = ''; }
   adminSignInBtn.style.display = 'inline-block';
 }
-
-/* init */
 async function init(){
   setSelectedDate(new Date());
   currentUser = loadLocalUser() || createLocalUser();
