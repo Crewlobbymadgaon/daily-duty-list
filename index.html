@@ -7,11 +7,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb;
-  --radius:12px; --divider:#1f6feb; --border:#cdd4e1; --pill-border: rgba(0,0,0,0.06);
-  --row-height:64px; /* uniform row height */
-  --train-col-width:120px; /* FIXED train column width */
-  --pill-space:36px; /* reserved vertical space for top pills */
+  --bg:#f4f7fb;
+  --card:#fff;
+  --muted:#6b7280;
+  --accent:#0f172a;
+  --accent-2:#2563eb;
+  --radius:12px;
+  --divider:#1f6feb;
+  --border:#cdd4e1;
+  --pill-border: rgba(0,0,0,0.08);
+  --row-height:64px;       /* uniform row height */
+  --train-col-width:120px; /* fixed train column width */
+  --pill-space:36px;       /* reserved vertical space for pills */
+  --cell-padding-x:10px;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -29,25 +37,33 @@ input[type="date"].native-date{position:absolute;left:-9999px}
 .tableWrap{max-height:calc(100vh - 112px);overflow:auto;border-radius:0;background:#fff;padding:6px;position:relative}
 table{width:100%;border-collapse:collapse;min-width:640px;table-layout:fixed;border:1px solid var(--border)}
 thead th{background:var(--card);padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);border-top:1px solid rgba(0,0,0,0.04);position:sticky;z-index:70;top:0;box-sizing:border-box}
-tbody td{padding:0 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;position:relative;height:var(--row-height);} /* uniform height */
+tbody td{padding:0;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;position:relative;height:var(--row-height);} /* uniform height */
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
 
-/* column widths: LP/ALP flexible, Train fixed */
+/* column widths */
 thead th:nth-child(1), td:nth-child(1){width:auto}
 thead th:nth-child(2), td:nth-child(2){width:auto}
 thead th:nth-child(3), td:nth-child(3){width:var(--train-col-width); min-width:var(--train-col-width); max-width:var(--train-col-width)}
 thead th:nth-child(4), td:nth-child(4){width:60px}
 thead th:nth-child(5), td:nth-child(5){width:60px}
 
-/* cell centering and consistent internal spacing */
-.cell-center{display:flex;align-items:center;justify-content:center;height:100%;position:relative;padding:8px 6px;box-sizing:border-box}
+/* cell inner wrapper - used to center content while reserving top pill space */
+.cell-inner{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  height:100%;
+  padding: calc(var(--pill-space) / 8) var(--cell-padding-x); /* slight top padding addition */
+  box-sizing:border-box;
+  text-align:center;
+}
 
-/* LINK PILL: absolute top-left (keeps name below) */
-.lp-cell{ position:relative; padding-top:6px; box-sizing:border-box; }
+/* LP link pill */
+.lp-cell{ position:relative; }
 .link-pill{
   position:absolute;
-  top:8px;
+  top:6px;
   left:8px;
   display:inline-flex;
   align-items:center;
@@ -57,6 +73,7 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
   font-weight:700;
   font-size:0.72rem;
   text-transform:uppercase;
+  letter-spacing:0.3px;
   background:transparent;
   border:1.5px solid var(--pill-border);
   color:var(--muted);
@@ -66,11 +83,11 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
   min-width:46px;
 }
 
-/* TRAIN CELL: reserve extra top space so the dep-pill has its own area */
+/* Train cell: reserve top space for dep-pill */
 .train-cell{ position:relative; padding-top:var(--pill-space); box-sizing:border-box; }
 .dep-pill{
   position:absolute;
-  top:8px;
+  top:6px;
   right:8px;
   background:transparent;
   border:1.5px solid var(--pill-border);
@@ -84,12 +101,8 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
   z-index:150;
 }
 
-/* Train number styling:
-   - exact 5-digit numbers stay on single line (nowrap)
-   - other tokens wrap (we add <wbr> at slashes)
-   - keep the stack compact (smaller gap & tighter margins)
-*/
-.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:2px 6px;max-width:100%;box-sizing:border-box}
+/* train numbers - compact and centered */
+.train-stack{display:flex;flex-direction:column;align-items:center;gap:4px;padding:2px 4px;max-width:100%;box-sizing:border-box}
 .train-number{
   font-weight:700;
   font-size:0.9rem;
@@ -97,39 +110,48 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
   display:inline-block;
   text-align:center;
   width:100%;
-  max-width:calc(var(--train-col-width) - 16px); /* leave padding */
+  max-width:calc(var(--train-col-width) - 16px);
   white-space:normal;
   word-break:break-word;
 }
 .train-number.nowrap{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-/* tighter top/bottom margins for compact look */
-.train-top{ margin:0; padding-top:2px; }
-.train-bottom{ margin:0; padding-bottom:2px; font-weight:700; font-size:0.9rem; }
-
-/* small divider */
+/* divider */
 .train-divider{ width:60%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
 
-/* editable names: centered and bold */
-.editable{display:flex;align-items:center;justify-content:center;height:100%;padding:6px 8px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:center;font-weight:700}
+/* editable names center-aligned and fill the cell */
+.editable{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:6px 8px;
+  box-sizing:border-box;
+  text-align:center;
+  font-weight:700;
+  border-radius:6px;
+  outline:none;
+  cursor:text;
+}
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
+
 #adminSignInBtn{position:fixed;top:10px;right:10px;z-index:200;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
 
-/* mobile adjustments */
+/* mobile tuning */
 @media (max-width:640px){
   :root{ --train-col-width:110px; --row-height:60px; --pill-space:32px; }
   table{min-width:0;table-layout:auto}
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
   thead th,tbody td{padding:6px}
   .train-number{font-size:0.86rem; max-width:calc(var(--train-col-width) - 16px)}
-  .train-number.nowrap{ font-size:0.9rem }
   .link-pill{font-size:0.64rem;padding:3px 6px;left:6px;top:6px}
   .dep-pill{font-size:0.64rem;padding:3px 6px;right:6px;top:6px}
-  .cell-center{min-height:56px}
+  .cell-inner{padding: calc(var(--pill-space) / 10) var(--cell-padding-x)}
 }
 </style>
 </head>
@@ -173,6 +195,7 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
   <button id="adminSignInBtn" title="Admin sign-in">Admin</button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
+  <!-- firebase libs (unchanged) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -233,7 +256,7 @@ try {
   updateLoginStatusUI();
 }
 
-/* DOM */
+/* DOM refs */
 const dutyTable = document.getElementById('dutyTable');
 const mainTable = document.getElementById('mainTable');
 const tableWrap = document.querySelector('.tableWrap');
@@ -256,7 +279,7 @@ function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slic
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
 
-/* link label mapping */
+/* short label from linkId */
 function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase();
@@ -269,10 +292,7 @@ function getShortLinkLabel(linkId) {
   return String(linkId).toUpperCase();
 }
 
-/* format train token:
-   - keep exact 5-digit numbers on a single line (nowrap)
-   - insert <wbr> after slashes for sensible breaking of long tokens
-*/
+/* format train token - 5-digit numbers stay on one line, else allow breaks at '/' */
 function formatTrainToken(token){
   if(!token) return '';
   const cleaned = token.toString().trim();
@@ -321,7 +341,7 @@ function alignHeaderWidths(){
   mainTable.style.width = mainWidth + 'px';
 }
 
-/* date controls */
+/* Date controls */
 dateBtn.addEventListener('click', ()=>{ datePicker.focus(); datePicker.click(); });
 datePicker.addEventListener('change', ()=>{ selectedDate = datePicker.value ? new Date(datePicker.value+'T00:00:00') : new Date(); setSelectedDate(selectedDate); renderCombinedDuties(); });
 prevBtn.addEventListener('click', ()=> changeDate(-1));
@@ -329,7 +349,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* load JSON link files */
+/* Load JSON link files */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async (f, idx) => {
@@ -376,7 +396,7 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* render */
+/* Render */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
@@ -447,13 +467,12 @@ async function renderCombinedDuties(){
     const mayEditALP = !!isAdmin;
     const ownerTag = (isAdmin && r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
-    // pill uses MAO/RN etc. derived from linkId
     const linkLabel = escapeHtml(getShortLinkLabel(r.link));
 
     const lpCell = `
       <td class="lp-cell">
         <div class="link-pill" title="${linkLabel}">${linkLabel}</div>
-        <div class="cell-center" style="padding-top:0">
+        <div class="cell-inner">
           <div class="editable" contenteditable="${mayEditLP? 'true':'false'}"
             data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName"
             title="${mayEditLP? 'Edit LP name':'View only'}">${escapeHtml(r.lpName)}</div>
@@ -461,20 +480,31 @@ async function renderCombinedDuties(){
       </td>`;
 
     const alpCell = `
-      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}"
-        data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName"
-        title="${mayEditALP? 'Edit ALP name':'View only'}">${escapeHtml(r.alpName)}</div></div></td>`;
+      <td>
+        <div class="cell-inner">
+          <div class="editable" contenteditable="${mayEditALP? 'true':'false'}"
+            data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName"
+            title="${mayEditALP? 'Edit ALP name':'View only'}">${escapeHtml(r.alpName)}</div>
+        </div>
+      </td>`;
 
-    const trainCell = `<td class="train-cell"><div class="dep-pill">${escapeHtml(r.depTime||'')}</div><div class="cell-center">${trainInner}</div></td>`;
+    const trainCell = `<td class="train-cell">
+        <div class="dep-pill">${escapeHtml(r.depTime||'')}</div>
+        <div class="cell-inner">${trainInner}</div>
+      </td>`;
 
-    const depCell = `<td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>`;
-    const linkCell = `<td><div class="cell-center" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>`;
+    const depCell = `<td>
+        <div class="cell-inner">${escapeHtml(r.depTime||'')}</div>
+      </td>`;
+    const linkCell = `<td>
+        <div class="cell-inner" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div>
+      </td>`;
 
     tr.innerHTML = `${lpCell}${alpCell}${trainCell}${depCell}${linkCell}`;
     dutyTable.appendChild(tr);
   });
 
-  /* editable handlers (unchanged) */
+  /* editable handlers */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
@@ -512,7 +542,7 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* Commit handler (unchanged) */
+/* commit handler (unchanged) */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
@@ -584,7 +614,7 @@ async function onEditableCommit(e){
   await renderCombinedDuties();
 }
 
-/* admin sign-in & detection (unchanged) */
+/* admin sign-in UI */
 if(adminSignInBtn){
   adminSignInBtn.addEventListener('click', async ()=>{
     if(!firebaseAuth){ alert('Firebase not initialized.'); return; }
