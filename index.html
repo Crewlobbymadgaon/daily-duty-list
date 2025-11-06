@@ -30,25 +30,42 @@ thead th{background:var(--card);padding:10px 12px;text-align:center;color:var(--
 tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;word-break:break-word;overflow-wrap:anywhere}
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
+
+/* default column widths for desktop (keeps visual balance) */
 thead th:nth-child(1), td:nth-child(1){width:36%}
 thead th:nth-child(2), td:nth-child(2){width:36%}
 thead th:nth-child(3), td:nth-child(3){width:18%}
 thead th:nth-child(4), td:nth-child(4){width:5%}
 thead th:nth-child(5), td:nth-child(5){width:5%}
+
 .cell-center{display:flex;align-items:center;justify-content:center;min-height:44px}
 .train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:4px 6px;max-width:100%;box-sizing:border-box}
 .train-top,.train-bottom{font-weight:400;font-size:0.90rem;line-height:1;display:inline-block;text-align:center;white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}
 .train-divider{ width:90%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
 .nowrap{ white-space:nowrap; display:inline-block; }
 @media (min-width:900px){ .train-divider{ width:100%; max-width:180px } }
+
+/* MOBILE: tighter layout and custom column widths
+   - LP: 40%, Train: 20%, ALP: 40%
+   - hide Dep & Link columns (they remain in DOM for accessibility)
+*/
 @media (max-width:640px){
   table{min-width:0;table-layout:auto}
-  /* Dep/Link columns are hidden on mobile - we keep 5 columns in DOM and hide the last two */
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
+
+  /* mobile column sizing */
+  thead th:nth-child(1), td:nth-child(1){width:40% !important; text-align:left; padding-left:10px}
+  thead th:nth-child(2), td:nth-child(2){width:20% !important; white-space:nowrap; font-weight:600}
+  thead th:nth-child(3), td:nth-child(3){width:40% !important; text-align:right; padding-right:10px}
+
   thead th,tbody td{padding:8px}
   .train-top,.train-bottom{font-size:0.86rem}
   .train-divider{height:1.5px; width:85%}
+  .cell-center{min-height:36px}
+  .editable{padding:4px 6px;min-height:28px}
 }
+
+/* Admin / small UI */
 .editable{display:block;min-height:32px;padding:6px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:center}
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
@@ -79,7 +96,6 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
       <div class="tableWrap" aria-live="polite">
         <table id="mainTable" aria-describedby="dateHeading">
           <thead>
-            <!-- replaced with dynamic row to allow responsive header reordering -->
             <tr id="theadRow"></tr>
           </thead>
           <tbody id="dutyTable">
@@ -252,20 +268,20 @@ function renderTableHead(){
   const tr = theadRowEl();
   if(!tr) return;
   if(isMobile()){
-    // Mobile order: LP, Train, ALP, Dep, Link (Dep/Link will be hidden by CSS)
+    // Mobile order: LP, Train No:, ALP, Dep, Link (Dep/Link hidden by CSS)
     tr.innerHTML = `
-      <th>Name of LP</th>
-      <th>Train No</th>
-      <th>Name of ALP</th>
+      <th>LP</th>
+      <th>Train No:</th>
+      <th>ALP</th>
       <th>Dep</th>
       <th>Link No</th>
     `;
   } else {
-    // Desktop original: LP, ALP, Train, Dep, Link
+    // Desktop: LP, ALP, Train No:, Dep, Link
     tr.innerHTML = `
-      <th>Name of LP</th>
-      <th>Name of ALP</th>
-      <th>Train No</th>
+      <th>LP</th>
+      <th>ALP</th>
+      <th>Train No:</th>
       <th>Dep</th>
       <th>Link No</th>
     `;
