@@ -23,6 +23,7 @@
   --pill-text-dep: rgba(15,23,42,0.9);
 }
 *{box-sizing:border-box}
+html,body{height:100%}
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent);-webkit-font-smoothing:antialiased}
 .wrap{max-width:1100px;margin:0 auto;padding:14px}
 .card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);overflow:hidden}
@@ -43,7 +44,7 @@ tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;colo
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
 
-/* DESKTOP default column sizes */
+/* default column sizes */
 thead th:nth-child(1), td:nth-child(1){width:36%}
 thead th:nth-child(2), td:nth-child(2){width:36%}
 thead th:nth-child(3), td:nth-child(3){width:18%}
@@ -52,8 +53,8 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 
 .cell-center{display:flex;align-items:center;justify-content:center;min-height:44px}
 
-/* train stack: relative so dep-time & link-label can be absolutely placed inside it,
-   and enough padding-top reserves space so top-left/right pills never overlap content */
+/* TRAIN STACK - reserve enough top space so pills never overlap content.
+   We make this fairly large and consistent to avoid device quirks. */
 .train-stack{
   display:inline-flex;
   flex-direction:column;
@@ -63,18 +64,18 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   max-width:100%;
   box-sizing:border-box;
   position:relative;
-  padding-top:40px; /* increased space for pills */
+  padding-top:48px; /* IMPORTANT: reserve space for top-left/top-right pills */
   min-height:72px;
 }
 
-/* TOP-LEFT LINK PILL: outline only, light color, uppercase e.g. MAO1, RN1 */
+/* TOP-LEFT LINK PILL: outline-only, light border, uppercase label (from JSON if present) */
 .train-linklabel{
   position:absolute;
   top:6px;
   left:6px;
   font-size:0.72rem;
   color:var(--pill-text-link);
-  background:transparent;                 /* outline only */
+  background:transparent;
   border:1px solid var(--pill-outline-link);
   padding:4px 8px;
   border-radius:999px;
@@ -83,29 +84,30 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   font-weight:700;
   line-height:1;
   pointer-events:none;
-  z-index:50;
-  transform:translateY(0);
+  z-index:110;
 }
 
-/* TOP-RIGHT DEP TIME PILL: outline only, light color */
+/* TOP-RIGHT DEP TIME PILL: outline-only, light border */
 .train-deptime{
   position:absolute;
   top:6px;
   right:6px;
   font-size:0.72rem;
   color:var(--pill-text-dep);
-  background:transparent;                 /* outline only */
+  background:transparent;
   border:1px solid var(--pill-outline-dep);
   padding:4px 8px;
   border-radius:999px;
   line-height:1;
   pointer-events:none;
   font-weight:700;
-  z-index:50;
-  transform:translateY(0);
+  z-index:110;
 }
 
-/* train number: slightly smaller and bold so 5-digit fits nicely */
+/* ensure content lines have no extra top margins */
+.train-top, .train-bottom, .train-number { margin:0; padding:0; }
+
+/* train number style */
 .train-number{
   white-space:nowrap;
   font-weight:700;
@@ -134,10 +136,10 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 @media (min-width:900px){ .train-divider{ width:100%; max-width:180px } }
 @media (max-width:640px){
   table{min-width:0;table-layout:auto}
-  /* hide Dep & Link columns visually */
+  /* hide Dep & Link columns visually (we show pills inside train cell) */
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
 
-  /* mobile column sizing: LP 40%, Train 25%, ALP 35% (train slightly wider) */
+  /* mobile column sizing: LP 40%, Train 25%, ALP 35% */
   thead th:nth-child(1), td:nth-child(1){width:40% !important; text-align:left; padding-left:10px}
   thead th:nth-child(2), td:nth-child(2){width:25% !important; white-space:nowrap; font-weight:700}
   thead th:nth-child(3), td:nth-child(3){width:35% !important; text-align:right; padding-right:10px}
@@ -148,14 +150,13 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   .cell-center{min-height:36px}
   .editable{padding:4px 6px;min-height:28px}
 
-  /* mobile pill spacing tweaks */
   .train-number{font-size:0.86rem}
-  .train-stack{padding-top:34px; min-height:56px}
+  .train-stack{padding-top:44px; min-height:56px}
   .train-deptime{top:4px; right:6px; font-size:0.68rem}
   .train-linklabel{top:4px; left:6px; font-size:0.68rem}
 }
 
-/* Make LP/ALP names appear bold and headings centered */
+/* Make LP/ALP names bold */
 .editable{
   display:block;
   min-height:32px;
@@ -167,7 +168,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   box-sizing:border-box;
   user-select:text;
   text-align:center;
-  font-weight:700; /* bold names */
+  font-weight:700;
 }
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
@@ -302,8 +303,8 @@ function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slic
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
 
-/* mapping: uppercase short labels like MAO1, RN1, OL1 */
-function getShortLinkLabel(linkId) {
+/* mapping fallback: uppercase short labels like MAO1, RN1, OL1 */
+function fallbackShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase();
   if (id.startsWith('link')) { const num = id.replace(/\D/g, ''); return `MAO${num}`; }
@@ -396,7 +397,8 @@ function renderTableHead(){
   }
 }
 
-/* Load JSON link files (debug friendly but silent) */
+/* Load JSON link files.
+   When a JSON file contains a friendly name, prefer that: we check `label`, `linkName`, `displayName`, `name`. */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async (f, idx) => {
@@ -439,7 +441,19 @@ async function loadAllLinks(){
     const linkId = linkData.linkId ?? (`file#${idx+1}`);
     const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
     const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
-    crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex}));
+
+    // try to extract a friendly link label from the JSON file (user requested)
+    const possibleLabel = (linkData && (linkData.label || linkData.linkName || linkData.displayName || linkData.name)) || null;
+    // if present, use it; otherwise fall back to the old mapping
+    const friendlyLabel = possibleLabel ? String(possibleLabel).trim() : null;
+
+    crewArr.forEach((crew, crewIndex) => allCrewData.push({
+      ...crew,
+      linkId,
+      lastUpdatedDate: lastUpdated,
+      crewIndex,
+      linkLabel: friendlyLabel  // may be null; renderer will fallback if null
+    }));
   });
 
   await renderCombinedDuties();
@@ -489,14 +503,25 @@ async function renderCombinedDuties(){
       const lpName =
         (local.crewLPName && local.crewLPName.trim()) ||
         (fb.crewLPName && fb.crewLPName.trim()) ||
-        getShortLinkLabel(crew.linkId);
+        getDisplayNameFallback(crew); // uses crew.linkLabel when available
 
       const alpName =
         (local.crewALPName && local.crewALPName.trim()) ||
         (fb.crewALPName && fb.crewALPName.trim()) ||
-        getShortLinkLabel(crew.linkId);
+        getDisplayNameFallback(crew);
 
-      rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, ownerUid, ownerName });
+      rows.push({
+        depTime,
+        outgoing,
+        incoming,
+        lpName,
+        alpName,
+        link: linkId,
+        crewIndex: crew.crewIndex,
+        ownerUid,
+        ownerName,
+        linkLabel: crew.linkLabel // may be null
+      });
     }
   });
 
@@ -509,21 +534,23 @@ async function renderCombinedDuties(){
   rows.forEach(r=>{
     const outHtml = formatTrainToken(r.outgoing || '');
     const incHtml = formatTrainToken(r.incoming || '');
-    const shortLinkRaw = getShortLinkLabel(r.link) || '';
+
+    // derive pill label: prefer JSON-provided linkLabel; otherwise fallback to computed label
+    const shortLinkRaw = r.linkLabel && String(r.linkLabel).trim() ? r.linkLabel.trim() : fallbackShortLinkLabel(r.link || '');
     const shortLink = escapeHtml(shortLinkRaw);
 
     // train cell: top-left link pill, top-right dep time pill, center train number(s)
     const trainInner = (incHtml)
       ? `<div class="train-stack" role="group" aria-label="Train info for ${shortLink}">
-           <div class="train-linklabel">${shortLink}</div>
-           <div class="train-deptime">${escapeHtml(r.depTime||'')}</div>
+           <div class="train-linklabel" aria-hidden="true">${shortLink}</div>
+           <div class="train-deptime" aria-hidden="true">${escapeHtml(r.depTime||'')}</div>
            <div class="train-top">${outHtml}</div>
            <div class="train-divider" aria-hidden="true"></div>
            <div class="train-bottom">${incHtml}</div>
          </div>`
       : `<div class="train-stack" role="group" aria-label="Train info for ${shortLink}">
-           <div class="train-linklabel">${shortLink}</div>
-           <div class="train-deptime">${escapeHtml(r.depTime||'')}</div>
+           <div class="train-linklabel" aria-hidden="true">${shortLink}</div>
+           <div class="train-deptime" aria-hidden="true">${escapeHtml(r.depTime||'')}</div>
            <div class="train-top">${outHtml}</div>
          </div>`;
 
@@ -572,12 +599,11 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  /* Attach editable behavior - block focus for non-admins (NO TOAST on each click) */
+  /* Attach editable behavior - block focus for non-admins */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
 
-    // prevent outer handlers from stealing focus on pointer down
     el.addEventListener('pointerdown', (ev)=> { ev.stopPropagation(); }, {passive:true});
 
     el.addEventListener('focus', (ev)=>{
@@ -635,6 +661,13 @@ async function renderCombinedDuties(){
   }
 }
 
+/* helper: resolve display name fallback for crew object (prefer JSON-provided linkLabel) */
+function getDisplayNameFallback(crewObj){
+  if(!crewObj) return '';
+  if(crewObj.linkLabel && String(crewObj.linkLabel).trim()) return String(crewObj.linkLabel).trim();
+  return fallbackShortLinkLabel(crewObj.linkId || '');
+}
+
 /* Commit handler (admin only) */
 async function onEditableCommit(e){
   const el = e.currentTarget;
@@ -684,7 +717,7 @@ async function onEditableCommit(e){
     return;
   }
 
-  // set value + owner to admin locally first
+  // set value + owner to admin locally
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
   localEdits[linkId][crewIndex][field] = newVal;
@@ -710,7 +743,7 @@ async function onEditableCommit(e){
   await renderCombinedDuties();
 }
 
-/* Admin sign-in UI */
+/* Admin sign-in UI (unchanged) */
 if(adminSignInBtn){
   adminSignInBtn.addEventListener('click', async ()=>{
     if(!firebaseAuth){
