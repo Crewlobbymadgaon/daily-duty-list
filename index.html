@@ -40,18 +40,49 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 
 .cell-center{display:flex;align-items:center;justify-content:center;min-height:44px}
 
-/* train stack: relative so dep-time can be absolutely placed inside it,
-   and padding-top reserves space so dep-time won't overlap content */
+/* train stack: relative so dep-time & link-label can be absolutely placed inside it,
+   and padding-top reserves space so top-left/right labels don't overlap content */
 .train-stack{
   display:inline-flex;
   flex-direction:column;
   align-items:center;
   gap:4px;
-  padding:6px 6px 6px 6px;
+  padding:6px;
   max-width:100%;
   box-sizing:border-box;
   position:relative;
-  padding-top:20px; /* space for dep-time */
+  padding-top:22px; /* space for top-left/right labels */
+}
+
+/* top-left link label inside train cell */
+.train-linklabel{
+  position:absolute;
+  top:6px;
+  left:8px;
+  font-size:0.72rem;
+  color:var(--muted);
+  text-transform:lowercase;
+  letter-spacing:0.2px;
+  pointer-events:none;
+}
+
+/* dep time top-right */
+.train-deptime{
+  position:absolute;
+  top:6px;
+  right:8px;
+  font-size:0.72rem;
+  color:var(--muted);
+  pointer-events:none;
+}
+
+/* train number: slightly smaller and bold so 5-digit fits nicely */
+.train-number{
+  white-space:nowrap;
+  font-weight:700;
+  display:inline-block;
+  font-size:0.92rem;
+  line-height:1;
 }
 
 .train-top,.train-bottom{
@@ -64,27 +95,6 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   overflow-wrap:anywhere;
   word-break:break-word;
   max-width:100%;
-}
-
-/* train number: slightly smaller and bold so 5-digit fits nicely */
-.train-number{
-  white-space:nowrap;
-  font-weight:700;
-  display:inline-block;
-  font-size:0.92rem; /* reduced size */
-  line-height:1;
-}
-
-/* dep time top-right */
-.train-deptime{
-  position:absolute;
-  top:6px;
-  right:8px;
-  font-size:0.72rem;
-  color:var(--muted);
-  background:transparent;
-  line-height:1;
-  pointer-events:none;
 }
 
 /* divider */
@@ -109,14 +119,27 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   .cell-center{min-height:36px}
   .editable{padding:4px 6px;min-height:28px}
 
-  /* mobile-specific: slightly smaller number and tighter dep-time spacing */
+  /* mobile-specific sizing tweaks */
   .train-number{font-size:0.9rem}
-  .train-stack{padding-top:16px}
+  .train-stack{padding-top:18px}
   .train-deptime{top:4px; right:6px; font-size:0.68rem}
+  .train-linklabel{top:4px; left:6px; font-size:0.68rem}
 }
 
-/* Admin / small UI */
-.editable{display:block;min-height:32px;padding:6px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:center}
+/* Make LP/ALP names appear bold */
+.editable{
+  display:block;
+  min-height:32px;
+  padding:6px;
+  border-radius:6px;
+  outline:none;
+  cursor:text;
+  width:100%;
+  box-sizing:border-box;
+  user-select:text;
+  text-align:center;
+  font-weight:700; /* bold names */
+}
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
 #adminSignInBtn{position:fixed;top:10px;right:10px;z-index:120;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
@@ -250,17 +273,17 @@ function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slic
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
 
-/* mapping */
+/* mapping: lowercase short labels */
 function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase();
-  if (id.startsWith('link')) { const num = id.replace(/\D/g, ''); return `MAO${num}`; }
-  if (id.startsWith('rnlink')) { const num = id.replace(/\D/g, ''); return `RN${num}`; }
-  if (id.startsWith('ollink')) { const num = id.replace(/\D/g, ''); return `OL${num}`; }
-  if (id.startsWith('sllink')) { const num = id.replace(/\D/g, ''); return `SL${num}`; }
+  if (id.startsWith('link')) { const num = id.replace(/\D/g, ''); return `mao${num}`; }
+  if (id.startsWith('rnlink')) { const num = id.replace(/\D/g, ''); return `rn${num}`; }
+  if (id.startsWith('ollink')) { const num = id.replace(/\D/g, ''); return `ol${num}`; }
+  if (id.startsWith('sllink')) { const num = id.replace(/\D/g, ''); return `sl${num}`; }
   const digits = id.match(/\d+/);
-  if(digits) return `L${digits[0]}`;
-  return String(linkId).toUpperCase();
+  if(digits) return `l${digits[0]}`;
+  return String(linkId).toLowerCase();
 }
 function formatTrainToken(token){ 
   if(!token) return ''; 
@@ -327,19 +350,19 @@ function renderTableHead(){
   if(!tr) return;
   if(isMobile()){
     tr.innerHTML = `
-      <th>LP</th>
-      <th>Train No:</th>
-      <th>ALP</th>
-      <th>Dep</th>
-      <th>Link No</th>
+      <th style="text-align:center">LP</th>
+      <th style="text-align:center">Train No:</th>
+      <th style="text-align:center">ALP</th>
+      <th style="text-align:center">Dep</th>
+      <th style="text-align:center">Link No</th>
     `;
   } else {
     tr.innerHTML = `
-      <th>LP</th>
-      <th>ALP</th>
-      <th>Train No:</th>
-      <th>Dep</th>
-      <th>Link No</th>
+      <th style="text-align:center">LP</th>
+      <th style="text-align:center">ALP</th>
+      <th style="text-align:center">Train No:</th>
+      <th style="text-align:center">Dep</th>
+      <th style="text-align:center">Link No</th>
     `;
   }
 }
@@ -457,15 +480,19 @@ async function renderCombinedDuties(){
   rows.forEach(r=>{
     const outHtml = formatTrainToken(r.outgoing || '');
     const incHtml = formatTrainToken(r.incoming || '');
-    // train HTML includes top-right dep time and centered train numbers
+    const shortLink = escapeHtml(getShortLinkLabel(r.link) || '');
+
+    // train cell: top-left link label, top-right dep time, center train number(s)
     const trainInner = (incHtml)
       ? `<div class="train-stack" role="group">
+           <div class="train-linklabel">${shortLink}</div>
            <div class="train-deptime">${escapeHtml(r.depTime||'')}</div>
            <div class="train-top">${outHtml}</div>
            <div class="train-divider" aria-hidden="true"></div>
            <div class="train-bottom">${incHtml}</div>
          </div>`
       : `<div class="train-stack">
+           <div class="train-linklabel">${shortLink}</div>
            <div class="train-deptime">${escapeHtml(r.depTime||'')}</div>
            <div class="train-top">${outHtml}</div>
          </div>`;
@@ -480,7 +507,7 @@ async function renderCombinedDuties(){
     // show owner tag only if admin (so employees never see names/UIDs)
     const ownerTag = (isAdmin && r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
-    // Build cells
+    // Build cells (LP & ALP names bold via .editable CSS)
     const lpCell = `
       <td><div class="cell-center">
         <div class="editable" contenteditable="${mayEditLP? 'true':'false'}"
@@ -503,7 +530,7 @@ async function renderCombinedDuties(){
 
     const trainCell = `<td>${trainHtml}</td>`;
     const depCell   = `<td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>`;
-    const linkCell  = `<td><div class="cell-center" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>`;
+    const linkCell  = `<td><div class="cell-center" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${shortLink} ${ownerTag}</div></td>`;
 
     // Responsive order: if mobile show LP -> Train -> ALP, else original LP -> ALP -> Train
     if (isMobile()) {
@@ -530,7 +557,7 @@ async function renderCombinedDuties(){
       const field = el.dataset.field;
       window.currentlyEditing = { link, crewIndex: crew, field };
       const txt = el.textContent.trim();
-      if(/^(MAO|RN|OL|SL|L)\d+/i.test(txt) || /^(LP|ALP)\d+/i.test(txt)){
+      if(/^(mao|rn|ol|sl|l)\d+/i.test(txt) || /^(lp|alp)\d+/i.test(txt)){
         el.dataset._orig = txt;
         el.textContent = '';
       } else {
