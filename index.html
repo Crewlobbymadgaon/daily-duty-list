@@ -7,8 +7,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb;
-  --radius:12px; --divider:#1f6feb; --border:#cdd4e1;
+  --bg:#f4f7fb;
+  --card:#fff;
+  --muted:#6b7280;
+  --accent:#0f172a;
+  --accent-2:#2563eb;
+  --radius:12px;
+  --divider:#1f6feb;
+  --border:#cdd4e1;
+  --pill-text:#0f172a;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent);-webkit-font-smoothing:antialiased}
@@ -19,7 +26,6 @@ body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,S
 .headerArea .sub{font-size:0.9rem;color:var(--muted);text-align:center}
 .headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center}
 .headerArea #loginStatus{font-size:0.78rem;color:var(--muted);margin-top:6px}
-.headerArea #notice{font-size:0.78rem;color:#6b7280;margin-top:4px;display:none} /* hidden per request */
 .controls{position:sticky;top:0;background:var(--card);z-index:55;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.03)}
 .nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:44px;height:36px;padding:0 10px;cursor:pointer}
@@ -35,26 +41,79 @@ thead th:nth-child(2), td:nth-child(2){width:36%}
 thead th:nth-child(3), td:nth-child(3){width:18%}
 thead th:nth-child(4), td:nth-child(4){width:5%}
 thead th:nth-child(5), td:nth-child(5){width:5%}
-.cell-center{display:flex;align-items:center;justify-content:center;min-height:44px}
-.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:4px 6px;max-width:100%;box-sizing:border-box}
-.train-top,.train-bottom{font-weight:400;font-size:0.90rem;line-height:1;display:inline-block;text-align:center;white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}
-.train-divider{ width:90%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
-.nowrap{ white-space:nowrap; display:inline-block; }
-@media (min-width:900px){ .train-divider{ width:100%; max-width:180px } }
-@media (max-width:640px){
-  table{min-width:0;table-layout:auto}
-  thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
-  thead th,tbody td{padding:8px}
-  .train-top,.train-bottom{font-size:0.86rem}
-  .train-divider{height:1.5px; width:85%}
+.cell-center{display:flex;align-items:center;justify-content:center;min-height:44px;position:relative}
+
+/* LP link pill (placed inside LP cell) */
+.link-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 8px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:0.72rem;
+  text-transform:uppercase;
+  letter-spacing:0.3px;
+  color:var(--pill-text);
+  border:2px solid transparent;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  margin-right:8px;
+  min-width:48px;
+  justify-content:center;
+  box-sizing:border-box;
 }
-.editable{display:block;min-height:32px;padding:6px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:center}
+
+/* Dep time pill (positioned at top-right of train cell) */
+.train-cell{
+  position:relative;
+  padding-top:8px;
+  padding-bottom:8px;
+}
+.dep-pill{
+  position:absolute;
+  top:6px;
+  right:8px;
+  transform:translateY(-20%);
+  background:transparent;
+  border:1.5px solid rgba(0,0,0,0.06);
+  padding:4px 8px;
+  border-radius:999px;
+  font-size:0.72rem;
+  font-weight:700;
+  color:var(--muted);
+  white-space:nowrap;
+  pointer-events:none;
+  z-index:110;
+}
+
+/* Train stack content (kept centered, slightly reduced font for train number) */
+.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;max-width:100%;box-sizing:border-box}
+.train-top{font-weight:700;font-size:0.95rem;line-height:1;display:inline-block;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.train-bottom{font-weight:400;font-size:0.86rem;line-height:1;display:inline-block;text-align:center;white-space:nowrap}
+.train-divider{ width:80%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
+
+/* LP/ALP editable bold */
+.editable{display:block;min-height:32px;padding:6px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:center;font-weight:700}
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
 #adminSignInBtn{position:fixed;top:10px;right:10px;z-index:120;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
+
+/* Mobile adjustments */
+@media (max-width:640px){
+  table{min-width:0;table-layout:auto}
+  thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
+  thead th,tbody td{padding:8px}
+  .train-top{font-size:0.86rem}
+  .train-divider{height:1.5px; width:85%}
+  .link-pill{font-size:0.66rem;padding:3px 6px;min-width:42px}
+  .dep-pill{font-size:0.64rem;padding:3px 6px;right:6px;top:6px}
+  .train-stack{padding:8px 4px}
+}
 </style>
 </head>
 <body>
@@ -79,11 +138,11 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
         <table id="mainTable" aria-describedby="dateHeading">
           <thead>
             <tr>
-              <th>Name of LP</th>
-              <th>Name of ALP</th>
-              <th>Train No</th>
-              <th>Dep</th>
-              <th>Link No</th>
+              <th style="text-align:center">LP</th>
+              <th style="text-align:center">ALP</th>
+              <th style="text-align:center">Train No:</th>
+              <th style="text-align:center">Dep</th>
+              <th style="text-align:center">Link No</th>
             </tr>
           </thead>
           <tbody id="dutyTable">
@@ -134,13 +193,9 @@ try {
   firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
   firebaseAuth = firebase.auth();
   firebaseDb = firebase.database();
-
-  // Keep persistence local for admin
   if (firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
     firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
   }
-
-  // no anonymous auto sign-in: visitors stay view-only.
   firebaseAuth.onAuthStateChanged(async (user) => {
     if (user){
       currentUser = {
@@ -150,7 +205,6 @@ try {
         anon: user.isAnonymous || false
       };
     } else {
-      // visitors get a local viewer id (not shown)
       currentUser = loadLocalUser() || createLocalUser();
     }
     await detectAdmin();
@@ -199,7 +253,20 @@ function getShortLinkLabel(linkId) {
   if(digits) return `L${digits[0]}`;
   return String(linkId).toUpperCase();
 }
-function formatTrainToken(token){ if(!token) return ''; const cleaned = token.toString().trim(); if(/^\d{5}$/.test(cleaned)){ return `<span class="nowrap">${escapeHtml(cleaned)}</span>`; } return escapeHtml(cleaned).replace(/\//g,'<wbr>/'); }
+function formatTrainToken(token){ if(!token) return ''; const cleaned = token.toString().trim(); if(/^\d{4,6}$/.test(cleaned)){ return `<span class="train-top">${escapeHtml(cleaned)}</span>`; } return escapeHtml(cleaned).replace(/\//g,'<wbr/>'); }
+
+/* generate deterministic color for link id (returns CSS border-color & background text color contraster) */
+function colorForLinkId(id){
+  if(!id) id = 'default';
+  // simple hash -> hue
+  let h = 0;
+  for(let i=0;i<id.length;i++) h = (h*31 + id.charCodeAt(i)) % 360;
+  const hue = h;
+  const bg = `hsl(${hue} 80% 92%)`;           // pale background
+  const border = `hsl(${hue} 80% 60%)`;       // stronger border
+  const text = `hsl(${hue} 80% 28%)`;         // darker text
+  return {bg, border, text};
+}
 
 /* layout helpers */
 function setTableWrapPaddingAndHeader(){
@@ -247,16 +314,14 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* Load JSON link files (debug friendly but silent) */
+/* Load JSON link files (silent debug) */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async (f, idx) => {
     try {
-      console.log('Fetching', f);
       const r = await fetch(f, {cache:'no-cache'});
       if (!r.ok){
         const text = await r.text().catch(()=>'<no body>');
-        console.error(`Failed to fetch ${f}:`, r.status, r.statusText, text);
         return { __error:true, file:f, status:r.status, statusText:r.statusText, body:text };
       }
       const json = await r.json().catch(async (err)=>{
@@ -265,7 +330,6 @@ async function loadAllLinks(){
       });
       return json;
     } catch(err){
-      console.error('Fetch error', f, err);
       return { __error:true, file:f, err: (err && err.message) };
     }
   });
@@ -290,13 +354,15 @@ async function loadAllLinks(){
     const linkId = linkData.linkId ?? (`file#${idx+1}`);
     const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
     const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
-    crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex}));
+    // capture friendly label if present (label/linkName/displayName/name)
+    const friendly = (linkData && (linkData.label || linkData.linkName || linkData.displayName || linkData.name)) || null;
+    crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex, friendlyLabel: friendly}));
   });
 
   await renderCombinedDuties();
 }
 
-/* Render + ownership: only admin may edit (client-side); employees view only. */
+/* Render + ownership: only admin may edit */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
@@ -337,14 +403,14 @@ async function renderCombinedDuties(){
       const lpName =
         (local.crewLPName && local.crewLPName.trim()) ||
         (fb.crewLPName && fb.crewLPName.trim()) ||
-        getShortLinkLabel(crew.linkId);
+        (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
 
       const alpName =
         (local.crewALPName && local.crewALPName.trim()) ||
         (fb.crewALPName && fb.crewALPName.trim()) ||
-        getShortLinkLabel(crew.linkId);
+        (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
 
-      rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, ownerUid, ownerName });
+      rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, ownerUid, ownerName, friendly: crew.friendlyLabel });
     }
   });
 
@@ -356,41 +422,58 @@ async function renderCombinedDuties(){
   dutyTable.innerHTML = '';
   rows.forEach(r=>{
     const outHtml = formatTrainToken(r.outgoing || '');
-    const incHtml = formatTrainToken(r.incoming || '');
-    const trainHtml = (incHtml)
-      ? `<div class="cell-center"><div class="train-stack" role="group"><div class="train-top">${outHtml}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${incHtml}</div></div></div>`
-      : `<div class="cell-center"><div class="train-stack"><div class="train-top">${outHtml}</div></div></div>`;
+    const incHtml = r.incoming ? `<div class="train-bottom">${escapeHtml(r.incoming)}</div>` : '';
+    const trainContent = `<div class="train-stack">${outHtml}${incHtml}</div>`;
 
     const tr = document.createElement('tr');
 
     // Only admin can edit
     const mayEditLP = !!isAdmin;
     const mayEditALP = !!isAdmin;
-    // show owner tag only if admin (so employees never see names/UIDs)
     const ownerTag = (isAdmin && r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
-    tr.innerHTML = `
-      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditLP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="${mayEditLP? 'Edit LP name':'View only'}">${escapeHtml(r.lpName)}</div></div></td>
-      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="${mayEditALP? 'Edit ALP name':'View only'}">${escapeHtml(r.alpName)}</div></div></td>
-      <td>${trainHtml}</td>
-      <td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>
-      <td><div class="cell-center" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>
-    `;
+    // compute link label & color
+    const linkLabel = escapeHtml(getShortLinkLabel(r.link));
+    const colors = colorForLinkId(String(r.link));
+    const pillStyle = `background:${colors.bg}; border-color:${colors.border}; color:${colors.text};`;
+
+    // LP cell: link pill + editable LP name (link pill placed left of name)
+    const lpCell = `
+      <td>
+        <div class="cell-center" style="justify-content:flex-start;gap:8px;">
+          <div class="link-pill" style="${pillStyle}" title="${linkLabel}">${linkLabel}</div>
+          <div style="flex:1">
+            <div class="editable" contenteditable="${mayEditLP? 'true':'false'}"
+              data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName"
+              title="${mayEditLP? 'Edit LP name':'View only'}">${escapeHtml(r.lpName)}</div>
+          </div>
+        </div>
+      </td>`;
+
+    // ALP cell: editable name centered
+    const alpCell = `
+      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}"
+        data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName"
+        title="${mayEditALP? 'Edit ALP name':'View only'}">${escapeHtml(r.alpName)}</div></div></td>`;
+
+    // Train cell: include dep-pill (top-right) and train content centered
+    const trainCell = `<td class="train-cell"><div class="dep-pill">${escapeHtml(r.depTime||'')}</div><div class="cell-center">${trainContent}</div></td>`;
+
+    // Dep & Link columns (kept for larger screens but will be hidden on mobile)
+    const depCell = `<td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>`;
+    const linkCell = `<td><div class="cell-center" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>`;
+
+    tr.innerHTML = `${lpCell}${alpCell}${trainCell}${depCell}${linkCell}`;
     dutyTable.appendChild(tr);
   });
 
-  /* Attach editable behavior - block focus for non-admins (NO TOAST on each click) */
+  /* Attach editable behavior - block focus for non-admins */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
 
     el.addEventListener('focus', (ev)=>{
-      if(!isAdmin){
-        // silently blur for visitors (no toast spam)
-        el.blur();
-        return;
-      }
-      // admin editing: clear placeholder label for convenience
+      if(!isAdmin){ el.blur(); return; }
       const txt = el.textContent.trim();
       if(/^(MAO|RN|OL|SL|L)\d+/i.test(txt) || /^(LP|ALP)\d+/i.test(txt)){
         el.dataset._orig = txt;
@@ -398,6 +481,7 @@ async function renderCombinedDuties(){
       } else {
         el.dataset._orig = '';
       }
+      placeCaretAtEnd(el);
     });
 
     el.addEventListener('keydown', (ev)=>{
@@ -410,7 +494,6 @@ async function renderCombinedDuties(){
     });
 
     el.addEventListener('blur', async (ev)=>{
-      // guard again: only admin should be allowed to commit
       if(!isAdmin){
         await renderCombinedDuties();
         return;
@@ -496,7 +579,7 @@ async function onEditableCommit(e){
   await renderCombinedDuties();
 }
 
-/* Admin sign-in UI */
+/* Admin sign-in UI (unchanged) */
 if(adminSignInBtn){
   adminSignInBtn.addEventListener('click', async ()=>{
     if(!firebaseAuth){
@@ -554,7 +637,6 @@ async function detectAdmin(){
 
 /* login status UI */
 function updateLoginStatusUI(){
-  // Visitors: hide all user details. Admins: minimal admin indicator.
   const u = currentUser || loadLocalUser();
   if(!u){
     loginStatus.textContent = '';
@@ -567,7 +649,6 @@ function updateLoginStatusUI(){
     notice.style.display = 'none';
   } else {
     loginStatus.textContent = '';
-    // keep the persistent small notice for visitors
     notice.style.display = '';
   }
   adminSignInBtn.style.display = 'inline-block';
