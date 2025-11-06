@@ -19,7 +19,7 @@ body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,S
 .headerArea .sub{font-size:0.9rem;color:var(--muted);text-align:center}
 .headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center}
 .headerArea #loginStatus{font-size:0.78rem;color:var(--muted);margin-top:6px}
-.headerArea #notice{font-size:0.78rem;color:#6b7280;margin-top:4px;display:none} /* hidden per request */
+.headerArea #notice{font-size:0.78rem;color:#6b7280;margin-top:4px;display:none}
 .controls{position:sticky;top:0;background:var(--card);z-index:55;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.03)}
 .nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:44px;height:36px;padding:0 10px;cursor:pointer}
@@ -31,7 +31,7 @@ tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;colo
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
 
-/* default column widths for desktop (keeps visual balance) */
+/* DESKTOP default column sizes */
 thead th:nth-child(1), td:nth-child(1){width:36%}
 thead th:nth-child(2), td:nth-child(2){width:36%}
 thead th:nth-child(3), td:nth-child(3){width:18%}
@@ -39,24 +39,24 @@ thead th:nth-child(4), td:nth-child(4){width:5%}
 thead th:nth-child(5), td:nth-child(5){width:5%}
 
 .cell-center{display:flex;align-items:center;justify-content:center;min-height:44px}
-.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:4px 6px;max-width:100%;box-sizing:border-box}
+.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:4px 6px;max-width:100%;box-sizing:border-box;position:relative}
 .train-top,.train-bottom{font-weight:400;font-size:0.90rem;line-height:1;display:inline-block;text-align:center;white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}
 .train-divider{ width:90%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
 .nowrap{ white-space:nowrap; display:inline-block; }
-@media (min-width:900px){ .train-divider{ width:100%; max-width:180px } }
+.train-number{ white-space:nowrap; font-weight:700; display:inline-block; font-size:1rem; }
+.train-deptime{ position:absolute; top:6px; right:8px; font-size:0.72rem; color:var(--muted); }
 
-/* MOBILE: tighter layout and custom column widths
-   - LP: 40%, Train: 20%, ALP: 40%
-   - hide Dep & Link columns (they remain in DOM for accessibility)
-*/
+/* MOBILE adjustments */
+@media (min-width:900px){ .train-divider{ width:100%; max-width:180px } }
 @media (max-width:640px){
   table{min-width:0;table-layout:auto}
+  /* hide Dep & Link columns visually */
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
 
-  /* mobile column sizing */
+  /* mobile column sizing: LP 40%, Train 25%, ALP 35% (train slightly wider) */
   thead th:nth-child(1), td:nth-child(1){width:40% !important; text-align:left; padding-left:10px}
-  thead th:nth-child(2), td:nth-child(2){width:20% !important; white-space:nowrap; font-weight:600}
-  thead th:nth-child(3), td:nth-child(3){width:40% !important; text-align:right; padding-right:10px}
+  thead th:nth-child(2), td:nth-child(2){width:25% !important; white-space:nowrap; font-weight:700}
+  thead th:nth-child(3), td:nth-child(3){width:35% !important; text-align:right; padding-right:10px}
 
   thead th,tbody td{padding:8px}
   .train-top,.train-bottom{font-size:0.86rem}
@@ -141,18 +141,20 @@ let selectedDate = new Date();
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
 
+/* small UX state for editing preservation */
+window.currentlyEditing = null;     // {link, crewIndex, field}
+window._commitDebounce = null;      // to debounce blur commits
+
 /* init firebase */
 try {
   firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
   firebaseAuth = firebase.auth();
   firebaseDb = firebase.database();
 
-  // Keep persistence local for admin
   if (firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
     firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
   }
 
-  // no anonymous auto sign-in: visitors stay view-only.
   firebaseAuth.onAuthStateChanged(async (user) => {
     if (user){
       currentUser = {
@@ -162,11 +164,11 @@ try {
         anon: user.isAnonymous || false
       };
     } else {
-      // visitors get a local viewer id (not shown)
       currentUser = loadLocalUser() || createLocalUser();
     }
     await detectAdmin();
     updateLoginStatusUI();
+    // only render; renderCombinedDuties will attempt to restore editor if one was open
     await renderCombinedDuties();
   });
 } catch(e){
@@ -211,7 +213,15 @@ function getShortLinkLabel(linkId) {
   if(digits) return `L${digits[0]}`;
   return String(linkId).toUpperCase();
 }
-function formatTrainToken(token){ if(!token) return ''; const cleaned = token.toString().trim(); if(/^\d{5}$/.test(cleaned)){ return `<span class="nowrap">${escapeHtml(cleaned)}</span>`; } return escapeHtml(cleaned).replace(/\//g,'<wbr>/'); }
+function formatTrainToken(token){ 
+  if(!token) return ''; 
+  const cleaned = token.toString().trim(); 
+  // If it's a 5-digit numeric code prefer bold single-line
+  if(/^\d{4,6}$/.test(cleaned)){ 
+    return `<span class="train-number">${escapeHtml(cleaned)}</span>`; 
+  } 
+  return `<span class="train-number">${escapeHtml(cleaned)}</span>`.replace(/\//g,'<wbr>/'); 
+}
 
 /* layout helpers */
 function setTableWrapPaddingAndHeader(){
@@ -268,7 +278,6 @@ function renderTableHead(){
   const tr = theadRowEl();
   if(!tr) return;
   if(isMobile()){
-    // Mobile order: LP, Train No:, ALP, Dep, Link (Dep/Link hidden by CSS)
     tr.innerHTML = `
       <th>LP</th>
       <th>Train No:</th>
@@ -277,7 +286,6 @@ function renderTableHead(){
       <th>Link No</th>
     `;
   } else {
-    // Desktop: LP, ALP, Train No:, Dep, Link
     tr.innerHTML = `
       <th>LP</th>
       <th>ALP</th>
@@ -339,7 +347,10 @@ async function loadAllLinks(){
 
 /* Render + ownership: only admin may edit (client-side); employees view only. */
 async function renderCombinedDuties(){
-  renderTableHead(); // keep header in sync if called standalone
+  renderTableHead();
+  // remember editing position to restore later
+  const editingInfo = window.currentlyEditing ? {...window.currentlyEditing} : null;
+
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
 
@@ -399,9 +410,20 @@ async function renderCombinedDuties(){
   rows.forEach(r=>{
     const outHtml = formatTrainToken(r.outgoing || '');
     const incHtml = formatTrainToken(r.incoming || '');
-    const trainHtml = (incHtml)
-      ? `<div class="cell-center"><div class="train-stack" role="group"><div class="train-top">${outHtml}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${incHtml}</div></div></div>`
-      : `<div class="cell-center"><div class="train-stack"><div class="train-top">${outHtml}</div></div></div>`;
+    // train HTML now includes a top-right dep time and center train number(s)
+    const trainInner = (incHtml)
+      ? `<div class="train-stack" role="group">
+           <div class="train-deptime">${escapeHtml(r.depTime||'')}</div>
+           <div class="train-top">${outHtml}</div>
+           <div class="train-divider" aria-hidden="true"></div>
+           <div class="train-bottom">${incHtml}</div>
+         </div>`
+      : `<div class="train-stack">
+           <div class="train-deptime">${escapeHtml(r.depTime||'')}</div>
+           <div class="train-top">${outHtml}</div>
+         </div>`;
+
+    const trainHtml = `<div class="cell-center">${trainInner}</div>`;
 
     const tr = document.createElement('tr');
 
@@ -451,13 +473,23 @@ async function renderCombinedDuties(){
     if(el.__bound) return;
     el.__bound = true;
 
+    // store pointerdown so touch taps don't cause weird blurs
+    el.addEventListener('pointerdown', (ev)=> {
+      // stop propagation so outer handlers don't force a blur
+      ev.stopPropagation();
+    }, {passive:true});
+
     el.addEventListener('focus', (ev)=>{
       if(!isAdmin){
-        // silently blur for visitors (no toast spam)
         el.blur();
         return;
       }
-      // admin editing: clear placeholder label for convenience
+      // mark currently editing; used to restore focus after re-renders
+      const link = el.dataset.link;
+      const crew = Number(el.dataset.crew);
+      const field = el.dataset.field;
+      window.currentlyEditing = { link, crewIndex: crew, field };
+      // if placeholder like MAO.. then clear for quick edit
       const txt = el.textContent.trim();
       if(/^(MAO|RN|OL|SL|L)\d+/i.test(txt) || /^(LP|ALP)\d+/i.test(txt)){
         el.dataset._orig = txt;
@@ -465,6 +497,8 @@ async function renderCombinedDuties(){
       } else {
         el.dataset._orig = '';
       }
+      // place caret at end
+      placeCaretAtEnd(el);
     });
 
     el.addEventListener('keydown', (ev)=>{
@@ -473,20 +507,41 @@ async function renderCombinedDuties(){
       } else if(ev.key === 'Enter'){
         ev.preventDefault();
         el.blur();
+      } else if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 's') {
+        // Ctrl/Cmd+S to save quickly
+        ev.preventDefault();
+        el.blur();
       }
     });
 
     el.addEventListener('blur', async (ev)=>{
-      // guard again: only admin should be allowed to commit
-      if(!isAdmin){
-        await renderCombinedDuties();
-        return;
-      }
-      await onEditableCommit(ev);
+      // minor debounce to avoid accidental immediate firing on touch UI
+      clearTimeout(window._commitDebounce);
+      window._commitDebounce = setTimeout(async ()=>{
+        // guard again: only admin should be allowed to commit
+        if(!isAdmin){
+          window.currentlyEditing = null;
+          await renderCombinedDuties();
+          return;
+        }
+        await onEditableCommit(ev);
+        window.currentlyEditing = null;
+      }, 220); // 220ms delay
     });
   });
 
   setTimeout(setTableWrapPaddingAndHeader, 20);
+
+  // restore editor focus if we were editing a particular cell before re-render
+  if (editingInfo && editingInfo.link){
+    const selector = `.editable[data-link="${escapeHtml(editingInfo.link)}"][data-crew="${editingInfo.crewIndex}"][data-field="${editingInfo.field}"]`;
+    const restored = document.querySelector(selector);
+    if(restored){
+      // focus and place caret at end
+      restored.focus();
+      placeCaretAtEnd(restored);
+    }
+  }
 }
 
 /* Commit handler (admin only) */
@@ -506,7 +561,7 @@ async function onEditableCommit(e){
   const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
   const userReadable = (currentUser && (currentUser.email || currentUser.displayName)) || userUid;
 
-  // clear
+  // clear locally & firebase if empty
   if(!newVal){
     if(localEdits[linkId] && localEdits[linkId][crewIndex]) {
       delete localEdits[linkId][crewIndex].crewLPName;
@@ -538,7 +593,7 @@ async function onEditableCommit(e){
     return;
   }
 
-  // set value + owner to admin
+  // set value + owner to admin locally first
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
   localEdits[linkId][crewIndex][field] = newVal;
@@ -548,6 +603,7 @@ async function onEditableCommit(e){
   saveLocalEdits();
   showToast('Saved locally');
 
+  // push to firebase (best-effort)
   if(firebaseDb){
     try{
       const path = `/edits/${linkId}/${crewIndex}`;
@@ -560,6 +616,7 @@ async function onEditableCommit(e){
     }
   }
 
+  // re-render to show owner tag etc (but renderCombinedDuties will attempt to restore editing if needed)
   await renderCombinedDuties();
 }
 
@@ -621,7 +678,6 @@ async function detectAdmin(){
 
 /* login status UI */
 function updateLoginStatusUI(){
-  // Visitors: hide all user details. Admins: minimal admin indicator.
   const u = currentUser || loadLocalUser();
   if(!u){
     loginStatus.textContent = '';
@@ -634,7 +690,6 @@ function updateLoginStatusUI(){
     notice.style.display = 'none';
   } else {
     loginStatus.textContent = '';
-    // keep the persistent small notice for visitors
     notice.style.display = '';
   }
   adminSignInBtn.style.display = 'inline-block';
@@ -647,7 +702,7 @@ async function init(){
   saveLocalUser(currentUser);
   localEdits = loadLocalEdits();
 
-  renderTableHead(); // render initial header
+  renderTableHead();
   await loadAllLinks();
   window.addEventListener('resize', () => {
     renderTableHead();
@@ -662,7 +717,6 @@ async function init(){
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(setTableWrapPaddingAndHeader, 80));
   updateLoginStatusUI();
 
-  // media query listener (some browsers don't fire resize)
   if (mql && mql.addEventListener) {
     mql.addEventListener('change', () => { renderTableHead(); renderCombinedDuties(); });
   } else if (mql && mql.addListener) {
