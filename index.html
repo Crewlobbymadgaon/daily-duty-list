@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>LP/ALP Duty List — Madgaon Lobby</title>
+<title>LP/ALP Duty List — Madgaon Lobby (Firebase)</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -30,11 +30,11 @@ thead th{background:var(--card);padding:10px 12px;text-align:center;color:var(--
 tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;word-break:break-word;overflow-wrap:anywhere}
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
-thead th:nth-child(1), td:nth-child(1){width:34%}
-thead th:nth-child(2), td:nth-child(2){width:34%}
+thead th:nth-child(1), td:nth-child(1){width:36%}
+thead th:nth-child(2), td:nth-child(2){width:36%}
 thead th:nth-child(3), td:nth-child(3){width:18%}
-thead th:nth-child(4), td:nth-child(4){width:6%}
-thead th:nth-child(5), td:nth-child(5){width:8%}
+thead th:nth-child(4), td:nth-child(4){width:5%}
+thead th:nth-child(5), td:nth-child(5){width:5%}
 .cell-center{display:flex;align-items:center;justify-content:center;min-height:44px}
 .train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:4px 6px;max-width:100%;box-sizing:border-box}
 .train-top,.train-bottom{font-weight:400;font-size:0.90rem;line-height:1;display:inline-block;text-align:center;white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}
@@ -48,24 +48,21 @@ thead th:nth-child(5), td:nth-child(5){width:8%}
   .train-top,.train-bottom{font-size:0.86rem}
   .train-divider{height:1.5px; width:85%}
 }
-
-/* editing UI (modal) */
-.edit-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);padding:6px 8px;border-radius:8px;cursor:pointer}
-.ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
-.toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s;z-index:300}
+.editable{display:block;min-height:32px;padding:6px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:center}
+.editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
+.editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
+#adminSignInBtn{position:fixed;top:10px;right:10px;z-index:120;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
+.toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
-/* modal */
-.modal-backdrop{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.32);z-index:400}
-.modal{width:360px;max-width:94%;background:#fff;padding:16px;border-radius:10px;box-shadow:0 10px 40px rgba(0,0,0,0.18)}
-.modal h3{margin:0 0 8px;font-size:1.05rem}
-.modal label{display:block;margin-top:10px;color:var(--muted);font-size:0.85rem}
-.modal input{width:100%;padding:8px;border-radius:8px;border:1px solid #e6eefc;margin-top:6px}
-.row{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
-.btn{background:var(--accent-2);color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
-.btn.secondary{background:#e6eefc;color:var(--accent)}
-.small{font-size:0.85rem;color:var(--muted)}
-/* small responsive tweak */
-@media (max-width:420px){ .modal{padding:12px} }
+.ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
+
+/* debug panel styling */
+#debugPanel{background:#111;color:#fff;padding:10px;border-radius:10px;margin:12px 0;font-size:0.9rem;display:none}
+#debugPanel h4{margin:0 0 8px 0;font-size:1rem}
+#debugPanel ul{margin:0;padding-left:18px}
+#debugPanel .ok{color:#90ee90}
+#debugPanel .bad{color:#ffb3b3}
+#debugPanel pre{white-space:pre-wrap;color:#eee;background:rgba(255,255,255,0.03);padding:8px;border-radius:6px;margin-top:8px;font-size:0.85rem}
 </style>
 </head>
 <body>
@@ -76,7 +73,7 @@ thead th:nth-child(5), td:nth-child(5){width:8%}
         <div class="sub">Madgaon Lobby</div>
         <div id="dateHeading">Loading date…</div>
         <div id="loginStatus" aria-live="polite"></div>
-        <div id="notice">Admins can edit names — employees can only view.</div>
+        <div id="notice">Sign in as admin to edit the names (view-only for employees).</div>
       </div>
 
       <div class="controls" role="toolbar" aria-label="Date controls">
@@ -84,6 +81,14 @@ thead th:nth-child(5), td:nth-child(5){width:8%}
         <button id="dateBtn" class="date-icon-btn" title="Pick a date">📅</button>
         <input id="datePicker" class="native-date" type="date" />
         <button id="nextDay" class="nav-btn" title="Next day">▶</button>
+      </div>
+
+      <!-- DEBUG PANEL (visible when page tries to fetch link files) -->
+      <div id="debugPanel" aria-live="polite" role="status">
+        <h4>Debug — link files</h4>
+        <div id="debugSummary">Checking link files…</div>
+        <ul id="debugList"></ul>
+        <pre id="debugSnippet" style="display:none"></pre>
       </div>
 
       <div class="tableWrap" aria-live="polite">
@@ -94,7 +99,7 @@ thead th:nth-child(5), td:nth-child(5){width:8%}
               <th>Name of ALP</th>
               <th>Train No</th>
               <th>Dep</th>
-              <th>Actions</th>
+              <th>Link No</th>
             </tr>
           </thead>
           <tbody id="dutyTable">
@@ -106,50 +111,15 @@ thead th:nth-child(5), td:nth-child(5){width:8%}
     </div>
   </div>
 
-  <button id="adminSignInBtn" title="Admin sign-in" style="position:fixed;top:10px;right:10px;z-index:350" class="btn">Admin</button>
+  <button id="adminSignInBtn" title="Admin sign-in">Admin</button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- Edit modal -->
-  <div id="editModal" class="modal-backdrop" role="dialog" aria-hidden="true">
-    <div class="modal" role="document">
-      <h3>Edit names</h3>
-      <div class="small">Link: <span id="modalLink"></span> — crew index: <span id="modalCrew"></span></div>
-      <label for="modalLP">LP name</label>
-      <input id="modalLP" type="text" />
-      <label for="modalALP">ALP name</label>
-      <input id="modalALP" type="text" />
-      <div class="row">
-        <button id="modalCancel" class="btn secondary">Cancel</button>
-        <button id="modalSave" class="btn">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Sign-in modal -->
-  <div id="signModal" class="modal-backdrop" role="dialog" aria-hidden="true">
-    <div class="modal" role="document">
-      <h3>Admin sign in</h3>
-      <div class="small">Use your admin email and password</div>
-      <label for="siEmail">Email</label>
-      <input id="siEmail" type="email" autocomplete="username" />
-      <label for="siPass">Password</label>
-      <input id="siPass" type="password" autocomplete="current-password" />
-      <div class="row">
-        <button id="siCancel" class="btn secondary">Cancel</button>
-        <button id="siDo" class="btn">Sign in</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Firebase compat (keep these unless you migrate to modular SDK) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-/* ------------------ Configuration ------------------
-   Injected Firebase config (from user)
-*/
+/* FIREBASE CONFIG (your provided config) */
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyA39vWi_90CUyj0davz4XAXqMey1aNM6FU",
   authDomain: "crewdutytable.firebaseapp.com",
@@ -159,23 +129,26 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "190634478615",
   appId: "1:190634478615:web:28e998325f69fb8bf36052"
 };
-/* Place your link*.json files in same folder as this HTML */
+
+/* link files & storage key */
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json',
   'ollink1.json','sllink1.json'
 ];
-const LS_KEY = 'lp_alp_edits_owner_v2';
+const LS_KEY = 'lp_alp_edits_owner_v1';
 
-/* ------------------ State ------------------ */
+/* state */
 let localEdits = loadLocalEdits();
 let allCrewData = [];
 let selectedDate = new Date();
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
 
-/* DOM refs */
+/* DOM */
 const dutyTable = document.getElementById('dutyTable');
+const mainTable = document.getElementById('mainTable');
+const tableWrap = document.querySelector('.tableWrap');
 const dateBtn = document.getElementById('dateBtn');
 const datePicker = document.getElementById('datePicker');
 const prevBtn = document.getElementById('prevDay');
@@ -183,33 +156,26 @@ const nextBtn = document.getElementById('nextDay');
 const dateHeading = document.getElementById('dateHeading');
 const toast = document.getElementById('toast');
 const adminSignInBtn = document.getElementById('adminSignInBtn');
+const loginStatus = document.getElementById('loginStatus');
+const notice = document.getElementById('notice');
 
-/* modals */
-const editModal = document.getElementById('editModal');
-const modalLink = document.getElementById('modalLink');
-const modalCrew = document.getElementById('modalCrew');
-const modalLP = document.getElementById('modalLP');
-const modalALP = document.getElementById('modalALP');
-const modalCancel = document.getElementById('modalCancel');
-const modalSave = document.getElementById('modalSave');
-
-const signModal = document.getElementById('signModal');
-const siEmail = document.getElementById('siEmail');
-const siPass = document.getElementById('siPass');
-const siCancel = document.getElementById('siCancel');
-const siDo = document.getElementById('siDo');
+/* debug elements */
+const debugPanel = document.getElementById('debugPanel');
+const debugSummary = document.getElementById('debugSummary');
+const debugList = document.getElementById('debugList');
+const debugSnippet = document.getElementById('debugSnippet');
 
 /* helpers */
-function showToast(msg, t=1800){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
-function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||'{}'); }catch(e){ return {}; } }
+function showToast(msg, t=1600){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
+function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
-function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner', JSON.stringify(u)); }catch(e){} }
-function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){ return null; } }
+function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
+function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `Viewer-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
-function formatTrainToken(token){ if(!token) return ''; const cleaned = token.toString().trim(); if(/^\d{5}$/.test(cleaned)){ return `<span class="nowrap">${escapeHtml(cleaned)}</span>`; } return escapeHtml(cleaned).replace(/\//g,'<wbr>/'); }
+function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
 
-/* mapping helper */
+/* mapping */
 function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase();
@@ -221,301 +187,442 @@ function getShortLinkLabel(linkId) {
   if(digits) return `L${digits[0]}`;
   return String(linkId).toUpperCase();
 }
+function formatTrainToken(token){ if(!token) return ''; const cleaned = token.toString().trim(); if(/^\d{5}$/.test(cleaned)){ return `<span class="nowrap">${escapeHtml(cleaned)}</span>`; } return escapeHtml(cleaned).replace(/\//g,'<wbr>/'); }
 
-/* layout helpers (kept simple) */
-function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
+/* layout helpers */
+function setTableWrapPaddingAndHeader(){
+  const header = document.querySelector('.headerArea');
+  const controls = document.querySelector('.controls');
+  if(!header || !controls || !tableWrap) return;
+  const headerRect = header.getBoundingClientRect();
+  const controlsRect = controls.getBoundingClientRect();
+  const wrapRect = tableWrap.getBoundingClientRect();
+  let numericTop = Math.round(controlsRect.bottom - wrapRect.top);
+  numericTop = Math.max(0, numericTop);
+  tableWrap.style.paddingTop = numericTop + 'px';
+  tableWrap.style.boxSizing = 'border-box';
+  document.querySelectorAll('thead th').forEach(th => { th.style.top = '0px'; });
+  const reserved = Math.round(headerRect.height + controlsRect.height) + 28;
+  tableWrap.style.maxHeight = Math.max(120, window.innerHeight - reserved) + 'px';
+  alignHeaderWidths();
+}
+function alignHeaderWidths(){
+  const thead = mainTable.querySelector('thead');
+  if(!thead) return;
+  const ths = Array.from(thead.querySelectorAll('th'));
+  const firstRow = mainTable.querySelector('tbody tr');
+  let widths = [];
+  if(firstRow){
+    const tds = Array.from(firstRow.querySelectorAll('td'));
+    if(tds.length === ths.length){
+      widths = tds.map(td => Math.round(td.getBoundingClientRect().width) || Math.round(ths[0].getBoundingClientRect().width));
+    }
+  }
+  if(widths.length !== ths.length){
+    widths = ths.map(th => Math.round(th.getBoundingClientRect().width) || 80);
+  }
+  ths.forEach((th,i)=>{ const w = widths[i] || 60; th.style.width = w+'px'; th.style.minWidth = w+'px'; th.style.maxWidth = w+'px'; th.style.boxSizing='border-box'; });
+  const mainWidth = Math.round(mainTable.getBoundingClientRect().width);
+  mainTable.style.tableLayout = 'fixed';
+  mainTable.style.width = mainWidth + 'px';
+}
+
+/* Date controls */
 dateBtn.addEventListener('click', ()=>{ datePicker.focus(); datePicker.click(); });
 datePicker.addEventListener('change', ()=>{ selectedDate = datePicker.value ? new Date(datePicker.value+'T00:00:00') : new Date(); setSelectedDate(selectedDate); renderCombinedDuties(); });
 prevBtn.addEventListener('click', ()=> changeDate(-1));
 nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
+function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* ------------------ Load link JSONs ------------------ */
+/* Load JSON link files (debug friendly) */
 async function loadAllLinks(){
+  // show debug panel
+  debugPanel.style.display = 'block';
+  debugSummary.textContent = 'Checking link files…';
+  debugList.innerHTML = '';
+  debugSnippet.style.display = 'none';
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
+
   const fetches = linkFiles.map(async (f, idx) => {
     try {
+      console.log('Fetching', f);
       const r = await fetch(f, {cache:'no-cache'});
-      if(!r.ok) return { __error:true, file:f, status:r.status };
-      const json = await r.json().catch(()=> ({ __error:true, file:f, parseErr:true }));
-      return json;
-    } catch(e){ return { __error:true, file:f, err:e && e.message }; }
+      if (!r.ok){
+        const text = await r.text().catch(()=>'<no body>');
+        console.error(`Failed to fetch ${f}:`, r.status, r.statusText, text);
+        return { __error:true, file:f, status:r.status, statusText:r.statusText, body:text };
+      }
+      // try parse json and capture the first 400 chars as snippet for debugging
+      const text = await r.text();
+      try {
+        const json = JSON.parse(text);
+        return { __ok:true, file:f, json, snippet: text.slice(0,400) };
+      } catch(parseErr){
+        return { __error:true, file:f, parseErr: (parseErr && parseErr.message), body: text.slice(0,400) };
+      }
+    } catch(err){
+      console.error('Fetch error', f, err);
+      return { __error:true, file:f, err: (err && err.message) };
+    }
   });
+
   const results = await Promise.all(fetches);
   allCrewData = [];
-  const anySuccess = results.some(r => r && !r.__error);
-  if(!anySuccess){
-    dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Failed to load link files — check they are in same folder as index.html</td></tr>`;
-    return;
-  }
-  results.forEach((linkData, idx)=>{
-    if(!linkData || linkData.__error) return;
-    const linkId = linkData.linkId ?? (`file#${idx+1}`);
-    const crew = Array.isArray(linkData.crew) ? linkData.crew : [];
-    crew.forEach((c, i) => allCrewData.push({...c, linkId, crewIndex:i}));
+  const anySuccess = results.some(r => r && r.__ok);
+  // populate debug panel list
+  results.forEach(res=>{
+    const li = document.createElement('li');
+    if(!res){
+      li.innerHTML = `<span class="bad">Unknown response</span>`;
+      debugList.appendChild(li);
+      return;
+    }
+    if(res.__ok){
+      li.innerHTML = `<span class="ok">${escapeHtml(res.file)} — OK (parsed)</span>`;
+      // push crew items later
+    } else {
+      let reason = res.status ? `HTTP ${res.status}` : (res.parseErr ? `JSON parse error: ${escapeHtml(res.parseErr)}` : (res.err ? `Fetch error: ${escapeHtml(res.err)}` : 'Unknown'));
+      li.innerHTML = `<span class="bad">${escapeHtml(res.file)} — ${reason}</span>`;
+      // if we have body snippet, show it
+      if(res.body) {
+        debugSnippet.style.display = 'block';
+        debugSnippet.textContent = `${res.file} body (first 400 chars):\n${res.body}`;
+      }
+    }
+    debugList.appendChild(li);
   });
+
+  if(!anySuccess){
+    debugSummary.textContent = 'All link files failed — likely causes: JSONs missing, wrong path, or case mismatch. See list below.';
+    dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Failed to load link files — check they are in the same folder as index.html (see debug panel above)</td></tr>`;
+    return;
+  } else {
+    debugSummary.textContent = 'Some link files loaded. Processing data...';
+  }
+
+  // process the successful ones
+  results.forEach((res, idx) => {
+    if(!res || res.__error || !res.__ok) return;
+    const linkData = res.json;
+    const linkId = linkData.linkId ?? (`file#${idx+1}`);
+    const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
+    const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
+    crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex}));
+  });
+
   await renderCombinedDuties();
 }
 
-/* ------------------ Render rows (read-only for viewers) ------------------ */
+/* Render + ownership: only admin may edit (client-side); employees view only. */
 async function renderCombinedDuties(){
-  if(!allCrewData || allCrewData.length===0){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; return; }
+  if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
+  const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
 
-  // load firebase edits if DB available
   let fbEdits = {};
   if(firebaseDb){
-    try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; }catch(e){ fbEdits = {}; }
+    try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; }catch(e){ fbEdits = {}; console.warn('fbEdits load failed', e); }
   }
 
-  // group by linkId and then process duties for selected weekday
-  const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
-  // arrange rows: for each crew item, decide displayed lp & alp (merged with edits)
+  const crewsByLink = allCrewData.reduce((acc,crew)=>{ (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
   const rows = [];
-  allCrewData.forEach(cd=>{
-    const link = cd.linkId;
-    const crewIdx = cd.crewIndex;
-    const duties = cd.duties || {};
-    const dutyForDay = duties[weekday] ?? '';
-    let outgoing='', incoming='', depTime='';
-    if(dutyForDay && typeof dutyForDay === 'object'){
-      outgoing = (dutyForDay.outgoing||'').toString().trim();
-      incoming = (dutyForDay.incoming||'').toString().trim();
-      depTime = (dutyForDay.depTime||'').toString().trim();
-    } else if(typeof dutyForDay === 'string') outgoing = dutyForDay.trim();
-    const combined = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
-    if(!combined || combined === 'REST') return;
-    // pick lp & alp from firebase edits, then local edits, else fallback label
-    const fb = (fbEdits[link] && fbEdits[link][crewIdx]) || {};
-    const local = (localEdits[link] && localEdits[link][crewIdx]) || {};
-    const lpName = (fb.crewLPName && fb.crewLPName.trim()) || (local.crewLPName && local.crewLPName.trim()) || getShortLinkLabel(link);
-    const alpName = (fb.crewALPName && fb.crewALPName.trim()) || (local.crewALPName && local.crewALPName.trim()) || getShortLinkLabel(link);
-    const ownerName = (fb._updatedByName || local._updatedByName) || null;
-    rows.push({ link, crewIdx, lpName, alpName, depTime, outgoing, incoming, ownerName });
+
+  Object.values(crewsByLink).forEach(crewList=>{
+    if(!crewList.length) return;
+    const lastUpdatedDate = crewList[0].lastUpdatedDate ? new Date(crewList[0].lastUpdatedDate) : new Date();
+    const diffDays = Math.floor((selectedDate.getTime()-lastUpdatedDate.getTime())/(1000*60*60*24));
+    const weeksPassed = Math.floor(diffDays/7);
+    const dutiesPerRow = crewList.map(c=>c.duties||{});
+    for(let rowIndex=0; rowIndex<crewList.length; rowIndex++){
+      const crewIndex = ((rowIndex - weeksPassed) % crewList.length + crewList.length) % crewList.length;
+      const crew = crewList[crewIndex];
+      const dutyForRow = dutiesPerRow[rowIndex][weekday] ?? '';
+      let outgoing='', incoming='', depTime='';
+      if(dutyForRow && typeof dutyForRow === 'object' && (dutyForRow.outgoing||dutyForRow.incoming)){
+        outgoing = (dutyForRow.outgoing||'').toString().trim();
+        incoming = (dutyForRow.incoming||'').toString().trim();
+        depTime = (dutyForRow.depTime||'').toString().trim();
+      } else if(typeof dutyForRow === 'string') outgoing = dutyForRow.trim();
+      const combined = (incoming ? `${outgoing}/${incoming}` : outgoing).toUpperCase();
+      if(!combined || combined === 'REST') continue;
+      const linkId = crew.linkId;
+
+      const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
+      const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
+      const ownerUid = fb._updatedBy || local._updatedBy || null;
+      const ownerName = (fb._updatedByName || local._updatedByName) || null;
+
+      const lpName =
+        (local.crewLPName && local.crewLPName.trim()) ||
+        (fb.crewLPName && fb.crewLPName.trim()) ||
+        getShortLinkLabel(crew.linkId);
+
+      const alpName =
+        (local.crewALPName && local.crewALPName.trim()) ||
+        (fb.crewALPName && fb.crewALPName.trim()) ||
+        getShortLinkLabel(crew.linkId);
+
+      rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, ownerUid, ownerName });
+    }
   });
 
-  // sort by depTime if numeric hh:mm else keep order
-  function tmin(t){ if(!t) return Infinity; const m=t.match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1])*60 + (+m[2]) : Infinity; }
+  function tmin(t){ if(!t) return Infinity; const m = t.match(/^(\d{1,2}):(\d{2})$/); return m ? (+m[1])*60 + (+m[2]) : Infinity; }
   rows.sort((a,b)=> tmin(a.depTime) - tmin(b.depTime));
 
-  if(rows.length===0){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`; return; }
-  dutyTable.innerHTML = '';
+  if(!rows.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No duties for ${weekday}</td></tr>`; setTableWrapPaddingAndHeader(); return; }
 
+  dutyTable.innerHTML = '';
   rows.forEach(r=>{
     const outHtml = formatTrainToken(r.outgoing || '');
     const incHtml = formatTrainToken(r.incoming || '');
-    const trainHtml = incHtml ? `<div class="cell-center"><div class="train-stack"><div class="train-top">${outHtml}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${incHtml}</div></div></div>` : `<div class="cell-center"><div class="train-stack"><div class="train-top">${outHtml}</div></div></div>`;
+    const trainHtml = (incHtml)
+      ? `<div class="cell-center"><div class="train-stack" role="group"><div class="train-top">${outHtml}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${incHtml}</div></div></div>`
+      : `<div class="cell-center"><div class="train-stack"><div class="train-top">${outHtml}</div></div></div>`;
+
     const tr = document.createElement('tr');
 
-    // actions cell: show edit button only if admin
-    const actions = isAdmin ? `<button class="edit-btn" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIdx}">✎ Edit</button> ${r.ownerName ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : ''}` : `<div class="small">${escapeHtml(getShortLinkLabel(r.link))}</div>`;
+    // Only admin can edit
+    const mayEditLP = !!isAdmin;
+    const mayEditALP = !!isAdmin;
+    // show owner tag only if admin (so employees never see names/UIDs)
+    const ownerTag = (isAdmin && r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
     tr.innerHTML = `
-      <td><div class="cell-center"><div style="width:100%;text-align:center">${escapeHtml(r.lpName)}</div></div></td>
-      <td><div class="cell-center"><div style="width:100%;text-align:center">${escapeHtml(r.alpName)}</div></div></td>
+      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditLP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="${mayEditLP? 'Edit LP name':'View only'}">${escapeHtml(r.lpName)}</div></div></td>
+      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="${mayEditALP? 'Edit ALP name':'View only'}">${escapeHtml(r.alpName)}</div></div></td>
       <td>${trainHtml}</td>
       <td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>
-      <td><div class="cell-center">${actions}</div></td>
+      <td><div class="cell-center" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>
     `;
     dutyTable.appendChild(tr);
   });
 
-  // attach edit handlers only for admin-visible edit buttons
-  if(isAdmin){
-    document.querySelectorAll('.edit-btn').forEach(btn=>{
-      if(btn.__bound) return;
-      btn.__bound = true;
-      btn.addEventListener('click', (ev)=>{
-        const link = btn.dataset.link;
-        const crew = Number(btn.dataset.crew);
-        openEditModal(link, crew);
-      });
+  /* Attach editable behavior - block focus for non-admins (NO TOAST on each click) */
+  document.querySelectorAll('.editable').forEach(el=>{
+    if(el.__bound) return;
+    el.__bound = true;
+
+    el.addEventListener('focus', (ev)=>{
+      if(!isAdmin){
+        // silently blur for visitors (no toast spam)
+        el.blur();
+        return;
+      }
+      // admin editing: clear placeholder label for convenience
+      const txt = el.textContent.trim();
+      if(/^(MAO|RN|OL|SL|L)\d+/i.test(txt) || /^(LP|ALP)\d+/i.test(txt)){
+        el.dataset._orig = txt;
+        el.textContent = '';
+      } else {
+        el.dataset._orig = '';
+      }
     });
-  }
-}
 
-/* ------------------ Edit flow (modal) ------------------ */
-function openEditModal(link, crewIndex){
-  modalLink.textContent = getShortLinkLabel(link);
-  modalCrew.textContent = crewIndex;
-  // prefill current names from merged source
-  const fbRef = firebaseDb ? firebaseDb.ref(`/edits/${link}/${crewIndex}`) : null;
-  // compute current values from fb or local or default label
-  let currentLP = '';
-  let currentALP = '';
-  if(firebaseDb){
-    firebaseDb.ref(`/edits/${link}/${crewIndex}`).once('value').then(snap=>{
-      const v = snap.val() || {};
-      const local = (localEdits[link] && localEdits[link][crewIndex]) || {};
-      currentLP = (v.crewLPName && v.crewLPName.trim()) || (local.crewLPName && local.crewLPName.trim()) || getShortLinkLabel(link);
-      currentALP = (v.crewALPName && v.crewALPName.trim()) || (local.crewALPName && local.crewALPName.trim()) || getShortLinkLabel(link);
-      modalLP.value = currentLP;
-      modalALP.value = currentALP;
-    }).catch(()=>{
-      const local = (localEdits[link] && localEdits[link][crewIndex]) || {};
-      modalLP.value = (local.crewLPName && local.crewLPName.trim()) || getShortLinkLabel(link);
-      modalALP.value = (local.crewALPName && local.crewALPName.trim()) || getShortLinkLabel(link);
+    el.addEventListener('keydown', (ev)=>{
+      if(ev.key === 'Escape'){
+        if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); }
+      } else if(ev.key === 'Enter'){
+        ev.preventDefault();
+        el.blur();
+      }
     });
-  } else {
-    const local = (localEdits[link] && localEdits[link][crewIndex]) || {};
-    modalLP.value = (local.crewLPName && local.crewLPName.trim()) || getShortLinkLabel(link);
-    modalALP.value = (local.crewALPName && local.crewALPName.trim()) || getShortLinkLabel(link);
+
+    el.addEventListener('blur', async (ev)=>{
+      // guard again: only admin should be allowed to commit
+      if(!isAdmin){
+        await renderCombinedDuties();
+        return;
+      }
+      await onEditableCommit(ev);
+    });
+  });
+
+  setTimeout(setTableWrapPaddingAndHeader, 20);
+}
+
+/* Commit handler (admin only) */
+async function onEditableCommit(e){
+  const el = e.currentTarget;
+  if(!el) return;
+  if(!isAdmin){
+    await renderCombinedDuties();
+    return;
   }
 
-  // show modal
-  editModal.style.display = 'flex';
-  editModal.setAttribute('aria-hidden','false');
-  // attach save handler (one-time)
-  modalSave.onclick = async ()=>{
-    const newLP = modalLP.value.trim();
-    const newALP = modalALP.value.trim();
-    await commitEdit(link, crewIndex, newLP, newALP);
-    closeEditModal();
-  };
-  modalCancel.onclick = closeEditModal;
-}
-function closeEditModal(){
-  editModal.style.display = 'none';
-  editModal.setAttribute('aria-hidden','true');
-}
+  const linkId = el.dataset.link;
+  const crewIndex = Number(el.dataset.crew);
+  const field = el.dataset.field;
+  const newVal = el.textContent.trim();
 
-/* commit to local and firebase (admin only) */
-async function commitEdit(link, crewIndex, lp, alp){
-  if(!isAdmin){ showToast('Not authorized'); return; }
-  // update local cache
-  if(!localEdits[link]) localEdits[link] = {};
-  if(!localEdits[link][crewIndex]) localEdits[link][crewIndex] = {};
-  localEdits[link][crewIndex].crewLPName = lp || null;
-  localEdits[link][crewIndex].crewALPName = alp || null;
-  localEdits[link][crewIndex]._updatedBy = currentUser && currentUser.uid;
-  localEdits[link][crewIndex]._updatedByName = (currentUser && (currentUser.displayName || currentUser.email)) || (currentUser && currentUser.uid) || 'admin';
-  localEdits[link][crewIndex]._updatedAt = new Date().toISOString();
+  const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
+  const userReadable = (currentUser && (currentUser.email || currentUser.displayName)) || userUid;
+
+  // clear
+  if(!newVal){
+    if(localEdits[linkId] && localEdits[linkId][crewIndex]) {
+      delete localEdits[linkId][crewIndex].crewLPName;
+      delete localEdits[linkId][crewIndex].crewALPName;
+      delete localEdits[linkId][crewIndex]._updatedBy;
+      delete localEdits[linkId][crewIndex]._updatedByName;
+      delete localEdits[linkId][crewIndex]._updatedAt;
+      if(Object.keys(localEdits[linkId][crewIndex]).length === 0) delete localEdits[linkId][crewIndex];
+    }
+    saveLocalEdits();
+    showToast('Cleared locally');
+
+    if(firebaseDb){
+      try{
+        const path = `/edits/${linkId}/${crewIndex}`;
+        const payload = {};
+        payload[field] = null;
+        payload._updatedBy = null;
+        payload._updatedByName = null;
+        payload._updatedAt = null;
+        await firebaseDb.ref(path).update(payload);
+        showToast('Cleared on Firebase');
+      }catch(err){
+        console.error('Firebase clear failed', err);
+        showToast('Firebase clear failed');
+      }
+    }
+    await renderCombinedDuties();
+    return;
+  }
+
+  // set value + owner to admin
+  if(!localEdits[linkId]) localEdits[linkId] = {};
+  if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
+  localEdits[linkId][crewIndex][field] = newVal;
+  localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
+  localEdits[linkId][crewIndex]['_updatedByName'] = userReadable;
+  localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
   saveLocalEdits();
   showToast('Saved locally');
 
-  // push to Firebase
   if(firebaseDb){
-    const payload = {
-      crewLPName: lp || null,
-      crewALPName: alp || null,
-      _updatedBy: localEdits[link][crewIndex]._updatedBy,
-      _updatedByName: localEdits[link][crewIndex]._updatedByName,
-      _updatedAt: localEdits[link][crewIndex]._updatedAt
-    };
     try{
-      await firebaseDb.ref(`/edits/${link}/${crewIndex}`).update(payload);
+      const path = `/edits/${linkId}/${crewIndex}`;
+      const payload = { [field]: newVal, _updatedBy: userUid, _updatedByName: userReadable, _updatedAt: new Date().toISOString() };
+      await firebaseDb.ref(path).update(payload);
       showToast('Synced to Firebase');
     }catch(err){
-      console.error('Firebase write failed', err);
+      console.error('Firebase push failed', err);
       showToast('Firebase sync failed');
     }
   }
+
   await renderCombinedDuties();
 }
 
-/* ------------------ Admin sign-in flow (modal) ------------------ */
-adminSignInBtn.addEventListener('click', ()=>{
-  if(firebaseAuth && firebaseAuth.currentUser && isAdmin){
-    // sign out
-    firebaseAuth.signOut().then(()=>{ showToast('Signed out'); }).catch(()=>{ showToast('Sign-out failed'); });
-    return;
-  }
-  // open sign modal
-  signModal.style.display = 'flex';
-  signModal.setAttribute('aria-hidden','false');
-  siEmail.value=''; siPass.value='';
-  siEmail.focus();
-});
-siCancel.addEventListener('click', ()=>{
-  signModal.style.display = 'none';
-  signModal.setAttribute('aria-hidden','true');
-});
-siDo.addEventListener('click', async ()=>{
-  const e = siEmail.value && siEmail.value.trim();
-  const p = siPass.value && siPass.value.trim();
-  if(!e || !p){ alert('Enter email & password'); return; }
-  try{
-    const cred = await firebaseAuth.signInWithEmailAndPassword(e,p);
-    const fbUser = firebaseAuth.currentUser || (cred && cred.user);
-    if(fbUser){
-      currentUser = { uid: fbUser.uid, displayName: fbUser.displayName || fbUser.email || fbUser.uid, email: fbUser.email || null, anon: fbUser.isAnonymous };
-      saveLocalUser(currentUser);
-      showToast('Signed in');
+/* Admin sign-in UI */
+if(adminSignInBtn){
+  adminSignInBtn.addEventListener('click', async ()=>{
+    if(!firebaseAuth){
+      alert('Firebase not initialized.');
+      return;
     }
-    signModal.style.display = 'none';
-    signModal.setAttribute('aria-hidden','true');
-    await detectAdmin();
-    await renderCombinedDuties();
-  }catch(err){
-    console.error('Sign-in failed', err);
-    alert('Sign-in failed: ' + (err && err.message || 'unknown'));
-  }
-});
+    const choice = confirm('Use existing admin account to sign in? OK = Sign in, Cancel = Sign out');
+    if(!choice){
+      try { await firebaseAuth.signOut(); showToast('Signed out'); await detectAdmin(); await renderCombinedDuties(); updateLoginStatusUI(); } catch(e){ console.warn(e); }
+      return;
+    }
+    const email = prompt('Admin email:');
+    if(!email) return;
+    const pwd = prompt('Password:');
+    if(!pwd) return;
+    try {
+      const cred = await firebaseAuth.signInWithEmailAndPassword(email, pwd);
+      const fbUser = firebaseAuth.currentUser || (cred && cred.user);
+      if(fbUser){
+        currentUser = {
+          uid: fbUser.uid,
+          displayName: fbUser.displayName || fbUser.email || fbUser.uid,
+          email: fbUser.email || null,
+          anon: !!fbUser.isAnonymous
+        };
+        saveLocalUser(currentUser);
+      }
+      showToast('Signed in');
+      await detectAdmin();
+      await renderCombinedDuties();
+      updateLoginStatusUI();
+      console.log('Admin signed in:', currentUser);
+    } catch (err){
+      console.error('Sign-in failed', err);
+      alert('Sign-in failed: ' + (err.message || err));
+    }
+  });
+}
 
-/* ------------------ Admin detection + UI updates ------------------ */
+/* Admin detection */
 async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
   try{
-    // optional override (leave empty) 
-    const ADMIN_UIDS = [];
+    const ADMIN_UIDS = []; // optional local override
     if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
     if(firebaseDb && currentUser && currentUser.uid){
-      // check db /meta/admins/<uid> === true
       const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value');
       if(snap.exists() && snap.val() === true) isAdmin = true;
     }
-  }catch(e){ console.warn('admin detect error', e); }
+  }catch(e){ console.warn('admin detect err', e); }
+  console.log('detectAdmin -> currentUser.uid=', currentUser && currentUser.uid, 'isAdmin=', isAdmin);
   updateLoginStatusUI();
 }
+
+/* login status UI */
 function updateLoginStatusUI(){
-  const loginStatus = document.getElementById('loginStatus');
+  // Visitors: hide all user details. Admins: minimal admin indicator.
+  const u = currentUser || loadLocalUser();
+  if(!u){
+    loginStatus.textContent = '';
+    notice.style.display = '';
+    adminSignInBtn.style.display = 'inline-block';
+    return;
+  }
   if(isAdmin){
     loginStatus.textContent = 'Admin — editing enabled';
-    adminSignInBtn.textContent = 'Sign out';
+    notice.style.display = 'none';
   } else {
-    // guest viewer
-    const u = loadLocalUser();
     loginStatus.textContent = '';
-    adminSignInBtn.textContent = 'Admin';
+    // keep the persistent small notice for visitors
+    notice.style.display = '';
   }
+  adminSignInBtn.style.display = 'inline-block';
 }
 
-/* ------------------ Init Firebase and app ------------------ */
-try {
-  firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
-  firebaseAuth = firebase.auth();
-  firebaseDb = firebase.database();
-  // set persistence for auth
-  if(firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence){
-    firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
-  }
-  firebaseAuth.onAuthStateChanged(async (user) => {
-    if(user){
-      currentUser = { uid: user.uid, displayName: user.displayName || user.email || user.uid, email: user.email || null, anon: user.isAnonymous };
-    } else {
-      currentUser = loadLocalUser() || createLocalUser();
-    }
-    await detectAdmin();
-    await loadAllLinks();
-  });
-} catch(e){
-  console.warn('Firebase init error', e);
-  currentUser = loadLocalUser() || createLocalUser();
-  await loadAllLinks().catch(()=>{});
-}
-
-/* ------------------ bootstrap ------------------ */
+/* init */
 async function init(){
   setSelectedDate(new Date());
   currentUser = loadLocalUser() || createLocalUser();
   saveLocalUser(currentUser);
   localEdits = loadLocalEdits();
-  // if firebase already initialized via onAuthStateChanged it will call loadAllLinks; otherwise call explicitly:
-  if(!firebaseAuth) await loadAllLinks();
-  window.addEventListener('resize', ()=>{});
-  // modal close on backdrop click
-  editModal.addEventListener('click', (ev)=>{ if(ev.target === editModal) closeEditModal(); });
-  signModal.addEventListener('click', (ev)=>{ if(ev.target === signModal){ signModal.style.display='none'; signModal.setAttribute('aria-hidden','true'); }});
+
+  // init firebase (if it fails we still continue to fetch link files)
+  try {
+    firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseAuth = firebase.auth();
+    firebaseDb = firebase.database();
+    if(firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence){
+      firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+    }
+    firebaseAuth.onAuthStateChanged(async (user)=>{
+      if(user){
+        currentUser = { uid: user.uid, displayName: user.displayName || user.email || user.uid, email: user.email || null, anon: user.isAnonymous };
+      } else {
+        currentUser = loadLocalUser() || createLocalUser();
+      }
+      await detectAdmin();
+    });
+  } catch(e){
+    console.warn('Firebase init error', e);
+  }
+
+  await loadAllLinks();
+  window.addEventListener('resize', () => setTimeout(setTableWrapPaddingAndHeader, 60));
+  window.addEventListener('orientationchange', () => setTimeout(setTableWrapPaddingAndHeader, 140));
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(setTableWrapPaddingAndHeader, 80));
+  updateLoginStatusUI();
 }
 document.addEventListener('DOMContentLoaded', init);
 </script>
