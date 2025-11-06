@@ -39,12 +39,57 @@ thead th:nth-child(4), td:nth-child(4){width:5%}
 thead th:nth-child(5), td:nth-child(5){width:5%}
 
 .cell-center{display:flex;align-items:center;justify-content:center;min-height:44px}
-.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:4px 6px;max-width:100%;box-sizing:border-box;position:relative}
-.train-top,.train-bottom{font-weight:400;font-size:0.90rem;line-height:1;display:inline-block;text-align:center;white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}
+
+/* train stack: relative so dep-time can be absolutely placed inside it,
+   and padding-top reserves space so dep-time won't overlap content */
+.train-stack{
+  display:inline-flex;
+  flex-direction:column;
+  align-items:center;
+  gap:4px;
+  padding:6px 6px 6px 6px;
+  max-width:100%;
+  box-sizing:border-box;
+  position:relative;
+  padding-top:20px; /* space for dep-time */
+}
+
+.train-top,.train-bottom{
+  font-weight:400;
+  font-size:0.90rem;
+  line-height:1;
+  display:inline-block;
+  text-align:center;
+  white-space:normal;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+  max-width:100%;
+}
+
+/* train number: slightly smaller and bold so 5-digit fits nicely */
+.train-number{
+  white-space:nowrap;
+  font-weight:700;
+  display:inline-block;
+  font-size:0.92rem; /* reduced size */
+  line-height:1;
+}
+
+/* dep time top-right */
+.train-deptime{
+  position:absolute;
+  top:6px;
+  right:8px;
+  font-size:0.72rem;
+  color:var(--muted);
+  background:transparent;
+  line-height:1;
+  pointer-events:none;
+}
+
+/* divider */
 .train-divider{ width:90%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
 .nowrap{ white-space:nowrap; display:inline-block; }
-.train-number{ white-space:nowrap; font-weight:700; display:inline-block; font-size:1rem; }
-.train-deptime{ position:absolute; top:6px; right:8px; font-size:0.72rem; color:var(--muted); }
 
 /* MOBILE adjustments */
 @media (min-width:900px){ .train-divider{ width:100%; max-width:180px } }
@@ -63,6 +108,11 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   .train-divider{height:1.5px; width:85%}
   .cell-center{min-height:36px}
   .editable{padding:4px 6px;min-height:28px}
+
+  /* mobile-specific: slightly smaller number and tighter dep-time spacing */
+  .train-number{font-size:0.9rem}
+  .train-stack{padding-top:16px}
+  .train-deptime{top:4px; right:6px; font-size:0.68rem}
 }
 
 /* Admin / small UI */
@@ -168,7 +218,6 @@ try {
     }
     await detectAdmin();
     updateLoginStatusUI();
-    // only render; renderCombinedDuties will attempt to restore editor if one was open
     await renderCombinedDuties();
   });
 } catch(e){
@@ -216,7 +265,6 @@ function getShortLinkLabel(linkId) {
 function formatTrainToken(token){ 
   if(!token) return ''; 
   const cleaned = token.toString().trim(); 
-  // If it's a 5-digit numeric code prefer bold single-line
   if(/^\d{4,6}$/.test(cleaned)){ 
     return `<span class="train-number">${escapeHtml(cleaned)}</span>`; 
   } 
@@ -348,7 +396,6 @@ async function loadAllLinks(){
 /* Render + ownership: only admin may edit (client-side); employees view only. */
 async function renderCombinedDuties(){
   renderTableHead();
-  // remember editing position to restore later
   const editingInfo = window.currentlyEditing ? {...window.currentlyEditing} : null;
 
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
@@ -410,7 +457,7 @@ async function renderCombinedDuties(){
   rows.forEach(r=>{
     const outHtml = formatTrainToken(r.outgoing || '');
     const incHtml = formatTrainToken(r.incoming || '');
-    // train HTML now includes a top-right dep time and center train number(s)
+    // train HTML includes top-right dep time and centered train numbers
     const trainInner = (incHtml)
       ? `<div class="train-stack" role="group">
            <div class="train-deptime">${escapeHtml(r.depTime||'')}</div>
@@ -473,23 +520,15 @@ async function renderCombinedDuties(){
     if(el.__bound) return;
     el.__bound = true;
 
-    // store pointerdown so touch taps don't cause weird blurs
-    el.addEventListener('pointerdown', (ev)=> {
-      // stop propagation so outer handlers don't force a blur
-      ev.stopPropagation();
-    }, {passive:true});
+    // prevent outer handlers from stealing focus on pointer down
+    el.addEventListener('pointerdown', (ev)=> { ev.stopPropagation(); }, {passive:true});
 
     el.addEventListener('focus', (ev)=>{
-      if(!isAdmin){
-        el.blur();
-        return;
-      }
-      // mark currently editing; used to restore focus after re-renders
+      if(!isAdmin){ el.blur(); return; }
       const link = el.dataset.link;
       const crew = Number(el.dataset.crew);
       const field = el.dataset.field;
       window.currentlyEditing = { link, crewIndex: crew, field };
-      // if placeholder like MAO.. then clear for quick edit
       const txt = el.textContent.trim();
       if(/^(MAO|RN|OL|SL|L)\d+/i.test(txt) || /^(LP|ALP)\d+/i.test(txt)){
         el.dataset._orig = txt;
@@ -497,7 +536,6 @@ async function renderCombinedDuties(){
       } else {
         el.dataset._orig = '';
       }
-      // place caret at end
       placeCaretAtEnd(el);
     });
 
@@ -508,17 +546,14 @@ async function renderCombinedDuties(){
         ev.preventDefault();
         el.blur();
       } else if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 's') {
-        // Ctrl/Cmd+S to save quickly
         ev.preventDefault();
         el.blur();
       }
     });
 
     el.addEventListener('blur', async (ev)=>{
-      // minor debounce to avoid accidental immediate firing on touch UI
       clearTimeout(window._commitDebounce);
       window._commitDebounce = setTimeout(async ()=>{
-        // guard again: only admin should be allowed to commit
         if(!isAdmin){
           window.currentlyEditing = null;
           await renderCombinedDuties();
@@ -526,7 +561,7 @@ async function renderCombinedDuties(){
         }
         await onEditableCommit(ev);
         window.currentlyEditing = null;
-      }, 220); // 220ms delay
+      }, 220);
     });
   });
 
@@ -537,7 +572,6 @@ async function renderCombinedDuties(){
     const selector = `.editable[data-link="${escapeHtml(editingInfo.link)}"][data-crew="${editingInfo.crewIndex}"][data-field="${editingInfo.field}"]`;
     const restored = document.querySelector(selector);
     if(restored){
-      // focus and place caret at end
       restored.focus();
       placeCaretAtEnd(restored);
     }
@@ -616,7 +650,6 @@ async function onEditableCommit(e){
     }
   }
 
-  // re-render to show owner tag etc (but renderCombinedDuties will attempt to restore editing if needed)
   await renderCombinedDuties();
 }
 
