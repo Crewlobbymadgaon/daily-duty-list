@@ -10,6 +10,7 @@
   --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb;
   --radius:12px; --divider:#1f6feb; --border:#cdd4e1; --pill-border: rgba(0,0,0,0.06);
   --row-height:64px; /* uniform row height */
+  --train-col-width:120px; /* FIXED train column width (adjust if needed) */
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -31,17 +32,17 @@ tbody td{padding:0 12px;border:1px solid var(--border);font-size:0.95rem;color:v
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
 
-/* column widths */
-thead th:nth-child(1), td:nth-child(1){width:46%}
-thead th:nth-child(2), td:nth-child(2){width:46%}
-thead th:nth-child(3), td:nth-child(3){width:6%}
-thead th:nth-child(4), td:nth-child(4){width:1%}
-thead th:nth-child(5), td:nth-child(5){width:1%}
+/* column widths: LP/ALP flexible, Train fixed */
+thead th:nth-child(1), td:nth-child(1){width:auto}
+thead th:nth-child(2), td:nth-child(2){width:auto}
+thead th:nth-child(3), td:nth-child(3){width:var(--train-col-width); min-width:var(--train-col-width); max-width:var(--train-col-width)}
+thead th:nth-child(4), td:nth-child(4){width:60px}
+thead th:nth-child(5), td:nth-child(5){width:60px}
 
 /* cell centering and consistent internal spacing */
 .cell-center{display:flex;align-items:center;justify-content:center;height:100%;position:relative;padding:8px 6px;box-sizing:border-box}
 
-/* LINK PILL: absolute top-left of LP cell; outline matches dep pill */
+/* LINK PILL (top-left of LP cell) and DEP pill (top-right of train cell) share outline */
 .lp-cell{ position:relative; padding-top:6px; box-sizing:border-box; }
 .link-pill{
   position:absolute;
@@ -64,8 +65,6 @@ thead th:nth-child(5), td:nth-child(5){width:1%}
   z-index:160;
   min-width:46px;
 }
-
-/* DEP PILL: top-right of train cell; same outline as link-pill */
 .train-cell{ position:relative; padding-top:6px; box-sizing:border-box; }
 .dep-pill{
   position:absolute;
@@ -84,27 +83,29 @@ thead th:nth-child(5), td:nth-child(5){width:1%}
 }
 
 /* Train number styling:
-   - exact 5-digit numbers will be non-wrapping (class "nowrap")
-   - other tokens may wrap; we insert <wbr> at slashes for sensible breaks
-   - limit visual width to allow 2-line wrapping when needed */
-.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:6px 4px;max-width:100%;box-sizing:border-box}
+   - exact 5-digit numbers are kept on a single line (nowrap)
+   - other tokens may wrap at <wbr>
+   - we constrain the visual width to the fixed cell width so wrapping occurs if needed
+*/
+.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:4px 6px;max-width:100%;box-sizing:border-box}
 .train-number{
   font-weight:700;
-  font-size:0.92rem;
+  font-size:0.9rem;
   line-height:1.05;
   display:inline-block;
   text-align:center;
-  max-width:110px; /* controls wrapping to ~2 lines */
-  word-break:break-word;
+  width:100%;
+  max-width:calc(var(--train-col-width) - 16px); /* leave space for padding/pill */
   white-space:normal;
+  word-break:break-word;
 }
-.train-number.nowrap{ white-space:nowrap; max-width:none; } /* used for exact 5-digit tokens */
+.train-number.nowrap{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
 /* small divider */
-.train-divider{ width:70%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
+.train-divider{ width:60%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
 
 /* editable names: centered and bold */
-.editable{display:block;height:100%;padding:6px 8px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:center;font-weight:700;display:flex;align-items:center;justify-content:center}
+.editable{display:flex;align-items:center;justify-content:center;height:100%;padding:6px 8px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:center;font-weight:700}
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
 #adminSignInBtn{position:fixed;top:10px;right:10px;z-index:200;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
@@ -112,13 +113,13 @@ thead th:nth-child(5), td:nth-child(5){width:1%}
 .toast.show{opacity:1;transform:translateY(0)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
 
-/* mobile adjustments */
+/* mobile adjustments: slightly reduce train column width on narrow screens */
 @media (max-width:640px){
+  :root{ --train-col-width:110px; --row-height:60px; }
   table{min-width:0;table-layout:auto}
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
   thead th,tbody td{padding:6px}
-  .train-number{font-size:0.86rem; max-width:140px}
-  .train-number.nowrap{ font-size:0.92rem }
+  .train-number{font-size:0.86rem; max-width:calc(var(--train-col-width) - 16px)}
   .link-pill{font-size:0.64rem;padding:3px 6px;left:6px;top:6px}
   .dep-pill{font-size:0.64rem;padding:3px 6px;right:6px;top:6px}
   .cell-center{min-height:56px}
@@ -262,8 +263,8 @@ function getShortLinkLabel(linkId) {
 }
 
 /* format train token:
-   - insert <wbr> at slashes to allow sensible breaks
-   - if the token is exactly a 5-digit number, mark nowrap so it stays on one line
+   - keep exact 5-digit numbers on a single line (nowrap)
+   - insert <wbr> after slashes for sensible breaking of long tokens
 */
 function formatTrainToken(token){
   if(!token) return '';
@@ -271,12 +272,11 @@ function formatTrainToken(token){
   if(/^\d{5}$/.test(cleaned)){
     return `<span class="train-number nowrap">${escapeHtml(cleaned)}</span>`;
   }
-  // insert break opportunities after slashes
   const withBreaks = escapeHtml(cleaned).replace(/\//g, '/<wbr>');
   return `<span class="train-number">${withBreaks}</span>`;
 }
 
-/* layout helpers (unchanged) */
+/* layout helpers */
 function setTableWrapPaddingAndHeader(){
   const header = document.querySelector('.headerArea');
   const controls = document.querySelector('.controls');
@@ -314,7 +314,7 @@ function alignHeaderWidths(){
   mainTable.style.width = mainWidth + 'px';
 }
 
-/* date controls (unchanged) */
+/* Date controls */
 dateBtn.addEventListener('click', ()=>{ datePicker.focus(); datePicker.click(); });
 datePicker.addEventListener('change', ()=>{ selectedDate = datePicker.value ? new Date(datePicker.value+'T00:00:00') : new Date(); setSelectedDate(selectedDate); renderCombinedDuties(); });
 prevBtn.addEventListener('click', ()=> changeDate(-1));
@@ -322,7 +322,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* load JSON link files (unchanged) */
+/* Load JSON link files */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async (f, idx) => {
@@ -369,7 +369,7 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* render (with pill showing MAO/RN via getShortLinkLabel) */
+/* Render */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
@@ -440,7 +440,7 @@ async function renderCombinedDuties(){
     const mayEditALP = !!isAdmin;
     const ownerTag = (isAdmin && r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
-    // pill uses MAO/RN/etc. derived from linkId
+    // pill uses MAO/RN etc derived from linkId
     const linkLabel = escapeHtml(getShortLinkLabel(r.link));
 
     const lpCell = `
@@ -467,7 +467,7 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  /* attach editable handlers */
+  /* editable handlers */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
@@ -505,7 +505,7 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* Commit handler (unchanged) */
+/* Commit handler */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
@@ -577,7 +577,7 @@ async function onEditableCommit(e){
   await renderCombinedDuties();
 }
 
-/* Admin sign-in UI & detection (unchanged) */
+/* admin sign-in & detection */
 if(adminSignInBtn){
   adminSignInBtn.addEventListener('click', async ()=>{
     if(!firebaseAuth){ alert('Firebase not initialized.'); return; }
