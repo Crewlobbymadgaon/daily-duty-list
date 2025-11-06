@@ -43,6 +43,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 @media (min-width:900px){ .train-divider{ width:100%; max-width:180px } }
 @media (max-width:640px){
   table{min-width:0;table-layout:auto}
+  /* Dep/Link columns are hidden on mobile - we keep 5 columns in DOM and hide the last two */
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
   thead th,tbody td{padding:8px}
   .train-top,.train-bottom{font-size:0.86rem}
@@ -78,13 +79,8 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
       <div class="tableWrap" aria-live="polite">
         <table id="mainTable" aria-describedby="dateHeading">
           <thead>
-            <tr>
-              <th>Name of LP</th>
-              <th>Name of ALP</th>
-              <th>Train No</th>
-              <th>Dep</th>
-              <th>Link No</th>
-            </tr>
+            <!-- replaced with dynamic row to allow responsive header reordering -->
+            <tr id="theadRow"></tr>
           </thead>
           <tbody id="dutyTable">
             <tr><td colspan="5" class="no-data">Loading data…</td></tr>
@@ -247,6 +243,35 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
+/* Responsive header/row reorder helpers */
+const MOBILE_Q = '(max-width: 640px)';
+const mql = window.matchMedia(MOBILE_Q);
+function isMobile() { return window.matchMedia(MOBILE_Q).matches; }
+function theadRowEl(){ return document.getElementById('theadRow'); }
+function renderTableHead(){
+  const tr = theadRowEl();
+  if(!tr) return;
+  if(isMobile()){
+    // Mobile order: LP, Train, ALP, Dep, Link (Dep/Link will be hidden by CSS)
+    tr.innerHTML = `
+      <th>Name of LP</th>
+      <th>Train No</th>
+      <th>Name of ALP</th>
+      <th>Dep</th>
+      <th>Link No</th>
+    `;
+  } else {
+    // Desktop original: LP, ALP, Train, Dep, Link
+    tr.innerHTML = `
+      <th>Name of LP</th>
+      <th>Name of ALP</th>
+      <th>Train No</th>
+      <th>Dep</th>
+      <th>Link No</th>
+    `;
+  }
+}
+
 /* Load JSON link files (debug friendly but silent) */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
@@ -298,6 +323,7 @@ async function loadAllLinks(){
 
 /* Render + ownership: only admin may edit (client-side); employees view only. */
 async function renderCombinedDuties(){
+  renderTableHead(); // keep header in sync if called standalone
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
 
@@ -369,13 +395,38 @@ async function renderCombinedDuties(){
     // show owner tag only if admin (so employees never see names/UIDs)
     const ownerTag = (isAdmin && r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
-    tr.innerHTML = `
-      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditLP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="${mayEditLP? 'Edit LP name':'View only'}">${escapeHtml(r.lpName)}</div></div></td>
-      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="${mayEditALP? 'Edit ALP name':'View only'}">${escapeHtml(r.alpName)}</div></div></td>
-      <td>${trainHtml}</td>
-      <td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>
-      <td><div class="cell-center" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>
+    // Build cells
+    const lpCell = `
+      <td><div class="cell-center">
+        <div class="editable" contenteditable="${mayEditLP? 'true':'false'}"
+          data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}"
+          data-field="crewLPName" title="${mayEditLP? 'Edit LP name':'View only'}">
+          ${escapeHtml(r.lpName)}
+        </div>
+      </div></td>
     `;
+
+    const alpCell = `
+      <td><div class="cell-center">
+        <div class="editable" contenteditable="${mayEditALP? 'true':'false'}"
+          data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}"
+          data-field="crewALPName" title="${mayEditALP? 'Edit ALP name':'View only'}">
+          ${escapeHtml(r.alpName)}
+        </div>
+      </div></td>
+    `;
+
+    const trainCell = `<td>${trainHtml}</td>`;
+    const depCell   = `<td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>`;
+    const linkCell  = `<td><div class="cell-center" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>`;
+
+    // Responsive order: if mobile show LP -> Train -> ALP, else original LP -> ALP -> Train
+    if (isMobile()) {
+      tr.innerHTML = `${lpCell}${trainCell}${alpCell}${depCell}${linkCell}`;
+    } else {
+      tr.innerHTML = `${lpCell}${alpCell}${trainCell}${depCell}${linkCell}`;
+    }
+
     dutyTable.appendChild(tr);
   });
 
@@ -579,11 +630,28 @@ async function init(){
   currentUser = loadLocalUser() || createLocalUser();
   saveLocalUser(currentUser);
   localEdits = loadLocalEdits();
+
+  renderTableHead(); // render initial header
   await loadAllLinks();
-  window.addEventListener('resize', () => setTimeout(setTableWrapPaddingAndHeader, 60));
-  window.addEventListener('orientationchange', () => setTimeout(setTableWrapPaddingAndHeader, 140));
+  window.addEventListener('resize', () => {
+    renderTableHead();
+    setTimeout(setTableWrapPaddingAndHeader, 60);
+    renderCombinedDuties();
+  });
+  window.addEventListener('orientationchange', () => {
+    renderTableHead();
+    setTimeout(setTableWrapPaddingAndHeader, 140);
+    renderCombinedDuties();
+  });
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(setTableWrapPaddingAndHeader, 80));
   updateLoginStatusUI();
+
+  // media query listener (some browsers don't fire resize)
+  if (mql && mql.addEventListener) {
+    mql.addEventListener('change', () => { renderTableHead(); renderCombinedDuties(); });
+  } else if (mql && mql.addListener) {
+    mql.addListener(() => { renderTableHead(); renderCombinedDuties(); });
+  }
 }
 document.addEventListener('DOMContentLoaded', init);
 </script>
