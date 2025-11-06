@@ -19,7 +19,7 @@ body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,S
 .headerArea .sub{font-size:0.9rem;color:var(--muted);text-align:center}
 .headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center}
 .headerArea #loginStatus{font-size:0.78rem;color:var(--muted);margin-top:6px}
-.headerArea #notice{font-size:0.78rem;color:#6b7280;margin-top:4px}
+.headerArea #notice{font-size:0.78rem;color:#6b7280;margin-top:4px;display:none} /* hidden per request */
 .controls{position:sticky;top:0;background:var(--card);z-index:55;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.03)}
 .nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:44px;height:36px;padding:0 10px;cursor:pointer}
@@ -55,14 +55,6 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
-
-/* debug panel styling */
-#debugPanel{background:#111;color:#fff;padding:10px;border-radius:10px;margin:12px 0;font-size:0.9rem;display:none}
-#debugPanel h4{margin:0 0 8px 0;font-size:1rem}
-#debugPanel ul{margin:0;padding-left:18px}
-#debugPanel .ok{color:#90ee90}
-#debugPanel .bad{color:#ffb3b3}
-#debugPanel pre{white-space:pre-wrap;color:#eee;background:rgba(255,255,255,0.03);padding:8px;border-radius:6px;margin-top:8px;font-size:0.85rem}
 </style>
 </head>
 <body>
@@ -73,7 +65,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
         <div class="sub">Madgaon Lobby</div>
         <div id="dateHeading">Loading date…</div>
         <div id="loginStatus" aria-live="polite"></div>
-        <div id="notice">Sign in as admin to edit the names (view-only for employees).</div>
+        <div id="notice"> <!-- intentionally hidden --> </div>
       </div>
 
       <div class="controls" role="toolbar" aria-label="Date controls">
@@ -81,14 +73,6 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
         <button id="dateBtn" class="date-icon-btn" title="Pick a date">📅</button>
         <input id="datePicker" class="native-date" type="date" />
         <button id="nextDay" class="nav-btn" title="Next day">▶</button>
-      </div>
-
-      <!-- DEBUG PANEL (visible when page tries to fetch link files) -->
-      <div id="debugPanel" aria-live="polite" role="status">
-        <h4>Debug — link files</h4>
-        <div id="debugSummary">Checking link files…</div>
-        <ul id="debugList"></ul>
-        <pre id="debugSnippet" style="display:none"></pre>
       </div>
 
       <div class="tableWrap" aria-live="polite">
@@ -145,6 +129,40 @@ let selectedDate = new Date();
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
 
+/* init firebase */
+try {
+  firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+  firebaseAuth = firebase.auth();
+  firebaseDb = firebase.database();
+
+  // Keep persistence local for admin
+  if (firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
+    firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+  }
+
+  // no anonymous auto sign-in: visitors stay view-only.
+  firebaseAuth.onAuthStateChanged(async (user) => {
+    if (user){
+      currentUser = {
+        uid: user.uid,
+        displayName: user.displayName || user.email || user.uid,
+        email: user.email || null,
+        anon: user.isAnonymous || false
+      };
+    } else {
+      // visitors get a local viewer id (not shown)
+      currentUser = loadLocalUser() || createLocalUser();
+    }
+    await detectAdmin();
+    updateLoginStatusUI();
+    await renderCombinedDuties();
+  });
+} catch(e){
+  console.warn('Firebase init error', e);
+  currentUser = loadLocalUser() || createLocalUser();
+  updateLoginStatusUI();
+}
+
 /* DOM */
 const dutyTable = document.getElementById('dutyTable');
 const mainTable = document.getElementById('mainTable');
@@ -158,12 +176,6 @@ const toast = document.getElementById('toast');
 const adminSignInBtn = document.getElementById('adminSignInBtn');
 const loginStatus = document.getElementById('loginStatus');
 const notice = document.getElementById('notice');
-
-/* debug elements */
-const debugPanel = document.getElementById('debugPanel');
-const debugSummary = document.getElementById('debugSummary');
-const debugList = document.getElementById('debugList');
-const debugSnippet = document.getElementById('debugSnippet');
 
 /* helpers */
 function showToast(msg, t=1600){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
@@ -235,15 +247,9 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* Load JSON link files (debug friendly) */
+/* Load JSON link files (debug friendly but silent) */
 async function loadAllLinks(){
-  // show debug panel
-  debugPanel.style.display = 'block';
-  debugSummary.textContent = 'Checking link files…';
-  debugList.innerHTML = '';
-  debugSnippet.style.display = 'none';
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
-
   const fetches = linkFiles.map(async (f, idx) => {
     try {
       console.log('Fetching', f);
@@ -253,14 +259,11 @@ async function loadAllLinks(){
         console.error(`Failed to fetch ${f}:`, r.status, r.statusText, text);
         return { __error:true, file:f, status:r.status, statusText:r.statusText, body:text };
       }
-      // try parse json and capture the first 400 chars as snippet for debugging
-      const text = await r.text();
-      try {
-        const json = JSON.parse(text);
-        return { __ok:true, file:f, json, snippet: text.slice(0,400) };
-      } catch(parseErr){
-        return { __error:true, file:f, parseErr: (parseErr && parseErr.message), body: text.slice(0,400) };
-      }
+      const json = await r.json().catch(async (err)=>{
+        const txt = await r.text().catch(()=>'<no body>');
+        return { __error:true, file:f, parseErr: (err && err.message), body: txt };
+      });
+      return json;
     } catch(err){
       console.error('Fetch error', f, err);
       return { __error:true, file:f, err: (err && err.message) };
@@ -269,42 +272,21 @@ async function loadAllLinks(){
 
   const results = await Promise.all(fetches);
   allCrewData = [];
-  const anySuccess = results.some(r => r && r.__ok);
-  // populate debug panel list
-  results.forEach(res=>{
-    const li = document.createElement('li');
-    if(!res){
-      li.innerHTML = `<span class="bad">Unknown response</span>`;
-      debugList.appendChild(li);
-      return;
-    }
-    if(res.__ok){
-      li.innerHTML = `<span class="ok">${escapeHtml(res.file)} — OK (parsed)</span>`;
-      // push crew items later
-    } else {
-      let reason = res.status ? `HTTP ${res.status}` : (res.parseErr ? `JSON parse error: ${escapeHtml(res.parseErr)}` : (res.err ? `Fetch error: ${escapeHtml(res.err)}` : 'Unknown'));
-      li.innerHTML = `<span class="bad">${escapeHtml(res.file)} — ${reason}</span>`;
-      // if we have body snippet, show it
-      if(res.body) {
-        debugSnippet.style.display = 'block';
-        debugSnippet.textContent = `${res.file} body (first 400 chars):\n${res.body}`;
-      }
-    }
-    debugList.appendChild(li);
-  });
-
+  const anySuccess = results.some(r => r && !r.__error);
   if(!anySuccess){
-    debugSummary.textContent = 'All link files failed — likely causes: JSONs missing, wrong path, or case mismatch. See list below.';
-    dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Failed to load link files — check they are in the same folder as index.html (see debug panel above)</td></tr>`;
+    dutyTable.innerHTML = '';
+    results.forEach(res=>{
+      const msg = res && res.__error ? `${res.file} — ${res.status||''} ${res.parseErr||res.err||''}` : 'Unknown error';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td colspan="5" class="no-data">Failed to load: ${escapeHtml(msg)}</td>`;
+      dutyTable.appendChild(tr);
+    });
+    setTableWrapPaddingAndHeader();
     return;
-  } else {
-    debugSummary.textContent = 'Some link files loaded. Processing data...';
   }
 
-  // process the successful ones
-  results.forEach((res, idx) => {
-    if(!res || res.__error || !res.__ok) return;
-    const linkData = res.json;
+  results.forEach((linkData, idx) => {
+    if(!linkData || linkData.__error) return;
     const linkId = linkData.linkId ?? (`file#${idx+1}`);
     const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
     const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
@@ -597,27 +579,6 @@ async function init(){
   currentUser = loadLocalUser() || createLocalUser();
   saveLocalUser(currentUser);
   localEdits = loadLocalEdits();
-
-  // init firebase (if it fails we still continue to fetch link files)
-  try {
-    firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
-    firebaseAuth = firebase.auth();
-    firebaseDb = firebase.database();
-    if(firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence){
-      firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
-    }
-    firebaseAuth.onAuthStateChanged(async (user)=>{
-      if(user){
-        currentUser = { uid: user.uid, displayName: user.displayName || user.email || user.uid, email: user.email || null, anon: user.isAnonymous };
-      } else {
-        currentUser = loadLocalUser() || createLocalUser();
-      }
-      await detectAdmin();
-    });
-  } catch(e){
-    console.warn('Firebase init error', e);
-  }
-
   await loadAllLinks();
   window.addEventListener('resize', () => setTimeout(setTableWrapPaddingAndHeader, 60));
   window.addEventListener('orientationchange', () => setTimeout(setTableWrapPaddingAndHeader, 140));
