@@ -16,10 +16,13 @@
   --divider:#1f6feb;
   --border:#cdd4e1;
   --pill-border: rgba(0,0,0,0.08);
-  --row-height:64px;       /* uniform row height */
-  --train-col-width:120px; /* fixed train column width */
-  --pill-space:36px;       /* reserved vertical space for pills */
+
+  --row-height:64px;        /* overall row height (uniform) */
+  --train-col-width:120px;  /* fixed train column width */
+  --pill-space:36px;        /* vertical area reserved for pills at top */
   --cell-padding-x:10px;
+  --train-slot-height:24px; /* fixed height for top and bottom train slots */
+  --train-gap:6px;          /* gap between top and bottom train slots */
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -41,20 +44,20 @@ tbody td{padding:0;border:1px solid var(--border);font-size:0.95rem;color:var(--
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
 
-/* column widths */
+/* columns */
 thead th:nth-child(1), td:nth-child(1){width:auto}
 thead th:nth-child(2), td:nth-child(2){width:auto}
 thead th:nth-child(3), td:nth-child(3){width:var(--train-col-width); min-width:var(--train-col-width); max-width:var(--train-col-width)}
 thead th:nth-child(4), td:nth-child(4){width:60px}
 thead th:nth-child(5), td:nth-child(5){width:60px}
 
-/* cell inner wrapper - used to center content while reserving top pill space */
+/* inner wrapper to center content and reserve pill space */
 .cell-inner{
   display:flex;
   align-items:center;
   justify-content:center;
   height:100%;
-  padding: calc(var(--pill-space) / 8) var(--cell-padding-x); /* slight top padding addition */
+  padding: calc(var(--pill-space) / 8) var(--cell-padding-x);
   box-sizing:border-box;
   text-align:center;
 }
@@ -83,7 +86,7 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
   min-width:46px;
 }
 
-/* Train cell: reserve top space for dep-pill */
+/* Train cell reserves top area for dep pill */
 .train-cell{ position:relative; padding-top:var(--pill-space); box-sizing:border-box; }
 .dep-pill{
   position:absolute;
@@ -101,25 +104,43 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
   z-index:150;
 }
 
-/* train numbers - compact and centered */
-.train-stack{display:flex;flex-direction:column;align-items:center;gap:4px;padding:2px 4px;max-width:100%;box-sizing:border-box}
+/* TRAIN: fixed slot heights so top and bottom spacing is identical for all rows */
+.train-stack{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:var(--train-gap);
+  padding:2px 4px;
+  max-width:100%;
+  box-sizing:border-box;
+  /* total height of the two slots + gap roughly:
+     2 * --train-slot-height + --train-gap */
+  min-height: calc( (var(--train-slot-height) * 2) + var(--train-gap) );
+}
+.train-slot{
+  height:var(--train-slot-height);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  box-sizing:border-box;
+}
 .train-number{
   font-weight:700;
   font-size:0.9rem;
-  line-height:1.05;
-  display:inline-block;
+  line-height:1;
   text-align:center;
-  width:100%;
   max-width:calc(var(--train-col-width) - 16px);
   white-space:normal;
   word-break:break-word;
 }
 .train-number.nowrap{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-/* divider */
-.train-divider{ width:60%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
+/* divider is decorative; keep height but make transparent for single-line case */
+.train-divider{ width:60%; height:2px; background:var(--divider); border-radius:2px; margin:0; opacity:1; }
 
-/* editable names center-aligned and fill the cell */
+/* editable names fill cell and center text */
 .editable{
   width:100%;
   height:100%;
@@ -144,7 +165,7 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
 
 /* mobile tuning */
 @media (max-width:640px){
-  :root{ --train-col-width:110px; --row-height:60px; --pill-space:32px; }
+  :root{ --train-col-width:110px; --row-height:60px; --pill-space:32px; --train-slot-height:20px; --train-gap:4px; }
   table{min-width:0;table-layout:auto}
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
   thead th,tbody td{padding:6px}
@@ -195,7 +216,6 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
   <button id="adminSignInBtn" title="Admin sign-in">Admin</button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <!-- firebase libs (unchanged) -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -279,7 +299,7 @@ function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slic
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
 
-/* short label from linkId */
+/* mapping */
 function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase();
@@ -292,7 +312,10 @@ function getShortLinkLabel(linkId) {
   return String(linkId).toUpperCase();
 }
 
-/* format train token - 5-digit numbers stay on one line, else allow breaks at '/' */
+/* format train token:
+   - exact 5-digit numbers -> nowrap slot
+   - otherwise insert <wbr> after slashes
+*/
 function formatTrainToken(token){
   if(!token) return '';
   const cleaned = token.toString().trim();
@@ -341,7 +364,7 @@ function alignHeaderWidths(){
   mainTable.style.width = mainWidth + 'px';
 }
 
-/* Date controls */
+/* date controls */
 dateBtn.addEventListener('click', ()=>{ datePicker.focus(); datePicker.click(); });
 datePicker.addEventListener('change', ()=>{ selectedDate = datePicker.value ? new Date(datePicker.value+'T00:00:00') : new Date(); setSelectedDate(selectedDate); renderCombinedDuties(); });
 prevBtn.addEventListener('click', ()=> changeDate(-1));
@@ -349,7 +372,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* Load JSON link files */
+/* load JSON link files */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async (f, idx) => {
@@ -396,7 +419,7 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* Render */
+/* render duties */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
@@ -457,16 +480,32 @@ async function renderCombinedDuties(){
   rows.forEach(r=>{
     const outHtml = formatTrainToken(r.outgoing || '');
     const inHtml  = r.incoming ? formatTrainToken(r.incoming) : '';
-    const trainInner = (inHtml)
-      ? `<div class="train-stack"><div class="train-top">${outHtml}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${inHtml}</div></div>`
-      : `<div class="train-stack"><div class="train-top">${outHtml}</div></div>`;
+    /* IMPORTANT: to ensure equal spacing for single vs. double numbers,
+       when there is no incoming (bottom) number we still render an empty
+       .train-slot (reserved space). We keep the divider (but invisible
+       via opacity) to preserve spacing. */
+    let trainInner = '';
+    if(inHtml){
+      trainInner = `
+        <div class="train-stack">
+          <div class="train-slot"><div class="train-number">${outHtml}</div></div>
+          <div class="train-divider" aria-hidden="true"></div>
+          <div class="train-slot"><div class="train-number">${inHtml}</div></div>
+        </div>`;
+    } else {
+      trainInner = `
+        <div class="train-stack">
+          <div class="train-slot"><div class="train-number">${outHtml}</div></div>
+          <div class="train-divider" style="opacity:0" aria-hidden="true"></div>
+          <div class="train-slot"><div class="train-number">&nbsp;</div></div>
+        </div>`;
+    }
 
     const tr = document.createElement('tr');
 
     const mayEditLP = !!isAdmin;
     const mayEditALP = !!isAdmin;
     const ownerTag = (isAdmin && r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
-
     const linkLabel = escapeHtml(getShortLinkLabel(r.link));
 
     const lpCell = `
@@ -504,7 +543,7 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  /* editable handlers */
+  /* editable handlers (unchanged) */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
@@ -542,7 +581,7 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* commit handler (unchanged) */
+/* Commit handler (unchanged) */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
@@ -614,7 +653,7 @@ async function onEditableCommit(e){
   await renderCombinedDuties();
 }
 
-/* admin sign-in UI */
+/* admin sign-in & detection (unchanged) */
 if(adminSignInBtn){
   adminSignInBtn.addEventListener('click', async ()=>{
     if(!firebaseAuth){ alert('Firebase not initialized.'); return; }
