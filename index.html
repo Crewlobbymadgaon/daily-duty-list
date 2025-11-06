@@ -15,9 +15,9 @@
   --radius:12px;
   --divider:#1f6feb;
   --border:#cdd4e1;
-  --pill-text:#0f172a;
 }
 *{box-sizing:border-box}
+html,body{height:100%}
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent);-webkit-font-smoothing:antialiased}
 .wrap{max-width:1100px;margin:0 auto;padding:14px}
 .card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);overflow:hidden}
@@ -33,49 +33,53 @@ input[type="date"].native-date{position:absolute;left:-9999px}
 .tableWrap{max-height:calc(100vh - 112px);overflow:auto;border-radius:0;background:#fff;padding:6px;position:relative}
 table{width:100%;border-collapse:collapse;min-width:640px;table-layout:fixed;border:1px solid var(--border)}
 thead th{background:var(--card);padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);border-top:1px solid rgba(0,0,0,0.04);position:sticky;z-index:70;top:0;box-sizing:border-box}
-tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;word-break:break-word;overflow-wrap:anywhere}
+tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;word-break:break-word;overflow-wrap:anywhere;position:relative}
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
+
+/* columns */
 thead th:nth-child(1), td:nth-child(1){width:36%}
 thead th:nth-child(2), td:nth-child(2){width:36%}
 thead th:nth-child(3), td:nth-child(3){width:18%}
 thead th:nth-child(4), td:nth-child(4){width:5%}
 thead th:nth-child(5), td:nth-child(5){width:5%}
+
 .cell-center{display:flex;align-items:center;justify-content:center;min-height:44px;position:relative}
 
-/* LP link pill (placed inside LP cell) */
+/* LINK PILL: now absolute at top-left of LP cell (outline only) */
+.lp-cell{ position:relative; padding-top:8px; }
 .link-pill{
+  position:absolute;
+  top:6px;
+  left:8px;
+  transform: translateY(-10%);
   display:inline-flex;
   align-items:center;
-  gap:6px;
+  justify-content:center;
   padding:4px 8px;
   border-radius:999px;
   font-weight:700;
   font-size:0.72rem;
   text-transform:uppercase;
   letter-spacing:0.3px;
-  color:var(--pill-text);
-  border:2px solid transparent;
+  background:transparent;         /* outline-only */
+  border:2px solid rgba(0,0,0,0.08); /* replaced inline with colorForLinkId(); default light outline */
+  color:var(--muted);
+  pointer-events:none;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
-  margin-right:8px;
+  z-index:160;
   min-width:48px;
-  justify-content:center;
-  box-sizing:border-box;
 }
 
-/* Dep time pill (positioned at top-right of train cell) */
-.train-cell{
-  position:relative;
-  padding-top:8px;
-  padding-bottom:8px;
-}
+/* Dep time pill (top-right of train cell) */
+.train-cell{ position:relative; padding-top:8px; }
 .dep-pill{
   position:absolute;
   top:6px;
   right:8px;
-  transform:translateY(-20%);
+  transform: translateY(-10%);
   background:transparent;
   border:1.5px solid rgba(0,0,0,0.06);
   padding:4px 8px;
@@ -85,34 +89,44 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   color:var(--muted);
   white-space:nowrap;
   pointer-events:none;
-  z-index:110;
+  z-index:150;
 }
 
-/* Train stack content (kept centered, slightly reduced font for train number) */
+/* Train stack: both train numbers same font & forced no-wrap (5-digit stays in one line) */
 .train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;max-width:100%;box-sizing:border-box}
-.train-top{font-weight:700;font-size:0.95rem;line-height:1;display:inline-block;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.train-bottom{font-weight:400;font-size:0.86rem;line-height:1;display:inline-block;text-align:center;white-space:nowrap}
+.train-number{ font-family: inherit; font-weight:700; font-size:0.92rem; line-height:1; white-space:nowrap; display:inline-block; text-align:center; }
+.train-top{ /* outgoing */
+  margin-top:14px; /* keep top space so pill doesn't overlap number visually */
+}
+.train-bottom{ /* incoming */
+  margin-top:2px;
+  font-weight:700; /* same boldness as top */
+  font-size:0.92rem; /* same size */
+  white-space:nowrap;
+}
+
+/* divider */
 .train-divider{ width:80%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
 
 /* LP/ALP editable bold */
-.editable{display:block;min-height:32px;padding:6px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:center;font-weight:700}
+.editable{display:block;min-height:32px;padding:8px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:left;font-weight:700}
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
-#adminSignInBtn{position:fixed;top:10px;right:10px;z-index:120;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
+#adminSignInBtn{position:fixed;top:10px;right:10px;z-index:200;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
 
-/* Mobile adjustments */
+/* mobile */
 @media (max-width:640px){
   table{min-width:0;table-layout:auto}
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
   thead th,tbody td{padding:8px}
-  .train-top{font-size:0.86rem}
-  .train-divider{height:1.5px; width:85%}
-  .link-pill{font-size:0.66rem;padding:3px 6px;min-width:42px}
+  .train-number{font-size:0.86rem}
+  .link-pill{font-size:0.64rem;padding:3px 6px;left:6px;top:6px}
   .dep-pill{font-size:0.64rem;padding:3px 6px;right:6px;top:6px}
   .train-stack{padding:8px 4px}
+  .editable{padding:6px;font-size:0.95rem}
 }
 </style>
 </head>
@@ -193,9 +207,11 @@ try {
   firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
   firebaseAuth = firebase.auth();
   firebaseDb = firebase.database();
+
   if (firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
     firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
   }
+
   firebaseAuth.onAuthStateChanged(async (user) => {
     if (user){
       currentUser = {
@@ -253,18 +269,24 @@ function getShortLinkLabel(linkId) {
   if(digits) return `L${digits[0]}`;
   return String(linkId).toUpperCase();
 }
-function formatTrainToken(token){ if(!token) return ''; const cleaned = token.toString().trim(); if(/^\d{4,6}$/.test(cleaned)){ return `<span class="train-top">${escapeHtml(cleaned)}</span>`; } return escapeHtml(cleaned).replace(/\//g,'<wbr/>'); }
 
-/* generate deterministic color for link id (returns CSS border-color & background text color contraster) */
+/* format train token: wrap number(s) in .train-number so both numbers share same font & never wrap */
+function formatTrainToken(token){ 
+  if(!token) return ''; 
+  const cleaned = token.toString().trim(); 
+  // present as a .train-number span (prevents wrapping and enforces identical style)
+  return `<span class="train-number">${escapeHtml(cleaned)}</span>`; 
+}
+
+/* deterministic color for link pill */
 function colorForLinkId(id){
   if(!id) id = 'default';
-  // simple hash -> hue
   let h = 0;
   for(let i=0;i<id.length;i++) h = (h*31 + id.charCodeAt(i)) % 360;
   const hue = h;
-  const bg = `hsl(${hue} 80% 92%)`;           // pale background
-  const border = `hsl(${hue} 80% 60%)`;       // stronger border
-  const text = `hsl(${hue} 80% 28%)`;         // darker text
+  const bg = `hsl(${hue} 90% 98%)`;     // near-white tinted background (but we will keep pill transparent per request)
+  const border = `hsl(${hue} 80% 45%)`;  // colored border
+  const text = `hsl(${hue} 70% 30%)`;    // colored text
   return {bg, border, text};
 }
 
@@ -314,7 +336,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* Load JSON link files (silent debug) */
+/* Load JSON link files */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async (f, idx) => {
@@ -354,7 +376,6 @@ async function loadAllLinks(){
     const linkId = linkData.linkId ?? (`file#${idx+1}`);
     const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
     const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
-    // capture friendly label if present (label/linkName/displayName/name)
     const friendly = (linkData && (linkData.label || linkData.linkName || linkData.displayName || linkData.name)) || null;
     crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex, friendlyLabel: friendly}));
   });
@@ -362,7 +383,7 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* Render + ownership: only admin may edit */
+/* Render */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
@@ -422,44 +443,40 @@ async function renderCombinedDuties(){
   dutyTable.innerHTML = '';
   rows.forEach(r=>{
     const outHtml = formatTrainToken(r.outgoing || '');
-    const incHtml = r.incoming ? `<div class="train-bottom">${escapeHtml(r.incoming)}</div>` : '';
-    const trainContent = `<div class="train-stack">${outHtml}${incHtml}</div>`;
+    const inHtml  = r.incoming ? formatTrainToken(r.incoming) : '';
+    const trainInner = (inHtml)
+      ? `<div class="train-stack"><div class="train-top">${outHtml}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${inHtml}</div></div>`
+      : `<div class="train-stack"><div class="train-top">${outHtml}</div></div>`;
 
     const tr = document.createElement('tr');
 
-    // Only admin can edit
     const mayEditLP = !!isAdmin;
     const mayEditALP = !!isAdmin;
     const ownerTag = (isAdmin && r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
-    // compute link label & color
+    // link pill label & color - outline only
     const linkLabel = escapeHtml(getShortLinkLabel(r.link));
     const colors = colorForLinkId(String(r.link));
-    const pillStyle = `background:${colors.bg}; border-color:${colors.border}; color:${colors.text};`;
+    const pillInlineStyle = `border-color:${colors.border}; color:${colors.text}; background:transparent;`;
 
-    // LP cell: link pill + editable LP name (link pill placed left of name)
+    // LP cell: absolute pill (top-left) + name below (pill won't disturb name)
     const lpCell = `
-      <td>
-        <div class="cell-center" style="justify-content:flex-start;gap:8px;">
-          <div class="link-pill" style="${pillStyle}" title="${linkLabel}">${linkLabel}</div>
-          <div style="flex:1">
-            <div class="editable" contenteditable="${mayEditLP? 'true':'false'}"
-              data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName"
-              title="${mayEditLP? 'Edit LP name':'View only'}">${escapeHtml(r.lpName)}</div>
-          </div>
+      <td class="lp-cell">
+        <div class="link-pill" style="${pillInlineStyle}" title="${linkLabel}">${linkLabel}</div>
+        <div style="padding-top:6px">
+          <div class="editable" contenteditable="${mayEditLP? 'true':'false'}"
+            data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName"
+            title="${mayEditLP? 'Edit LP name':'View only'}">${escapeHtml(r.lpName)}</div>
         </div>
       </td>`;
 
-    // ALP cell: editable name centered
     const alpCell = `
       <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}"
         data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName"
         title="${mayEditALP? 'Edit ALP name':'View only'}">${escapeHtml(r.alpName)}</div></div></td>`;
 
-    // Train cell: include dep-pill (top-right) and train content centered
-    const trainCell = `<td class="train-cell"><div class="dep-pill">${escapeHtml(r.depTime||'')}</div><div class="cell-center">${trainContent}</div></td>`;
+    const trainCell = `<td class="train-cell"><div class="dep-pill">${escapeHtml(r.depTime||'')}</div><div class="cell-center">${trainInner}</div></td>`;
 
-    // Dep & Link columns (kept for larger screens but will be hidden on mobile)
     const depCell = `<td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>`;
     const linkCell = `<td><div class="cell-center" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>`;
 
@@ -467,7 +484,7 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  /* Attach editable behavior - block focus for non-admins */
+  /* editable handlers */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
@@ -505,7 +522,7 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* Commit handler (admin only) */
+/* Commit handler (admin only) - unchanged */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
@@ -522,7 +539,6 @@ async function onEditableCommit(e){
   const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
   const userReadable = (currentUser && (currentUser.email || currentUser.displayName)) || userUid;
 
-  // clear
   if(!newVal){
     if(localEdits[linkId] && localEdits[linkId][crewIndex]) {
       delete localEdits[linkId][crewIndex].crewLPName;
@@ -554,7 +570,6 @@ async function onEditableCommit(e){
     return;
   }
 
-  // set value + owner to admin
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
   localEdits[linkId][crewIndex][field] = newVal;
