@@ -7,23 +7,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f4f7fb;
-  --card:#fff;
-  --muted:#6b7280;
-  --accent:#0f172a;
-  --accent-2:#2563eb;
-  --radius:12px;
-  --divider:#1f6feb;
-  --border:#cdd4e1;
-
-  /* pill outline colors (light) */
-  --pill-outline-link: rgba(37,99,235,0.14);  /* light blue border */
-  --pill-outline-dep: rgba(15,23,42,0.08);    /* light dark border */
-  --pill-text-link: rgba(37,99,235,0.92);
-  --pill-text-dep: rgba(15,23,42,0.9);
+  --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb;
+  --radius:12px; --divider:#1f6feb; --border:#cdd4e1;
 }
 *{box-sizing:border-box}
-html,body{height:100%}
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent);-webkit-font-smoothing:antialiased}
 .wrap{max-width:1100px;margin:0 auto;padding:14px}
 .card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);overflow:hidden}
@@ -32,7 +19,7 @@ body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,S
 .headerArea .sub{font-size:0.9rem;color:var(--muted);text-align:center}
 .headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center}
 .headerArea #loginStatus{font-size:0.78rem;color:var(--muted);margin-top:6px}
-.headerArea #notice{font-size:0.78rem;color:#6b7280;margin-top:4px;display:none}
+.headerArea #notice{font-size:0.78rem;color:#6b7280;margin-top:4px;display:none} /* hidden per request */
 .controls{position:sticky;top:0;background:var(--card);z-index:55;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.03)}
 .nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:44px;height:36px;padding:0 10px;cursor:pointer}
@@ -43,146 +30,28 @@ thead th{background:var(--card);padding:10px 12px;text-align:center;color:var(--
 tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;word-break:break-word;overflow-wrap:anywhere}
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
-
-/* default column sizes */
 thead th:nth-child(1), td:nth-child(1){width:36%}
 thead th:nth-child(2), td:nth-child(2){width:36%}
 thead th:nth-child(3), td:nth-child(3){width:18%}
 thead th:nth-child(4), td:nth-child(4){width:5%}
 thead th:nth-child(5), td:nth-child(5){width:5%}
-
 .cell-center{display:flex;align-items:center;justify-content:center;min-height:44px}
-
-/* TRAIN STACK - reserve sufficient top space for pills; increased to prevent overlap */
-.train-stack{
-  display:inline-flex;
-  flex-direction:column;
-  align-items:center;
-  gap:6px;
-  padding:8px 6px;
-  max-width:100%;
-  box-sizing:border-box;
-  position:relative;
-  padding-top:56px; /* increased reserve */
-  min-height:76px;
-}
-
-/* TOP-LEFT LINK PILL: outline-only, constrained width so it can't overlap center */
-.train-linklabel{
-  position:absolute;
-  top:6px;
-  left:6px;
-  font-size:0.68rem;                 /* slightly smaller */
-  color:var(--pill-text-link);
-  background:transparent;
-  border:1px solid var(--pill-outline-link);
-  padding:3px 7px;                   /* compact */
-  border-radius:999px;
-  text-transform:uppercase;
-  letter-spacing:0.2px;
-  font-weight:700;
-  line-height:1;
-  pointer-events:none;
-  z-index:160;
-  max-width:46%;                     /* prevents overlap into center */
-  display:inline-block;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-/* TOP-RIGHT DEP TIME PILL: outline-only, constrained width, aligned to right end */
-.train-deptime{
-  position:absolute;
-  top:6px;
-  right:6px;
-  font-size:0.68rem;                 /* slightly smaller */
-  color:var(--pill-text-dep);
-  background:transparent;
-  border:1px solid var(--pill-outline-dep);
-  padding:3px 7px;
-  border-radius:999px;
-  line-height:1;
-  pointer-events:none;
-  font-weight:700;
-  z-index:160;
-  max-width:36%;
-  display:inline-block;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  text-align:right;
-}
-
-/* ensure content lines have no extra top margins */
-.train-top, .train-bottom, .train-number { margin:0; padding:0; }
-
-/* train number style */
-.train-number{
-  white-space:nowrap;
-  font-weight:700;
-  display:inline-block;
-  font-size:0.86rem;
-  line-height:1;
-}
-
-.train-top,.train-bottom{
-  font-weight:400;
-  font-size:0.90rem;
-  line-height:1;
-  display:inline-block;
-  text-align:center;
-  white-space:normal;
-  overflow-wrap:anywhere;
-  word-break:break-word;
-  max-width:100%;
-}
-
-/* divider */
-.train-divider{ width:88%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
+.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:4px 6px;max-width:100%;box-sizing:border-box}
+.train-top,.train-bottom{font-weight:400;font-size:0.90rem;line-height:1;display:inline-block;text-align:center;white-space:normal;overflow-wrap:anywhere;word-break:break-word;max-width:100%}
+.train-divider{ width:90%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
 .nowrap{ white-space:nowrap; display:inline-block; }
-
-/* MOBILE adjustments */
 @media (min-width:900px){ .train-divider{ width:100%; max-width:180px } }
 @media (max-width:640px){
   table{min-width:0;table-layout:auto}
-  /* hide Dep & Link columns visually (pills show inside train cell) */
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
-
-  /* mobile column sizing: LP 40%, Train 30%, ALP 30% */
-  thead th:nth-child(1), td:nth-child(1){width:40% !important; text-align:left; padding-left:10px}
-  thead th:nth-child(2), td:nth-child(2){width:30% !important; white-space:nowrap; font-weight:700}
-  thead th:nth-child(3), td:nth-child(3){width:30% !important; text-align:right; padding-right:10px}
-
   thead th,tbody td{padding:8px}
   .train-top,.train-bottom{font-size:0.86rem}
-  .train-divider{height:1.4px; width:82%}
-  .cell-center{min-height:36px}
-  .editable{padding:4px 6px;min-height:28px}
-
-  .train-number{font-size:0.82rem}
-  .train-stack{padding-top:50px; min-height:56px}
-  .train-deptime{top:4px; right:6px; font-size:0.64rem; max-width:40%}
-  .train-linklabel{top:4px; left:6px; font-size:0.64rem; max-width:50%}
+  .train-divider{height:1.5px; width:85%}
 }
-
-/* Make LP/ALP names bold */
-.editable{
-  display:block;
-  min-height:32px;
-  padding:6px;
-  border-radius:6px;
-  outline:none;
-  cursor:text;
-  width:100%;
-  box-sizing:border-box;
-  user-select:text;
-  text-align:center;
-  font-weight:700;
-}
+.editable{display:block;min-height:32px;padding:6px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:center}
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
-#adminSignInBtn{position:fixed;top:10px;right:10px;z-index:200;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
+#adminSignInBtn{position:fixed;top:10px;right:10px;z-index:120;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
@@ -209,7 +78,13 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
       <div class="tableWrap" aria-live="polite">
         <table id="mainTable" aria-describedby="dateHeading">
           <thead>
-            <tr id="theadRow"></tr>
+            <tr>
+              <th>Name of LP</th>
+              <th>Name of ALP</th>
+              <th>Train No</th>
+              <th>Dep</th>
+              <th>Link No</th>
+            </tr>
           </thead>
           <tbody id="dutyTable">
             <tr><td colspan="5" class="no-data">Loading data…</td></tr>
@@ -254,20 +129,18 @@ let selectedDate = new Date();
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
 
-/* small UX state for editing preservation */
-window.currentlyEditing = null;     // {link, crewIndex, field}
-window._commitDebounce = null;      // to debounce blur commits
-
 /* init firebase */
 try {
   firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
   firebaseAuth = firebase.auth();
   firebaseDb = firebase.database();
 
+  // Keep persistence local for admin
   if (firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
     firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
   }
 
+  // no anonymous auto sign-in: visitors stay view-only.
   firebaseAuth.onAuthStateChanged(async (user) => {
     if (user){
       currentUser = {
@@ -277,6 +150,7 @@ try {
         anon: user.isAnonymous || false
       };
     } else {
+      // visitors get a local viewer id (not shown)
       currentUser = loadLocalUser() || createLocalUser();
     }
     await detectAdmin();
@@ -313,8 +187,8 @@ function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slic
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
 
-/* mapping fallback: uppercase short labels like MAO1, RN1, OL1 */
-function fallbackShortLinkLabel(linkId) {
+/* mapping */
+function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase();
   if (id.startsWith('link')) { const num = id.replace(/\D/g, ''); return `MAO${num}`; }
@@ -325,14 +199,7 @@ function fallbackShortLinkLabel(linkId) {
   if(digits) return `L${digits[0]}`;
   return String(linkId).toUpperCase();
 }
-function formatTrainToken(token){ 
-  if(!token) return ''; 
-  const cleaned = token.toString().trim(); 
-  if(/^\d{4,6}$/.test(cleaned)){ 
-    return `<span class="train-number">${escapeHtml(cleaned)}</span>`; 
-  } 
-  return `<span class="train-number">${escapeHtml(cleaned)}</span>`.replace(/\//g,'<wbr>/'); 
-}
+function formatTrainToken(token){ if(!token) return ''; const cleaned = token.toString().trim(); if(/^\d{5}$/.test(cleaned)){ return `<span class="nowrap">${escapeHtml(cleaned)}</span>`; } return escapeHtml(cleaned).replace(/\//g,'<wbr>/'); }
 
 /* layout helpers */
 function setTableWrapPaddingAndHeader(){
@@ -380,35 +247,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* Responsive header/row reorder helpers */
-const MOBILE_Q = '(max-width: 640px)';
-const mql = window.matchMedia(MOBILE_Q);
-function isMobile() { return window.matchMedia(MOBILE_Q).matches; }
-function theadRowEl(){ return document.getElementById('theadRow'); }
-function renderTableHead(){
-  const tr = theadRowEl();
-  if(!tr) return;
-  if(isMobile()){
-    tr.innerHTML = `
-      <th style="text-align:center">LP</th>
-      <th style="text-align:center">Train No:</th>
-      <th style="text-align:center">ALP</th>
-      <th style="text-align:center">Dep</th>
-      <th style="text-align:center">Link No</th>
-    `;
-  } else {
-    tr.innerHTML = `
-      <th style="text-align:center">LP</th>
-      <th style="text-align:center">ALP</th>
-      <th style="text-align:center">Train No:</th>
-      <th style="text-align:center">Dep</th>
-      <th style="text-align:center">Link No</th>
-    `;
-  }
-}
-
-/* Load JSON link files.
-   When a JSON file contains a friendly name, prefer that: we check `label`, `linkName`, `displayName`, `name`. */
+/* Load JSON link files (debug friendly but silent) */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async (f, idx) => {
@@ -451,18 +290,7 @@ async function loadAllLinks(){
     const linkId = linkData.linkId ?? (`file#${idx+1}`);
     const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
     const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
-
-    // try to extract a friendly link label from the JSON file (user requested)
-    const possibleLabel = (linkData && (linkData.label || linkData.linkName || linkData.displayName || linkData.name)) || null;
-    const friendlyLabel = possibleLabel ? String(possibleLabel).trim() : null;
-
-    crewArr.forEach((crew, crewIndex) => allCrewData.push({
-      ...crew,
-      linkId,
-      lastUpdatedDate: lastUpdated,
-      crewIndex,
-      linkLabel: friendlyLabel  // may be null; renderer will fallback if null
-    }));
+    crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex}));
   });
 
   await renderCombinedDuties();
@@ -470,9 +298,6 @@ async function loadAllLinks(){
 
 /* Render + ownership: only admin may edit (client-side); employees view only. */
 async function renderCombinedDuties(){
-  renderTableHead();
-  const editingInfo = window.currentlyEditing ? {...window.currentlyEditing} : null;
-
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
 
@@ -512,25 +337,14 @@ async function renderCombinedDuties(){
       const lpName =
         (local.crewLPName && local.crewLPName.trim()) ||
         (fb.crewLPName && fb.crewLPName.trim()) ||
-        getDisplayNameFallback(crew); // uses crew.linkLabel when available
+        getShortLinkLabel(crew.linkId);
 
       const alpName =
         (local.crewALPName && local.crewALPName.trim()) ||
         (fb.crewALPName && fb.crewALPName.trim()) ||
-        getDisplayNameFallback(crew);
+        getShortLinkLabel(crew.linkId);
 
-      rows.push({
-        depTime,
-        outgoing,
-        incoming,
-        lpName,
-        alpName,
-        link: linkId,
-        crewIndex: crew.crewIndex,
-        ownerUid,
-        ownerName,
-        linkLabel: crew.linkLabel // may be null
-      });
+      rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, ownerUid, ownerName });
     }
   });
 
@@ -543,27 +357,9 @@ async function renderCombinedDuties(){
   rows.forEach(r=>{
     const outHtml = formatTrainToken(r.outgoing || '');
     const incHtml = formatTrainToken(r.incoming || '');
-
-    // derive pill label: prefer JSON-provided linkLabel; otherwise fallback to computed label
-    const shortLinkRaw = r.linkLabel && String(r.linkLabel).trim() ? r.linkLabel.trim() : fallbackShortLinkLabel(r.link || '');
-    const shortLink = escapeHtml(shortLinkRaw);
-
-    // train cell: top-left link pill, top-right dep time pill, center train number(s)
-    const trainInner = (incHtml)
-      ? `<div class="train-stack" role="group" aria-label="Train info for ${shortLink}">
-           <div class="train-linklabel" aria-hidden="true">${shortLink}</div>
-           <div class="train-deptime" aria-hidden="true">${escapeHtml(r.depTime||'')}</div>
-           <div class="train-top">${outHtml}</div>
-           <div class="train-divider" aria-hidden="true"></div>
-           <div class="train-bottom">${incHtml}</div>
-         </div>`
-      : `<div class="train-stack" role="group" aria-label="Train info for ${shortLink}">
-           <div class="train-linklabel" aria-hidden="true">${shortLink}</div>
-           <div class="train-deptime" aria-hidden="true">${escapeHtml(r.depTime||'')}</div>
-           <div class="train-top">${outHtml}</div>
-         </div>`;
-
-    const trainHtml = `<div class="cell-center">${trainInner}</div>`;
+    const trainHtml = (incHtml)
+      ? `<div class="cell-center"><div class="train-stack" role="group"><div class="train-top">${outHtml}</div><div class="train-divider" aria-hidden="true"></div><div class="train-bottom">${incHtml}</div></div></div>`
+      : `<div class="cell-center"><div class="train-stack"><div class="train-top">${outHtml}</div></div></div>`;
 
     const tr = document.createElement('tr');
 
@@ -573,62 +369,35 @@ async function renderCombinedDuties(){
     // show owner tag only if admin (so employees never see names/UIDs)
     const ownerTag = (isAdmin && r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
-    // Build cells (LP & ALP names bold via .editable CSS)
-    const lpCell = `
-      <td><div class="cell-center">
-        <div class="editable" contenteditable="${mayEditLP? 'true':'false'}"
-          data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}"
-          data-field="crewLPName" title="${mayEditLP? 'Edit LP name':'View only'}">
-          ${escapeHtml(r.lpName)}
-        </div>
-      </div></td>
+    tr.innerHTML = `
+      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditLP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName" title="${mayEditLP? 'Edit LP name':'View only'}">${escapeHtml(r.lpName)}</div></div></td>
+      <td><div class="cell-center"><div class="editable" contenteditable="${mayEditALP? 'true':'false'}" data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName" title="${mayEditALP? 'Edit ALP name':'View only'}">${escapeHtml(r.alpName)}</div></div></td>
+      <td>${trainHtml}</td>
+      <td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>
+      <td><div class="cell-center" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>
     `;
-
-    const alpCell = `
-      <td><div class="cell-center">
-        <div class="editable" contenteditable="${mayEditALP? 'true':'false'}"
-          data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}"
-          data-field="crewALPName" title="${mayEditALP? 'Edit ALP name':'View only'}">
-          ${escapeHtml(r.alpName)}
-        </div>
-      </div></td>
-    `;
-
-    const trainCell = `<td>${trainHtml}</td>`;
-    const depCell   = `<td><div class="cell-center">${escapeHtml(r.depTime||'')}</div></td>`;
-    const linkCell  = `<td><div class="cell-center" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${shortLink} ${ownerTag}</div></td>`;
-
-    // Responsive order: if mobile show LP -> Train -> ALP, else original LP -> ALP -> Train
-    if (isMobile()) {
-      tr.innerHTML = `${lpCell}${trainCell}${alpCell}${depCell}${linkCell}`;
-    } else {
-      tr.innerHTML = `${lpCell}${alpCell}${trainCell}${depCell}${linkCell}`;
-    }
-
     dutyTable.appendChild(tr);
   });
 
-  /* Attach editable behavior - block focus for non-admins */
+  /* Attach editable behavior - block focus for non-admins (NO TOAST on each click) */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
 
-    el.addEventListener('pointerdown', (ev)=> { ev.stopPropagation(); }, {passive:true});
-
     el.addEventListener('focus', (ev)=>{
-      if(!isAdmin){ el.blur(); return; }
-      const link = el.dataset.link;
-      const crew = Number(el.dataset.crew);
-      const field = el.dataset.field;
-      window.currentlyEditing = { link, crewIndex: crew, field };
+      if(!isAdmin){
+        // silently blur for visitors (no toast spam)
+        el.blur();
+        return;
+      }
+      // admin editing: clear placeholder label for convenience
       const txt = el.textContent.trim();
-      if(/^(mao|rn|ol|sl|l)\d+/i.test(txt) || /^(lp|alp)\d+/i.test(txt)){
+      if(/^(MAO|RN|OL|SL|L)\d+/i.test(txt) || /^(LP|ALP)\d+/i.test(txt)){
         el.dataset._orig = txt;
         el.textContent = '';
       } else {
         el.dataset._orig = '';
       }
-      placeCaretAtEnd(el);
     });
 
     el.addEventListener('keydown', (ev)=>{
@@ -637,44 +406,20 @@ async function renderCombinedDuties(){
       } else if(ev.key === 'Enter'){
         ev.preventDefault();
         el.blur();
-      } else if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === 's') {
-        ev.preventDefault();
-        el.blur();
       }
     });
 
     el.addEventListener('blur', async (ev)=>{
-      clearTimeout(window._commitDebounce);
-      window._commitDebounce = setTimeout(async ()=>{
-        if(!isAdmin){
-          window.currentlyEditing = null;
-          await renderCombinedDuties();
-          return;
-        }
-        await onEditableCommit(ev);
-        window.currentlyEditing = null;
-      }, 220);
+      // guard again: only admin should be allowed to commit
+      if(!isAdmin){
+        await renderCombinedDuties();
+        return;
+      }
+      await onEditableCommit(ev);
     });
   });
 
   setTimeout(setTableWrapPaddingAndHeader, 20);
-
-  // restore editor focus if we were editing a particular cell before re-render
-  if (editingInfo && editingInfo.link){
-    const selector = `.editable[data-link="${escapeHtml(editingInfo.link)}"][data-crew="${editingInfo.crewIndex}"][data-field="${editingInfo.field}"]`;
-    const restored = document.querySelector(selector);
-    if(restored){
-      restored.focus();
-      placeCaretAtEnd(restored);
-    }
-  }
-}
-
-/* helper: resolve display name fallback for crew object (prefer JSON-provided linkLabel) */
-function getDisplayNameFallback(crewObj){
-  if(!crewObj) return '';
-  if(crewObj.linkLabel && String(crewObj.linkLabel).trim()) return String(crewObj.linkLabel).trim();
-  return fallbackShortLinkLabel(crewObj.linkId || '');
 }
 
 /* Commit handler (admin only) */
@@ -694,7 +439,7 @@ async function onEditableCommit(e){
   const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
   const userReadable = (currentUser && (currentUser.email || currentUser.displayName)) || userUid;
 
-  // clear locally & firebase if empty
+  // clear
   if(!newVal){
     if(localEdits[linkId] && localEdits[linkId][crewIndex]) {
       delete localEdits[linkId][crewIndex].crewLPName;
@@ -726,7 +471,7 @@ async function onEditableCommit(e){
     return;
   }
 
-  // set value + owner to admin locally
+  // set value + owner to admin
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
   localEdits[linkId][crewIndex][field] = newVal;
@@ -736,7 +481,6 @@ async function onEditableCommit(e){
   saveLocalEdits();
   showToast('Saved locally');
 
-  // push to firebase (best-effort)
   if(firebaseDb){
     try{
       const path = `/edits/${linkId}/${crewIndex}`;
@@ -752,7 +496,7 @@ async function onEditableCommit(e){
   await renderCombinedDuties();
 }
 
-/* Admin sign-in UI (unchanged) */
+/* Admin sign-in UI */
 if(adminSignInBtn){
   adminSignInBtn.addEventListener('click', async ()=>{
     if(!firebaseAuth){
@@ -810,6 +554,7 @@ async function detectAdmin(){
 
 /* login status UI */
 function updateLoginStatusUI(){
+  // Visitors: hide all user details. Admins: minimal admin indicator.
   const u = currentUser || loadLocalUser();
   if(!u){
     loginStatus.textContent = '';
@@ -822,6 +567,7 @@ function updateLoginStatusUI(){
     notice.style.display = 'none';
   } else {
     loginStatus.textContent = '';
+    // keep the persistent small notice for visitors
     notice.style.display = '';
   }
   adminSignInBtn.style.display = 'inline-block';
@@ -833,27 +579,11 @@ async function init(){
   currentUser = loadLocalUser() || createLocalUser();
   saveLocalUser(currentUser);
   localEdits = loadLocalEdits();
-
-  renderTableHead();
   await loadAllLinks();
-  window.addEventListener('resize', () => {
-    renderTableHead();
-    setTimeout(setTableWrapPaddingAndHeader, 60);
-    renderCombinedDuties();
-  });
-  window.addEventListener('orientationchange', () => {
-    renderTableHead();
-    setTimeout(setTableWrapPaddingAndHeader, 140);
-    renderCombinedDuties();
-  });
+  window.addEventListener('resize', () => setTimeout(setTableWrapPaddingAndHeader, 60));
+  window.addEventListener('orientationchange', () => setTimeout(setTableWrapPaddingAndHeader, 140));
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(setTableWrapPaddingAndHeader, 80));
   updateLoginStatusUI();
-
-  if (mql && mql.addEventListener) {
-    mql.addEventListener('change', () => { renderTableHead(); renderCombinedDuties(); });
-  } else if (mql && mql.addListener) {
-    mql.addListener(() => { renderTableHead(); renderCombinedDuties(); });
-  }
 }
 document.addEventListener('DOMContentLoaded', init);
 </script>
