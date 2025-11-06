@@ -11,8 +11,8 @@
   --radius:12px; --divider:#1f6feb; --border:#cdd4e1;
   --pill-link-bg:#2563eb; /* link pill color (blue) */
   --pill-link-color:#ffffff;
-  --pill-dep-bg:rgba(15,23,42,0.06); /* subtle pill for dep time */
-  --pill-dep-color:var(--accent);
+  --pill-dep-bg:#111827;  /* dark pill for dep time */
+  --pill-dep-color:#ffffff;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent);-webkit-font-smoothing:antialiased}
@@ -45,21 +45,21 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 .cell-center{display:flex;align-items:center;justify-content:center;min-height:44px}
 
 /* train stack: relative so dep-time & link-label can be absolutely placed inside it,
-   and padding-top reserves space so top-left/right labels don't overlap content */
+   and enough padding-top reserves space so top-left/right pills never overlap content */
 .train-stack{
   display:inline-flex;
   flex-direction:column;
   align-items:center;
   gap:4px;
-  padding:6px;
+  padding:8px;
   max-width:100%;
   box-sizing:border-box;
   position:relative;
-  padding-top:28px; /* reserve space for top-left/top-right pills */
-  min-height:60px;
+  padding-top:36px; /* increased space for pills */
+  min-height:64px;
 }
 
-/* top-left link label inside train cell (pill with attractive color) */
+/* top-left link pill inside train cell (uppercase MAO1, RN1 etc) */
 .train-linklabel{
   position:absolute;
   top:6px;
@@ -71,13 +71,15 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   border-radius:999px;
   text-transform:uppercase;
   letter-spacing:0.3px;
-  font-weight:600;
+  font-weight:700;
   line-height:1;
   pointer-events:none;
-  box-shadow:0 4px 12px rgba(37,99,235,0.12);
+  z-index:40;
+  transform:translateY(0);
+  box-shadow:0 6px 18px rgba(37,99,235,0.14);
 }
 
-/* dep time top-right (subtle contrasting pill) */
+/* dep time top-right pill */
 .train-deptime{
   position:absolute;
   top:6px;
@@ -90,6 +92,9 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   line-height:1;
   pointer-events:none;
   font-weight:600;
+  z-index:40;
+  transform:translateY(0);
+  box-shadow:0 6px 18px rgba(0,0,0,0.08);
 }
 
 /* train number: slightly smaller and bold so 5-digit fits nicely */
@@ -135,9 +140,9 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   .cell-center{min-height:36px}
   .editable{padding:4px 6px;min-height:28px}
 
-  /* mobile-specific: slightly smaller number and tighter dep-time spacing */
+  /* mobile-specific pill spacing */
   .train-number{font-size:0.86rem}
-  .train-stack{padding-top:22px}
+  .train-stack{padding-top:30px; min-height:56px}
   .train-deptime{top:4px; right:6px; font-size:0.68rem}
   .train-linklabel{top:4px; left:6px; font-size:0.68rem}
 }
@@ -289,7 +294,7 @@ function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slic
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
 
-/* mapping: uppercase short labels */
+/* mapping: uppercase short labels like MAO1, RN1, OL1 */
 function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase();
@@ -499,7 +504,7 @@ async function renderCombinedDuties(){
     const shortLinkRaw = getShortLinkLabel(r.link) || '';
     const shortLink = escapeHtml(shortLinkRaw);
 
-    // train cell: top-left link label, top-right dep time, center train number(s)
+    // train cell: top-left link pill, top-right dep time pill, center train number(s)
     const trainInner = (incHtml)
       ? `<div class="train-stack" role="group" aria-label="Train info for ${shortLink}">
            <div class="train-linklabel">${shortLink}</div>
