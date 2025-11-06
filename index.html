@@ -53,8 +53,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 
 .cell-center{display:flex;align-items:center;justify-content:center;min-height:44px}
 
-/* TRAIN STACK - reserve enough top space so pills never overlap content.
-   We make this fairly large and consistent to avoid device quirks. */
+/* TRAIN STACK - reserve sufficient top space for pills; increased to prevent overlap */
 .train-stack{
   display:inline-flex;
   flex-direction:column;
@@ -64,44 +63,55 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   max-width:100%;
   box-sizing:border-box;
   position:relative;
-  padding-top:48px; /* IMPORTANT: reserve space for top-left/top-right pills */
-  min-height:72px;
+  padding-top:56px; /* increased reserve */
+  min-height:76px;
 }
 
-/* TOP-LEFT LINK PILL: outline-only, light border, uppercase label (from JSON if present) */
+/* TOP-LEFT LINK PILL: outline-only, constrained width so it can't overlap center */
 .train-linklabel{
   position:absolute;
   top:6px;
   left:6px;
-  font-size:0.72rem;
+  font-size:0.68rem;                 /* slightly smaller */
   color:var(--pill-text-link);
   background:transparent;
   border:1px solid var(--pill-outline-link);
-  padding:4px 8px;
+  padding:3px 7px;                   /* compact */
   border-radius:999px;
   text-transform:uppercase;
-  letter-spacing:0.3px;
+  letter-spacing:0.2px;
   font-weight:700;
   line-height:1;
   pointer-events:none;
-  z-index:110;
+  z-index:160;
+  max-width:46%;                     /* prevents overlap into center */
+  display:inline-block;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
-/* TOP-RIGHT DEP TIME PILL: outline-only, light border */
+/* TOP-RIGHT DEP TIME PILL: outline-only, constrained width, aligned to right end */
 .train-deptime{
   position:absolute;
   top:6px;
   right:6px;
-  font-size:0.72rem;
+  font-size:0.68rem;                 /* slightly smaller */
   color:var(--pill-text-dep);
   background:transparent;
   border:1px solid var(--pill-outline-dep);
-  padding:4px 8px;
+  padding:3px 7px;
   border-radius:999px;
   line-height:1;
   pointer-events:none;
   font-weight:700;
-  z-index:110;
+  z-index:160;
+  max-width:36%;
+  display:inline-block;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  text-align:right;
 }
 
 /* ensure content lines have no extra top margins */
@@ -112,7 +122,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   white-space:nowrap;
   font-weight:700;
   display:inline-block;
-  font-size:0.88rem;
+  font-size:0.86rem;
   line-height:1;
 }
 
@@ -129,31 +139,31 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 }
 
 /* divider */
-.train-divider{ width:90%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
+.train-divider{ width:88%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
 .nowrap{ white-space:nowrap; display:inline-block; }
 
 /* MOBILE adjustments */
 @media (min-width:900px){ .train-divider{ width:100%; max-width:180px } }
 @media (max-width:640px){
   table{min-width:0;table-layout:auto}
-  /* hide Dep & Link columns visually (we show pills inside train cell) */
+  /* hide Dep & Link columns visually (pills show inside train cell) */
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
 
-  /* mobile column sizing: LP 40%, Train 25%, ALP 35% */
+  /* mobile column sizing: LP 40%, Train 30%, ALP 30% */
   thead th:nth-child(1), td:nth-child(1){width:40% !important; text-align:left; padding-left:10px}
-  thead th:nth-child(2), td:nth-child(2){width:25% !important; white-space:nowrap; font-weight:700}
-  thead th:nth-child(3), td:nth-child(3){width:35% !important; text-align:right; padding-right:10px}
+  thead th:nth-child(2), td:nth-child(2){width:30% !important; white-space:nowrap; font-weight:700}
+  thead th:nth-child(3), td:nth-child(3){width:30% !important; text-align:right; padding-right:10px}
 
   thead th,tbody td{padding:8px}
   .train-top,.train-bottom{font-size:0.86rem}
-  .train-divider{height:1.5px; width:85%}
+  .train-divider{height:1.4px; width:82%}
   .cell-center{min-height:36px}
   .editable{padding:4px 6px;min-height:28px}
 
-  .train-number{font-size:0.86rem}
-  .train-stack{padding-top:44px; min-height:56px}
-  .train-deptime{top:4px; right:6px; font-size:0.68rem}
-  .train-linklabel{top:4px; left:6px; font-size:0.68rem}
+  .train-number{font-size:0.82rem}
+  .train-stack{padding-top:50px; min-height:56px}
+  .train-deptime{top:4px; right:6px; font-size:0.64rem; max-width:40%}
+  .train-linklabel{top:4px; left:6px; font-size:0.64rem; max-width:50%}
 }
 
 /* Make LP/ALP names bold */
@@ -172,7 +182,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
 }
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
-#adminSignInBtn{position:fixed;top:10px;right:10px;z-index:120;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
+#adminSignInBtn{position:fixed;top:10px;right:10px;z-index:200;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
@@ -444,7 +454,6 @@ async function loadAllLinks(){
 
     // try to extract a friendly link label from the JSON file (user requested)
     const possibleLabel = (linkData && (linkData.label || linkData.linkName || linkData.displayName || linkData.name)) || null;
-    // if present, use it; otherwise fall back to the old mapping
     const friendlyLabel = possibleLabel ? String(possibleLabel).trim() : null;
 
     crewArr.forEach((crew, crewIndex) => allCrewData.push({
