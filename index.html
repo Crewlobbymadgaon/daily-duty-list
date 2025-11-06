@@ -37,16 +37,16 @@ tbody td{padding:10px 12px;border:1px solid var(--border);font-size:0.95rem;colo
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
 
-/* columns */
-thead th:nth-child(1), td:nth-child(1){width:36%}
-thead th:nth-child(2), td:nth-child(2){width:36%}
+/* columns adjusted: give LP & ALP more space, reduce Train column */
+thead th:nth-child(1), td:nth-child(1){width:34%}
+thead th:nth-child(2), td:nth-child(2){width:34%}
 thead th:nth-child(3), td:nth-child(3){width:18%}
-thead th:nth-child(4), td:nth-child(4){width:5%}
-thead th:nth-child(5), td:nth-child(5){width:5%}
+thead th:nth-child(4), td:nth-child(4){width:6%}
+thead th:nth-child(5), td:nth-child(5){width:8%}
 
 .cell-center{display:flex;align-items:center;justify-content:center;min-height:44px;position:relative}
 
-/* LINK PILL: now absolute at top-left of LP cell (outline only) */
+/* LP: link pill absolute top-left, outline only (styles matched to dep-pill) */
 .lp-cell{ position:relative; padding-top:8px; }
 .link-pill{
   position:absolute;
@@ -56,14 +56,14 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  padding:4px 8px;
+  padding:4px 8px;               /* matched to dep-pill */
   border-radius:999px;
   font-weight:700;
   font-size:0.72rem;
   text-transform:uppercase;
   letter-spacing:0.3px;
   background:transparent;         /* outline-only */
-  border:2px solid rgba(0,0,0,0.08); /* replaced inline with colorForLinkId(); default light outline */
+  border:1.5px solid rgba(0,0,0,0.06); /* will be overridden inline with colorForLinkId() */
   color:var(--muted);
   pointer-events:none;
   white-space:nowrap;
@@ -73,7 +73,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   min-width:48px;
 }
 
-/* Dep time pill (top-right of train cell) */
+/* Dep time pill: top-right of train cell (style matched to link-pill) */
 .train-cell{ position:relative; padding-top:8px; }
 .dep-pill{
   position:absolute;
@@ -92,23 +92,16 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   z-index:150;
 }
 
-/* Train stack: both train numbers same font & forced no-wrap (5-digit stays in one line) */
-.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:12px 6px;max-width:100%;box-sizing:border-box}
+/* Train stack: reduced padding so train cell smaller; both numbers same style */
+.train-stack{display:inline-flex;flex-direction:column;align-items:center;gap:6px;padding:8px 4px;max-width:100%;box-sizing:border-box}
 .train-number{ font-family: inherit; font-weight:700; font-size:0.92rem; line-height:1; white-space:nowrap; display:inline-block; text-align:center; }
-.train-top{ /* outgoing */
-  margin-top:14px; /* keep top space so pill doesn't overlap number visually */
-}
-.train-bottom{ /* incoming */
-  margin-top:2px;
-  font-weight:700; /* same boldness as top */
-  font-size:0.92rem; /* same size */
-  white-space:nowrap;
-}
+.train-top{ margin-top:8px; } /* smaller top offset */
+.train-bottom{ margin-top:4px; font-weight:700; font-size:0.92rem; white-space:nowrap; }
 
 /* divider */
 .train-divider{ width:80%; height:2px; background:var(--divider); border-radius:2px; margin:0; }
 
-/* LP/ALP editable bold */
+/* LP/ALP editable bold, left aligned so names show properly */
 .editable{display:block;min-height:32px;padding:8px;border-radius:6px;outline:none;cursor:text;width:100%;box-sizing:border-box;user-select:text;text-align:left;font-weight:700}
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
@@ -125,7 +118,7 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   .train-number{font-size:0.86rem}
   .link-pill{font-size:0.64rem;padding:3px 6px;left:6px;top:6px}
   .dep-pill{font-size:0.64rem;padding:3px 6px;right:6px;top:6px}
-  .train-stack{padding:8px 4px}
+  .train-stack{padding:6px 3px}
   .editable{padding:6px;font-size:0.95rem}
 }
 </style>
@@ -274,7 +267,6 @@ function getShortLinkLabel(linkId) {
 function formatTrainToken(token){ 
   if(!token) return ''; 
   const cleaned = token.toString().trim(); 
-  // present as a .train-number span (prevents wrapping and enforces identical style)
   return `<span class="train-number">${escapeHtml(cleaned)}</span>`; 
 }
 
@@ -284,10 +276,9 @@ function colorForLinkId(id){
   let h = 0;
   for(let i=0;i<id.length;i++) h = (h*31 + id.charCodeAt(i)) % 360;
   const hue = h;
-  const bg = `hsl(${hue} 90% 98%)`;     // near-white tinted background (but we will keep pill transparent per request)
-  const border = `hsl(${hue} 80% 45%)`;  // colored border
-  const text = `hsl(${hue} 70% 30%)`;    // colored text
-  return {bg, border, text};
+  const border = `hsl(${hue} 75% 45%)`;  // colored border
+  const text = `hsl(${hue} 75% 28%)`;    // colored text
+  return { border, text };
 }
 
 /* layout helpers */
@@ -431,7 +422,7 @@ async function renderCombinedDuties(){
         (fb.crewALPName && fb.crewALPName.trim()) ||
         (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
 
-      rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, ownerUid, ownerName, friendly: crew.friendlyLabel });
+      rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, ownerUid, ownerName });
     }
   });
 
@@ -454,7 +445,7 @@ async function renderCombinedDuties(){
     const mayEditALP = !!isAdmin;
     const ownerTag = (isAdmin && r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
-    // link pill label & color - outline only
+    // link pill label & color - outline only and always using MAO/RN style
     const linkLabel = escapeHtml(getShortLinkLabel(r.link));
     const colors = colorForLinkId(String(r.link));
     const pillInlineStyle = `border-color:${colors.border}; color:${colors.text}; background:transparent;`;
@@ -522,7 +513,7 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* Commit handler (admin only) - unchanged */
+/* Commit handler (admin only) - unchanged logic */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
@@ -646,7 +637,6 @@ async function detectAdmin(){
       if(snap.exists() && snap.val() === true) isAdmin = true;
     }
   }catch(e){ console.warn('admin detect err', e); }
-  console.log('detectAdmin -> currentUser.uid=', currentUser && currentUser.uid, 'isAdmin=', isAdmin);
   updateLoginStatusUI();
 }
 
