@@ -7,12 +7,20 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb;
-  --radius:12px; --divider:#1f6feb; --border:#cdd4e1;
-  --pill-link-bg:#2563eb; /* link pill color (blue) */
-  --pill-link-color:#ffffff;
-  --pill-dep-bg:#111827;  /* dark pill for dep time */
-  --pill-dep-color:#ffffff;
+  --bg:#f4f7fb;
+  --card:#fff;
+  --muted:#6b7280;
+  --accent:#0f172a;
+  --accent-2:#2563eb;
+  --radius:12px;
+  --divider:#1f6feb;
+  --border:#cdd4e1;
+
+  /* pill outline colors (light) */
+  --pill-outline-link: rgba(37,99,235,0.14);  /* light blue border */
+  --pill-outline-dep: rgba(15,23,42,0.08);    /* light dark border */
+  --pill-text-link: rgba(37,99,235,0.92);
+  --pill-text-dep: rgba(15,23,42,0.9);
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent);-webkit-font-smoothing:antialiased}
@@ -50,23 +58,24 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   display:inline-flex;
   flex-direction:column;
   align-items:center;
-  gap:4px;
-  padding:8px;
+  gap:6px;
+  padding:8px 6px;
   max-width:100%;
   box-sizing:border-box;
   position:relative;
-  padding-top:36px; /* increased space for pills */
-  min-height:64px;
+  padding-top:40px; /* increased space for pills */
+  min-height:72px;
 }
 
-/* top-left link pill inside train cell (uppercase MAO1, RN1 etc) */
+/* TOP-LEFT LINK PILL: outline only, light color, uppercase e.g. MAO1, RN1 */
 .train-linklabel{
   position:absolute;
   top:6px;
   left:6px;
   font-size:0.72rem;
-  color:var(--pill-link-color);
-  background:var(--pill-link-bg);
+  color:var(--pill-text-link);
+  background:transparent;                 /* outline only */
+  border:1px solid var(--pill-outline-link);
   padding:4px 8px;
   border-radius:999px;
   text-transform:uppercase;
@@ -74,27 +83,26 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   font-weight:700;
   line-height:1;
   pointer-events:none;
-  z-index:40;
+  z-index:50;
   transform:translateY(0);
-  box-shadow:0 6px 18px rgba(37,99,235,0.14);
 }
 
-/* dep time top-right pill */
+/* TOP-RIGHT DEP TIME PILL: outline only, light color */
 .train-deptime{
   position:absolute;
   top:6px;
   right:6px;
   font-size:0.72rem;
-  color:var(--pill-dep-color);
-  background:var(--pill-dep-bg);
+  color:var(--pill-text-dep);
+  background:transparent;                 /* outline only */
+  border:1px solid var(--pill-outline-dep);
   padding:4px 8px;
   border-radius:999px;
   line-height:1;
   pointer-events:none;
-  font-weight:600;
-  z-index:40;
+  font-weight:700;
+  z-index:50;
   transform:translateY(0);
-  box-shadow:0 6px 18px rgba(0,0,0,0.08);
 }
 
 /* train number: slightly smaller and bold so 5-digit fits nicely */
@@ -140,9 +148,9 @@ thead th:nth-child(5), td:nth-child(5){width:5%}
   .cell-center{min-height:36px}
   .editable{padding:4px 6px;min-height:28px}
 
-  /* mobile-specific pill spacing */
+  /* mobile pill spacing tweaks */
   .train-number{font-size:0.86rem}
-  .train-stack{padding-top:30px; min-height:56px}
+  .train-stack{padding-top:34px; min-height:56px}
   .train-deptime{top:4px; right:6px; font-size:0.68rem}
   .train-linklabel{top:4px; left:6px; font-size:0.68rem}
 }
