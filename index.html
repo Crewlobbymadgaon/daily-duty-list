@@ -162,7 +162,6 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
-.futureTag{font-size:0.68rem;color:#fff;background:#10b981;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
 
 /* mobile tuning */
 @media (max-width:640px){
@@ -242,7 +241,7 @@ const linkFiles = [
 const LS_KEY = 'lp_alp_edits_owner_v1';
 
 /* state */
-let localEdits = loadLocalEdits(); // now top-level includes date keys and possibly _futureOverrides
+let localEdits = loadLocalEdits();
 let allCrewData = [];
 let selectedDate = new Date();
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
@@ -292,71 +291,22 @@ const loginStatus = document.getElementById('loginStatus');
 
 /* helpers */
 function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
-function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
-function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
-
-/* --- date helpers --- */
-function getDateKey(d){
-  const date = d ? new Date(d) : selectedDate || new Date();
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth()+1).padStart(2,'0');
-  const dd = String(date.getDate()).padStart(2,'0');
-  return `${yyyy}-${mm}-${dd}`;
-}
-function isDateAfter(a,b){ // returns true if a > b (date-only)
-  const A = new Date(getDateKey(a) + 'T00:00:00');
-  const B = new Date(getDateKey(b) + 'T00:00:00');
-  return A.getTime() > B.getTime();
-}
-
-/* local user helpers */
+function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
+function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
 function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
 function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `Viewer-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
-
-/* load/save local edits: top-level object with date keys and _futureOverrides */
-function loadLocalEdits(){
-  try{
-    const raw = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-    // migrate legacy structure (no date keys and no _futureOverrides)
-    const hasDateKeys = Object.keys(raw).some(k => /^\d{4}-\d{2}-\d{2}$/.test(k));
-    if(!hasDateKeys && Object.keys(raw).length){
-      // migrate into today's dateKey
-      const dateKey = getDateKey(new Date());
-      const migrated = {};
-      migrated[dateKey] = raw;
-      localStorage.setItem(LS_KEY, JSON.stringify(migrated));
-      return migrated;
-    }
-    return raw;
-  }catch(e){
-    return {};
-  }
-}
-function saveLocalEdits(){
-  try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){}
-}
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
+function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
 
 /* mapping */
 function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase();
-  if (id.startsWith('link')) {
-    const num = id.replace(/\D/g, '') || '';
-    return `MAO${num}`;
-  }
-  if (id.startsWith('rnlink')) {
-    const num = id.replace(/\D/g, '') || '';
-    return `RN${num}`;
-  }
-  if (id.startsWith('ollink')) {
-    const num = id.replace(/\D/g, '') || '';
-    return `OL${num}`;
-  }
-  if (id.startsWith('sllink')) {
-    const num = id.replace(/\D/g, '') || '';
-    return `SL${num}`;
-  }
+  if (id.startsWith('link')) { const num = id.replace(/\D/g, ''); return `MAO${num}`; }
+  if (id.startsWith('rnlink')) { const num = id.replace(/\D/g, ''); return `RN${num}`; }
+  if (id.startsWith('ollink')) { const num = id.replace(/\D/g, ''); return `OL${num}`; }
+  if (id.startsWith('sllink')) { const num = id.replace(/\D/g, ''); return `SL${num}`; }
   const digits = id.match(/\d+/);
   if(digits) return `L${digits[0]}`;
   return String(linkId).toUpperCase();
@@ -462,37 +412,21 @@ async function loadAllLinks(){
     const linkId = linkData.linkId ?? (`file#${idx+1}`);
     const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
     const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
-    const friendly = (linkData && (linkData.label || linkData.linkName || linkData.displayName || linkData.name)) || getShortLinkLabel(linkId);
+    const friendly = (linkData && (linkData.label || linkData.linkName || linkData.displayName || linkData.name)) || null;
     crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex, friendlyLabel: friendly}));
   });
 
   await renderCombinedDuties();
 }
 
-/* render duties (date-scoped + future overrides) */
+/* render duties */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
 
-  // load firebase per-date edits and future overrides
   let fbEdits = {};
-  let fbEdits_future = {};
   if(firebaseDb){
-    try{
-      const dateKey = getDateKey(selectedDate);
-      const snap = await firebaseDb.ref(`/edits/${dateKey}`).once('value');
-      fbEdits = snap.val() || {};
-    }catch(e){
-      fbEdits = {};
-      console.warn('fbEdits load failed', e);
-    }
-    try{
-      const snapF = await firebaseDb.ref('/edits_future').once('value');
-      fbEdits_future = snapF.val() || {};
-    }catch(e){
-      fbEdits_future = {};
-      console.warn('fbEdits_future load failed', e);
-    }
+    try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; }catch(e){ fbEdits = {}; console.warn('fbEdits load failed', e); }
   }
 
   const crewsByLink = allCrewData.reduce((acc,crew)=>{ (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
@@ -518,53 +452,19 @@ async function renderCombinedDuties(){
       if(!combined || combined === 'REST') continue;
       const linkId = crew.linkId;
 
-      // load local per-date edits for selected date
-      const dateKey = getDateKey(selectedDate);
-      const localBucket = localEdits[dateKey] || {};
-      let local = (localBucket[linkId] && localBucket[linkId][crew.crewIndex]) || {};
-      let fb = (fbEdits && fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
+      const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
+      const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
+      const ownerUid = fb._updatedBy || local._updatedBy || null;
+      const ownerName = (fb._updatedByName || local._updatedByName) || null;
 
-      // owner info (per-date)
-      const ownerUid = (fb && fb._updatedBy) || (local && local._updatedBy) || null;
-      const ownerName = (fb && fb._updatedByName) || (local && local._updatedByName) || null;
-
-      // APPLY future overrides: local first, then firebase future (but do not override exact per-date edits)
-      // local future overrides (if any)
-      if(localEdits && localEdits._futureOverrides && localEdits._futureOverrides[linkId] && localEdits._futureOverrides[linkId][crew.crewIndex]){
-        const fo = localEdits._futureOverrides[linkId][crew.crewIndex];
-        Object.keys(fo).forEach(fieldName=>{
-          const rec = fo[fieldName];
-          if(rec && rec.from && !isDateAfter(rec.from, selectedDate)){
-            // apply only if per-date local/fb doesn't already define it
-            if(!(local && local[fieldName]) && !(fb && fb[fieldName])){
-              // set into a copy to avoid mutating storage
-              local = Object.assign({}, local, { [fieldName]: rec.value });
-            }
-          }
-        });
-      }
-      // firebase future overrides
-      if(fbEdits_future && fbEdits_future[linkId] && fbEdits_future[linkId][crew.crewIndex]){
-        const fo = fbEdits_future[linkId][crew.crewIndex];
-        Object.keys(fo).forEach(fieldName=>{
-          const rec = fo[fieldName];
-          if(rec && rec.from && !isDateAfter(rec.from, selectedDate)){
-            if(!(local && local[fieldName]) && !(fb && fb[fieldName])){
-              fb = Object.assign({}, fb, { [fieldName]: rec.value });
-            }
-          }
-        });
-      }
-
-      // lp and alp names resolution: per-date local -> per-date fb -> future local -> future fb -> friendly label fallback
       const lpName =
-        (local && local.crewLPName && local.crewLPName.trim()) ||
-        (fb && fb.crewLPName && fb.crewLPName.trim()) ||
+        (local.crewLPName && local.crewLPName.trim()) ||
+        (fb.crewLPName && fb.crewLPName.trim()) ||
         (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
 
       const alpName =
-        (local && local.crewALPName && local.crewALPName.trim()) ||
-        (fb && fb.crewALPName && fb.crewALPName.trim()) ||
+        (local.crewALPName && local.crewALPName.trim()) ||
+        (fb.crewALPName && fb.crewALPName.trim()) ||
         (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
 
       rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, ownerUid, ownerName });
@@ -580,6 +480,10 @@ async function renderCombinedDuties(){
   rows.forEach(r=>{
     const outHtml = formatTrainToken(r.outgoing || '');
     const inHtml  = r.incoming ? formatTrainToken(r.incoming) : '';
+    /* IMPORTANT: to ensure equal spacing for single vs. double numbers,
+       when there is no incoming (bottom) number we still render an empty
+       .train-slot (reserved space). We keep the divider (but invisible
+       via opacity) to preserve spacing. */
     let trainInner = '';
     if(inHtml){
       trainInner = `
@@ -602,19 +506,6 @@ async function renderCombinedDuties(){
     const mayEditLP = !!isAdmin;
     const mayEditALP = !!isAdmin;
     const ownerTag = (isAdmin && r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
-    // optionally show future badge if a future override exists for this link/crew (for the admin)
-    let futureBadge = '';
-    try{
-      const dateKeyNow = getDateKey(new Date());
-      const hasLocalFuture = localEdits && localEdits._futureOverrides && localEdits._futureOverrides[r.link] && localEdits._futureOverrides[r.link][r.crewIndex];
-      if(isAdmin && hasLocalFuture){
-        // show earliest from-date among fields
-        const fo = localEdits._futureOverrides[r.link][r.crewIndex];
-        const froms = Object.keys(fo).map(f => fo[f] && fo[f].from).filter(Boolean).sort();
-        if(froms && froms.length) futureBadge = `<span class="futureTag">from ${escapeHtml(froms[0])}</span>`;
-      }
-    }catch(e){}
-
     const linkLabel = escapeHtml(getShortLinkLabel(r.link));
 
     const lpCell = `
@@ -645,14 +536,14 @@ async function renderCombinedDuties(){
         <div class="cell-inner">${escapeHtml(r.depTime||'')}</div>
       </td>`;
     const linkCell = `<td>
-        <div class="cell-inner" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag} ${futureBadge}</div>
+        <div class="cell-inner" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div>
       </td>`;
 
     tr.innerHTML = `${lpCell}${alpCell}${trainCell}${depCell}${linkCell}`;
     dutyTable.appendChild(tr);
   });
 
-  /* editable handlers */
+  /* editable handlers (unchanged) */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
@@ -690,7 +581,7 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* Commit handler (date-aware + future overrides) */
+/* Commit handler (unchanged) */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
@@ -707,119 +598,62 @@ async function onEditableCommit(e){
   const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
   const userReadable = (currentUser && (currentUser.email || currentUser.displayName)) || userUid;
 
-  const dateKey = getDateKey(selectedDate);
-  const todayKey = getDateKey(new Date());
-  const isFuture = isDateAfter(selectedDate, new Date()); // true when selectedDate > today
-
-  // Clearing behavior
   if(!newVal){
-    if(isFuture){
-      // Remove future override for field
-      if(localEdits._futureOverrides && localEdits._futureOverrides[linkId] && localEdits._futureOverrides[linkId][crewIndex]){
-        delete localEdits._futureOverrides[linkId][crewIndex][field];
-        if(Object.keys(localEdits._futureOverrides[linkId][crewIndex]).length === 0) delete localEdits._futureOverrides[linkId][crewIndex];
-        if(Object.keys(localEdits._futureOverrides[linkId]).length === 0) delete localEdits._futureOverrides[linkId];
-        saveLocalEdits();
-        showToast('Cleared future override (local)');
-      }
-      if(firebaseDb){
-        try{
-          const path = `/edits_future/${linkId}/${crewIndex}/${field}`;
-          await firebaseDb.ref(path).remove();
-          showToast('Cleared future override on Firebase');
-        }catch(err){
-          console.error('Firebase clear future failed', err);
-          showToast('Firebase clear failed');
-        }
-      }
-    } else {
-      // Clear per-date edit
-      if(localEdits[dateKey] && localEdits[dateKey][linkId] && localEdits[dateKey][linkId][crewIndex]){
-        delete localEdits[dateKey][linkId][crewIndex][field];
-        // if no keys remain clean up
-        if(Object.keys(localEdits[dateKey][linkId][crewIndex]).length === 0) delete localEdits[dateKey][linkId][crewIndex];
-        if(localEdits[dateKey] && localEdits[dateKey][linkId] && Object.keys(localEdits[dateKey][linkId]).length === 0) delete localEdits[dateKey][linkId];
-        saveLocalEdits();
-        showToast('Cleared locally');
-      }
-      if(firebaseDb){
-        try{
-          const path = `/edits/${dateKey}/${linkId}/${crewIndex}`;
-          const payload = {};
-          payload[field] = null;
-          payload._updatedBy = null;
-          payload._UpdatedByName = null;
-          payload._updatedAt = null;
-          await firebaseDb.ref(path).update(payload);
-          showToast('Cleared on Firebase');
-        }catch(err){
-          console.error('Firebase clear failed', err);
-          showToast('Firebase clear failed');
-        }
+    if(localEdits[linkId] && localEdits[linkId][crewIndex]) {
+      delete localEdits[linkId][crewIndex].crewLPName;
+      delete localEdits[linkId][crewIndex].crewALPName;
+      delete localEdits[linkId][crewIndex]._updatedBy;
+      delete localEdits[linkId][crewIndex]._updatedByName;
+      delete localEdits[linkId][crewIndex]._updatedAt;
+      if(Object.keys(localEdits[linkId][crewIndex]).length === 0) delete localEdits[linkId][crewIndex];
+    }
+    saveLocalEdits();
+    showToast('Cleared locally');
+
+    if(firebaseDb){
+      try{
+        const path = `/edits/${linkId}/${crewIndex}`;
+        const payload = {};
+        payload[field] = null;
+        payload._updatedBy = null;
+        payload._updatedByName = null;
+        payload._updatedAt = null;
+        await firebaseDb.ref(path).update(payload);
+        showToast('Cleared on Firebase');
+      }catch(err){
+        console.error('Firebase clear failed', err);
+        showToast('Firebase clear failed');
       }
     }
     await renderCombinedDuties();
     return;
   }
 
-  // Saving behavior
-  if(isFuture){
-    // Save as future override (applies from dateKey onward)
-    if(!localEdits._futureOverrides) localEdits._futureOverrides = {};
-    if(!localEdits._futureOverrides[linkId]) localEdits._futureOverrides[linkId] = {};
-    if(!localEdits._futureOverrides[linkId][crewIndex]) localEdits._futureOverrides[linkId][crewIndex] = {};
+  if(!localEdits[linkId]) localEdits[linkId] = {};
+  if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
+  localEdits[linkId][crewIndex][field] = newVal;
+  localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
+  localEdits[linkId][crewIndex]['_updatedByName'] = userReadable;
+  localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
+  saveLocalEdits();
+  showToast('Saved locally');
 
-    localEdits._futureOverrides[linkId][crewIndex][field] = {
-      from: dateKey,
-      value: newVal,
-      _updatedBy: userUid,
-      _updatedByName: userReadable,
-      _updatedAt: new Date().toISOString()
-    };
-    saveLocalEdits();
-    showToast(`Saved future override from ${dateKey}`);
-
-    if(firebaseDb){
-      try{
-        const path = `/edits_future/${linkId}/${crewIndex}/${field}`;
-        const payload = localEdits._futureOverrides[linkId][crewIndex][field];
-        await firebaseDb.ref(path).set(payload);
-        showToast('Synced future override to Firebase');
-      }catch(err){
-        console.error('Firebase future push failed', err);
-        showToast('Firebase future sync failed');
-      }
-    }
-  } else {
-    // Save per-date edit
-    if(!localEdits[dateKey]) localEdits[dateKey] = {};
-    if(!localEdits[dateKey][linkId]) localEdits[dateKey][linkId] = {};
-    if(!localEdits[dateKey][linkId][crewIndex]) localEdits[dateKey][linkId][crewIndex] = {};
-
-    localEdits[dateKey][linkId][crewIndex][field] = newVal;
-    localEdits[dateKey][linkId][crewIndex]['_updatedBy'] = userUid;
-    localEdits[dateKey][linkId][crewIndex]['_updatedByName'] = userReadable;
-    localEdits[dateKey][linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
-    saveLocalEdits();
-    showToast('Saved locally');
-
-    if(firebaseDb){
-      try{
-        const path = `/edits/${dateKey}/${linkId}/${crewIndex}`;
-        const payload = { [field]: newVal, _updatedBy: userUid, _updatedByName: userReadable, _updatedAt: new Date().toISOString() };
-        await firebaseDb.ref(path).update(payload);
-        showToast('Synced to Firebase');
-      }catch(err){
-        console.error('Firebase push failed', err);
-        showToast('Firebase sync failed');
-      }
+  if(firebaseDb){
+    try{
+      const path = `/edits/${linkId}/${crewIndex}`;
+      const payload = { [field]: newVal, _updatedBy: userUid, _updatedByName: userReadable, _updatedAt: new Date().toISOString() };
+      await firebaseDb.ref(path).update(payload);
+      showToast('Synced to Firebase');
+    }catch(err){
+      console.error('Firebase push failed', err);
+      showToast('Firebase sync failed');
     }
   }
 
   await renderCombinedDuties();
 }
 
-/* admin sign-in & detection */
+/* admin sign-in & detection (unchanged) */
 if(adminSignInBtn){
   adminSignInBtn.addEventListener('click', async ()=>{
     if(!firebaseAuth){ alert('Firebase not initialized.'); return; }
