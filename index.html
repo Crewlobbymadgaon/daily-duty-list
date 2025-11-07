@@ -581,7 +581,11 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* Commit handler (unchanged) */
+/* Commit handler — UPDATED: only modify the specific field.
+   When clearing, we ONLY remove that field locally and on Firebase
+   (we do not wipe other fields or metadata). If the local edit object
+   has no editable fields left afterwards we remove the row object.
+*/
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
@@ -598,26 +602,36 @@ async function onEditableCommit(e){
   const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
   const userReadable = (currentUser && (currentUser.email || currentUser.displayName)) || userUid;
 
+  // Ensure object exists locally
+  if(!localEdits[linkId]) localEdits[linkId] = {};
+  if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
+
+  // If the new value is empty -> remove only that field (locally + Firebase)
   if(!newVal){
-    if(localEdits[linkId] && localEdits[linkId][crewIndex]) {
-      delete localEdits[linkId][crewIndex].crewLPName;
-      delete localEdits[linkId][crewIndex].crewALPName;
-      delete localEdits[linkId][crewIndex]._updatedBy;
-      delete localEdits[linkId][crewIndex]._updatedByName;
-      delete localEdits[linkId][crewIndex]._updatedAt;
-      if(Object.keys(localEdits[linkId][crewIndex]).length === 0) delete localEdits[linkId][crewIndex];
+    // delete just the specific editable field locally
+    if(localEdits[linkId] && localEdits[linkId][crewIndex] && localEdits[linkId][crewIndex][field]){
+      delete localEdits[linkId][crewIndex][field];
+    }
+
+    // if there are no editable fields left for this crew, remove the local entry entirely
+    const remainingKeys = Object.keys(localEdits[linkId][crewIndex] || {}).filter(k => !k.startsWith('_'));
+    if(remainingKeys.length === 0){
+      // remove metadata too, so the object disappears
+      delete localEdits[linkId][crewIndex];
+      // if link has no crew entries left, remove link object
+      if(Object.keys(localEdits[linkId]||{}).length === 0){
+        delete localEdits[linkId];
+      }
     }
     saveLocalEdits();
     showToast('Cleared locally');
 
+    // update Firebase: only set that field to null (don't overwrite other fields)
     if(firebaseDb){
       try{
         const path = `/edits/${linkId}/${crewIndex}`;
-        const payload = {};
-        payload[field] = null;
-        payload._updatedBy = null;
-        payload._updatedByName = null;
-        payload._updatedAt = null;
+        const payload = { };
+        payload[field] = null; // remove just that field
         await firebaseDb.ref(path).update(payload);
         showToast('Cleared on Firebase');
       }catch(err){
@@ -625,13 +639,17 @@ async function onEditableCommit(e){
         showToast('Firebase clear failed');
       }
     }
+
     await renderCombinedDuties();
     return;
   }
 
+  // Otherwise set/overwrite only this field (locally + Firebase), preserve other fields
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
+
   localEdits[linkId][crewIndex][field] = newVal;
+  // update metadata for this crew entry
   localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
   localEdits[linkId][crewIndex]['_updatedByName'] = userReadable;
   localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
