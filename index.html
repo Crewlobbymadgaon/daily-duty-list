@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>MAO Link</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- PWA / Install -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#2563eb">
+<!-- iOS support -->
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Duty Table">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
 :root{
   --bg:#f4f7fb;
@@ -112,6 +120,8 @@ tbody tr:nth-child(odd){background:#fbfdff}
   </div>
 
   <button id="adminSignInBtn" title="Admin sign-in">Admin</button>
+  <!-- put next to adminSignInBtn or in headerArea -->
+<button id="installBtn" class="date-icon-btn" style="display:none; margin-left:8px;">Install</button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -763,6 +773,50 @@ async function init(){
   updateLoginStatusUI();
 }
 document.addEventListener('DOMContentLoaded', init);
+
+  
+/* Service worker registration */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', async () => {
+    try {
+      await navigator.serviceWorker.register('/service-worker.js');
+      console.log('Service Worker registered');
+    } catch (err) {
+      console.warn('Service Worker registration failed:', err);
+    }
+  });
+}
+
+/* Handling the install prompt (Android/Chrome) */
+let deferredPrompt = null;
+const installBtn = document.getElementById('installBtn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();            // prevent the automatic mini-infobar
+  deferredPrompt = e;            // save for triggering later
+  if (installBtn) {
+    installBtn.style.display = 'inline-flex';
+    installBtn.addEventListener('click', async () => {
+      installBtn.style.display = 'none';
+      if(!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      if(choice.outcome === 'accepted'){
+        console.log('User accepted the install prompt');
+      } else {
+        console.log('User dismissed the install prompt');
+      }
+      deferredPrompt = null;
+    });
+  }
+});
+
+/* optional: track when app is installed */
+window.addEventListener('appinstalled', () => {
+  console.log('PWA was installed');
+  if(installBtn) installBtn.style.display = 'none';
+});
+
 </script>
 </body>
 </html>
