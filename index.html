@@ -311,6 +311,56 @@ function dateOnlyISO(d){
   try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); }
 }
 
+/**
+ * Reconcile localEdits with what's in Firebase (fbEdits).
+ * - If Firebase has an entry for link/idx, and its _updatedAt is newer, prefer Firebase.
+ * - If Firebase has no entry for link/idx, remove the local entry (reflect deletion).
+ * - Returns true if localEdits was modified.
+ */
+function reconcileLocalWithFirebase(fbEdits){
+  if(!fbEdits || typeof fbEdits !== 'object') return false;
+  let changed = false;
+
+  Object.keys(localEdits || {}).forEach(linkId => {
+    const localLink = localEdits[linkId] || {};
+    Object.keys(localLink).forEach(idxKey => {
+      const localObj = localLink[idxKey];
+      const fbObj = fbEdits[linkId] && fbEdits[linkId][idxKey];
+
+      if(!fbObj){
+        // Firebase has no entry — treat as deleted => remove local cached edit
+        delete localEdits[linkId][idxKey];
+        changed = true;
+      } else {
+        // Both exist: compare timestamps if available
+        try {
+          const fbTs = fbObj && fbObj._updatedAt ? Date.parse(fbObj._updatedAt) : null;
+          const localTs = localObj && localObj._updatedAt ? Date.parse(localObj._updatedAt) : null;
+
+          if(fbTs && (!localTs || fbTs >= localTs)){
+            // Overwrite local with firebase copy
+            localEdits[linkId][idxKey] = Object.assign({}, localEdits[linkId][idxKey] || {}, fbObj);
+            changed = true;
+          }
+        } catch(e){
+          // if parse fails, prefer firebase to avoid stale local persisting
+          localEdits[linkId][idxKey] = Object.assign({}, localEdits[linkId][idxKey] || {}, fbObj);
+          changed = true;
+        }
+      }
+    });
+
+    // if link object becomes empty, remove it
+    if(localEdits[linkId] && Object.keys(localEdits[linkId]).length === 0){
+      delete localEdits[linkId];
+      changed = true;
+    }
+  });
+
+  if(changed) saveLocalEdits();
+  return changed;
+}
+
 /* mapping */
 function getShortLinkLabel(linkId) {
   if (!linkId) return '';
@@ -439,7 +489,15 @@ async function renderCombinedDuties(){
 
   let fbEdits = {};
   if(firebaseDb){
-    try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; }catch(e){ fbEdits = {}; console.warn('fbEdits load failed', e); }
+    try{
+      const snap = await firebaseDb.ref('/edits').once('value');
+      fbEdits = snap.val() || {};
+      // reconcile local cache with firebase (removes locally-cached edits that were deleted in Firebase)
+      reconcileLocalWithFirebase(fbEdits);
+    }catch(e){
+      fbEdits = {};
+      console.warn('fbEdits load failed', e);
+    }
   }
 
   const crewsByLink = allCrewData.reduce((acc,crew)=>{ (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
