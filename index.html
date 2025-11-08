@@ -16,7 +16,6 @@
   --divider:#1f6feb;
   --border:#cdd4e1;
   --pill-border: rgba(0,0,0,0.08);
-
   --row-height:64px;
   --train-col-width:120px;
   --pill-space:36px;
@@ -33,7 +32,7 @@ body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,S
 .headerArea h1{margin:0;font-size:1.25rem;font-weight:700;text-align:center}
 .headerArea .sub{font-size:0.9rem;color:var(--muted);text-align:center}
 .headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center}
-.headerArea #loginStatus{font-size:0.9rem;color:var(--muted);margin-top:4px;width:100%;text-align:center;display:block;}
+.headerArea #loginStatus{font-size:0.95rem;color:var(--muted);margin-top:4px;width:100%;text-align:center;display:block}
 .controls{position:sticky;top:0;background:var(--card);z-index:55;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.03)}
 .nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:44px;height:36px;padding:0 10px;cursor:pointer}
@@ -41,130 +40,29 @@ input[type="date"].native-date{position:absolute;left:-9999px}
 .tableWrap{max-height:calc(100vh - 112px);overflow:auto;border-radius:0;background:#fff;padding:6px;position:relative}
 table{width:100%;border-collapse:collapse;min-width:640px;table-layout:fixed;border:1px solid var(--border)}
 thead th{background:var(--card);padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);border-top:1px solid rgba(0,0,0,0.04);position:sticky;z-index:70;top:0;box-sizing:border-box}
-tbody td{padding:0;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;position:relative;height:var(--row-height);} /* uniform height */
+tbody td{padding:0;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;position:relative;height:var(--row-height);}
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
-
-/* columns */
-thead th:nth-child(1), td:nth-child(1){width:auto}
-thead th:nth-child(2), td:nth-child(2){width:auto}
-thead th:nth-child(3), td:nth-child(3){width:var(--train-col-width); min-width:var(--train-col-width); max-width:var(--train-col-width)}
-thead th:nth-child(4), td:nth-child(4){width:60px}
-thead th:nth-child(5), td:nth-child(5){width:60px}
-
-/* inner wrapper to center content and reserve pill space */
-.cell-inner{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  height:100%;
-  padding: calc(var(--pill-space) / 8) var(--cell-padding-x);
-  box-sizing:border-box;
-  text-align:center;
-}
-
-/* LP link pill */
 .lp-cell{ position:relative; }
 .link-pill{
-  position:absolute;
-  top:6px;
-  left:8px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  padding:4px 8px;
-  border-radius:999px;
-  font-weight:700;
-  font-size:0.72rem;
-  text-transform:uppercase;
-  letter-spacing:0.3px;
-  background:transparent;
-  border:1.5px solid var(--pill-border);
-  color:var(--muted);
-  pointer-events:none;
-  white-space:nowrap;
-  z-index:60;
-  min-width:46px;
+  position:absolute; top:6px; left:8px; display:inline-flex; align-items:center; justify-content:center;
+  padding:4px 8px; border-radius:999px; font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.3px;
+  background:transparent; border:1.5px solid var(--pill-border); color:var(--muted); pointer-events:none; z-index:60; min-width:46px;
 }
-
-/* Train cell reserves top area for dep pill */
 .train-cell{ position:relative; padding-top:var(--pill-space); box-sizing:border-box; }
-.dep-pill{
-  position:absolute;
-  top:6px;
-  right:8px;
-  background:transparent;
-  border:1.5px solid var(--pill-border);
-  padding:4px 8px;
-  border-radius:999px;
-  font-size:0.72rem;
-  font-weight:700;
-  color:var(--muted);
-  white-space:nowrap;
-  pointer-events:none;
-  z-index:60;
-}
-
-/* TRAIN: fixed slot heights so top and bottom spacing is identical for all rows */
-.train-stack{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  gap:var(--train-gap);
-  padding:2px 4px;
-  max-width:100%;
-  box-sizing:border-box;
-  /* total height of the two slots + gap roughly:
-     2 * --train-slot-height + --train-gap */
-  min-height: calc( (var(--train-slot-height) * 2) + var(--train-gap) );
-}
-.train-slot{
-  height:var(--train-slot-height);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  width:100%;
-  box-sizing:border-box;
-}
-.train-number{
-  font-weight:700;
-  font-size:0.9rem;
-  line-height:1;
-  text-align:center;
-  max-width:calc(var(--train-col-width) - 16px);
-  white-space:normal;
-  word-break:break-word;
-}
+.dep-pill{ position:absolute; top:6px; right:8px; background:transparent; border:1.5px solid var(--pill-border); padding:4px 8px; border-radius:999px; font-size:0.72rem; font-weight:700; color:var(--muted); pointer-events:none; z-index:60; }
+.train-stack{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--train-gap); padding:2px 4px; max-width:100%; box-sizing:border-box; min-height: calc( (var(--train-slot-height) * 2) + var(--train-gap) ); }
+.train-slot{ height:var(--train-slot-height); display:flex; align-items:center; justify-content:center; width:100%; box-sizing:border-box; }
+.train-number{ font-weight:700; font-size:0.9rem; line-height:1; text-align:center; max-width:calc(var(--train-col-width) - 16px); white-space:normal; word-break:break-word; }
 .train-number.nowrap{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-
-/* divider is decorative; keep height but make transparent for single-line case */
 .train-divider{ width:60%; height:2px; background:var(--divider); border-radius:2px; margin:0; opacity:1; }
-
-/* editable names fill cell and center text */
-.editable{
-  width:100%;
-  height:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:6px 8px;
-  box-sizing:border-box;
-  text-align:center;
-  font-weight:700;
-  border-radius:6px;
-  outline:none;
-  cursor:text;
-}
+.editable{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; padding:6px 8px; box-sizing:border-box; text-align:center; font-weight:700; border-radius:6px; outline:none; cursor:text; }
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
 .editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6);pointer-events:none}
-
 #adminSignInBtn{position:fixed;top:10px;right:10px;z-index:200;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
-
-/* mobile tuning */
 @media (max-width:640px){
   :root{ --train-col-width:110px; --row-height:60px; --pill-space:32px; --train-slot-height:20px; --train-gap:4px; }
   table{min-width:0;table-layout:auto}
@@ -210,7 +108,6 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
           </tbody>
         </table>
       </div>
-
     </div>
   </div>
 
@@ -222,7 +119,7 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-/* FIREBASE CONFIG */
+/* ---------- CONFIG: update if needed ---------- */
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyA39vWi_90CUyj0davz4XAXqMey1aNM6FU",
   authDomain: "crewdutytable.firebaseapp.com",
@@ -232,52 +129,28 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "190634478615",
   appId: "1:190634478615:web:28e998325f69fb8bf36052"
 };
-
-/* link files & storage key */
+/* list of JSON link files (must exist on same origin or be reachable) */
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json',
   'ollink1.json','sllink1.json'
 ];
 const LS_KEY = 'lp_alp_edits_owner_v1';
+const POLL_MS = 15000; // polling fallback when realtime fails
 
-/* state */
+/* ---------- app state ---------- */
 let localEdits = loadLocalEdits();
 let allCrewData = [];
 let selectedDate = new Date();
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
 
-/* init firebase */
-try {
-  firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
-  firebaseAuth = firebase.auth();
-  firebaseDb = firebase.database();
-  if (firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
-    firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
-  }
-  firebaseAuth.onAuthStateChanged(async (user) => {
-    if (user){
-      currentUser = {
-        uid: user.uid,
-        displayName: user.displayName || user.email || user.uid,
-        email: user.email || null,
-        anon: user.isAnonymous || false
-      };
-    } else {
-      currentUser = loadLocalUser() || createLocalUser();
-    }
-    await detectAdmin();
-    updateLoginStatusUI();
-    await renderCombinedDuties();
-  });
-} catch(e){
-  console.warn('Firebase init error', e);
-  currentUser = loadLocalUser() || createLocalUser();
-  updateLoginStatusUI();
-}
+/* realtime helpers */
+let latestFbEdits = null;
+let realtimeListenerAttached = false;
+let pollingIntervalId = null;
 
-/* DOM refs */
+/* ---------- DOM refs ---------- */
 const dutyTable = document.getElementById('dutyTable');
 const mainTable = document.getElementById('mainTable');
 const tableWrap = document.querySelector('.tableWrap');
@@ -290,7 +163,7 @@ const toast = document.getElementById('toast');
 const adminSignInBtn = document.getElementById('adminSignInBtn');
 const loginStatus = document.getElementById('loginStatus');
 
-/* helpers */
+/* ---------- small utilities ---------- */
 function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
@@ -299,88 +172,51 @@ function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stri
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `Viewer-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
-
-/* sanitize edit input - trim, collapse spaces, cap length */
 function sanitizeName(s){ const x = (s||"").replace(/\s+/g," ").trim(); return x.slice(0, 40); }
+function dateOnlyISO(d){ if(!d) return ''; if(d instanceof Date) return d.toISOString().slice(0,10); try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); } }
 
-/* date-only ISO helper (YYYY-MM-DD) */
-function dateOnlyISO(d){
-  if(!d) return '';
-  if(d instanceof Date) return d.toISOString().slice(0,10);
-  try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); }
-}
-
-/**
- * Convert an old flat edit object into revisions if needed.
- * Returns normalized object (does not mutate input).
- */
+/* ---------- normalize / revisions helpers ---------- */
+/* Convert legacy flat edit object into revisioned shape (non-mutating) */
 function normalizeToRevisions(editObj){
   if(!editObj || typeof editObj !== 'object') return {};
-  // if already has _revisions, return shallow copy
-  if(editObj._revisions && typeof editObj._revisions === 'object'){
-    return Object.assign({}, editObj);
-  }
+  if(editObj._revisions && typeof editObj._revisions === 'object') return Object.assign({}, editObj);
   const res = Object.assign({}, editObj);
-  // if there's a root-level _effectiveFrom (old style) or fields, move them into revisions
   const eff = editObj._effectiveFrom || editObj._effective_from || null;
-  if(eff){
-    res._revisions = res._revisions || {};
-    // take all non-underscore fields as part of the revision
-    const rev = {};
-    Object.keys(editObj).forEach(k=>{
-      if(k.startsWith('_')) return;
-      rev[k] = editObj[k];
-      delete res[k];
-    });
-    // copy metadata into revision
-    rev._updatedBy = editObj._updatedBy || editObj._updated_by || null;
-    rev._updatedByName = editObj._updatedByName || editObj._updated_by_name || null;
-    rev._updatedAt = editObj._updatedAt || editObj._updated_at || new Date().toISOString();
-    res._revisions[eff] = rev;
-    // remove old legacy markers
-    delete res._effectiveFrom; delete res._effective_from; delete res._effectiveFrom;
-  } else {
-    // no eff marker and no revisions: keep as-is but not ideal; treat it as a "base" revision at 1970-01-01
-    const hasFields = Object.keys(editObj).some(k => !k.startsWith('_'));
-    if(hasFields){
-      res._revisions = res._revisions || {};
-      const rev = {};
-      Object.keys(editObj).forEach(k=>{
-        if(k.startsWith('_')) return;
-        rev[k] = editObj[k];
-        delete res[k];
-      });
-      rev._updatedBy = editObj._updatedBy || null;
-      rev._updatedByName = editObj._updatedByName || null;
-      rev._updatedAt = editObj._updatedAt || new Date().toISOString();
-      res._revisions['1970-01-01'] = rev;
-    }
+  const revs = {};
+  // collect non-underscore keys as a revision
+  const fields = {};
+  Object.keys(editObj).forEach(k=>{
+    if(k.startsWith('_')) return;
+    fields[k] = editObj[k];
+    delete res[k];
+  });
+  if(Object.keys(fields).length){
+    const dateKey = eff || '1970-01-01';
+    revs[dateKey] = Object.assign({}, fields);
+    revs[dateKey]._updatedBy = editObj._updatedBy || editObj._updated_by || null;
+    revs[dateKey]._updatedByName = editObj._updatedByName || editObj._updated_by_name || null;
+    revs[dateKey]._updatedAt = editObj._updatedAt || editObj._updated_at || new Date().toISOString();
+    res._revisions = revs;
   }
   return res;
 }
 
-/**
- * Get a field value from an edit object, considering revisions.
- * Preference: look in editObj._revisions for the newest date <= selectedDate.
- * Returns null if not found.
- */
+/* retrieve a named field for the selectedDate from an edit object (revisions-aware) */
 function getFieldFromEdit(editObj, field){
   if(!editObj) return null;
   const revs = editObj._revisions;
   const sel = dateOnlyISO(selectedDate);
   if(revs && typeof revs === 'object'){
-    const dates = Object.keys(revs).filter(d => typeof d === 'string' && d <= sel).sort();
-    if(dates.length){
-      for(let i = dates.length - 1; i >= 0; i--){
-        const candidate = revs[dates[i]];
-        if(candidate && typeof candidate === 'object' && candidate[field] && String(candidate[field]).trim()){
-          return String(candidate[field]).trim();
-        }
+    const validDates = Object.keys(revs).filter(d=>typeof d === 'string' && d <= sel).sort();
+    if(validDates.length){
+      for(let i=validDates.length-1;i>=0;i--){
+        const candidate = revs[validDates[i]];
+        if(candidate && candidate[field] && String(candidate[field]).trim()) return String(candidate[field]).trim();
       }
     }
   }
-  // fallback to legacy flat field if present and effective (backwards compatibility)
-  if(editObj[field] && editObj[field].toString().trim()){
+  // fallback to old flat field if present and effective
+  if(editObj[field] && String(editObj[field]).trim()){
     const eff = editObj._effectiveFrom || editObj._effective_from || null;
     if(!eff) return String(editObj[field]).trim();
     if(eff && eff <= sel) return String(editObj[field]).trim();
@@ -388,62 +224,88 @@ function getFieldFromEdit(editObj, field){
   return null;
 }
 
+/* ---------- reconciliation ---------- */
 /**
- * Reconcile localEdits with what's in Firebase (fbEdits).
- * - If Firebase has an entry for link/idx, prefer firebase (copy revisions).
- * - If Firebase has no entry for link/idx, remove the local entry (reflect deletion).
- * - Returns true if localEdits was modified.
+ * Reconcile localEdits with Firebase snapshot:
+ * - If Firebase has no entry -> remove local entry (reflect deletion).
+ * - If Firebase has revisions -> prefer Firebase for that row (overwrite local).
+ * - If both have revisions -> merge conservatively (keep both).
  */
 function reconcileLocalWithFirebase(fbEdits){
   if(!fbEdits || typeof fbEdits !== 'object') return false;
   let changed = false;
-
-  Object.keys(localEdits || {}).forEach(linkId => {
+  Object.keys(localEdits || {}).forEach(linkId=>{
     const localLink = localEdits[linkId] || {};
-    Object.keys(localLink).forEach(idxKey => {
+    Object.keys(localLink).forEach(idxKey=>{
       const localObj = localLink[idxKey];
       const fbObjRaw = fbEdits[linkId] && fbEdits[linkId][idxKey];
-
       if(!fbObjRaw){
-        // Firebase has no entry — treat as deleted => remove local cached edit
+        // deleted in firebase -> remove local cache
         delete localEdits[linkId][idxKey];
         changed = true;
       } else {
-        // normalize both sides to revisions and decide
         const fbObj = normalizeToRevisions(fbObjRaw);
-        // If firebase has revisions, prefer firebase as source-of-truth for that row
+        // If firebase has revisions, prefer it (overwrite local) to ensure DB is authoritative
         if(fbObj._revisions && Object.keys(fbObj._revisions).length){
           localEdits[linkId][idxKey] = fbObj;
           changed = true;
         } else {
-          // otherwise merge conservatively: ensure local is normalized too and keep whichever revision is newer per date
+          // merge: ensure local normalized and add any firebase revisions
           const localNorm = normalizeToRevisions(localObj);
-          // merge revisions (keep both sides)
-          const merged = Object.assign({}, localNorm);
-          merged._revisions = merged._revisions || {};
+          localNorm._revisions = localNorm._revisions || {};
           if(fbObj._revisions){
             Object.keys(fbObj._revisions).forEach(d=>{
-              merged._revisions[d] = merged._revisions[d] || fbObj._revisions[d];
+              localNorm._revisions[d] = localNorm._revisions[d] || fbObj._revisions[d];
             });
+            localEdits[linkId][idxKey] = localNorm;
+            changed = true;
           }
-          localEdits[linkId][idxKey] = merged;
-          changed = true;
         }
       }
     });
-
-    // if link object becomes empty, remove it
     if(localEdits[linkId] && Object.keys(localEdits[linkId]).length === 0){
       delete localEdits[linkId];
       changed = true;
     }
   });
-
   if(changed) saveLocalEdits();
   return changed;
 }
 
-/* mapping */
+/* ---------- firebase realtime & polling ---------- */
+function attachRealtimeEditsListener(){
+  if(!firebaseDb || realtimeListenerAttached) return;
+  try{
+    realtimeListenerAttached = true;
+    firebaseDb.ref('/edits').on('value', snap=>{
+      try{
+        latestFbEdits = snap.val() || {};
+        reconcileLocalWithFirebase(latestFbEdits);
+        renderCombinedDuties();
+      }catch(e){
+        console.warn('Realtime handler error', e);
+      }
+    });
+    if(pollingIntervalId){ clearInterval(pollingIntervalId); pollingIntervalId = null; }
+  }catch(e){ console.warn('attachRealtimeEditsListener failed', e); }
+}
+
+function startPollingFallback(){
+  if(pollingIntervalId || !firebaseDb || realtimeListenerAttached) return;
+  pollingIntervalId = setInterval(async ()=>{
+    try{
+      const snap = await firebaseDb.ref('/edits').once('value');
+      const fb = snap.val() || {};
+      if(JSON.stringify(fb) !== JSON.stringify(latestFbEdits)){
+        latestFbEdits = fb;
+        reconcileLocalWithFirebase(latestFbEdits);
+        renderCombinedDuties();
+      }
+    }catch(e){ /* ignore network errors */ }
+  }, POLL_MS);
+}
+
+/* ---------- mapping/format helpers ---------- */
 function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase();
@@ -455,11 +317,6 @@ function getShortLinkLabel(linkId) {
   if(digits) return `L${digits[0]}`;
   return String(linkId).toUpperCase();
 }
-
-/* format train token:
-   - exact 5-digit numbers -> nowrap slot
-   - otherwise insert <wbr> after slashes
-*/
 function formatTrainToken(token){
   if(!token) return '';
   const cleaned = token.toString().trim();
@@ -470,7 +327,7 @@ function formatTrainToken(token){
   return `<span class="train-number">${withBreaks}</span>`;
 }
 
-/* layout helpers */
+/* ---------- layout helpers ---------- */
 function setTableWrapPaddingAndHeader(){
   const header = document.querySelector('.headerArea');
   const controls = document.querySelector('.controls');
@@ -508,11 +365,7 @@ function alignHeaderWidths(){
   mainTable.style.width = mainWidth + 'px';
 }
 
-/* date controls */
-const dateBtn = document.getElementById('dateBtn');
-const datePicker = document.getElementById('datePicker');
-const prevBtn = document.getElementById('prevDay');
-const nextBtn = document.getElementById('nextDay');
+/* ---------- date controls ---------- */
 dateBtn.addEventListener('click', ()=>{ datePicker.focus(); datePicker.click(); });
 datePicker.addEventListener('change', ()=>{ selectedDate = datePicker.value ? new Date(datePicker.value+'T00:00:00') : new Date(); setSelectedDate(selectedDate); renderCombinedDuties(); });
 prevBtn.addEventListener('click', ()=> changeDate(-1));
@@ -520,7 +373,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* load JSON link files */
+/* ---------- load link files (diagnostic) ---------- */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async (f, idx) => {
@@ -528,14 +381,20 @@ async function loadAllLinks(){
       const r = await fetch(f, {cache:'no-cache'});
       if (!r.ok){
         const text = await r.text().catch(()=>'<no body>');
+        console.error(`Link file fetch failed: ${f}`, r.status, r.statusText, text);
         return { __error:true, file:f, status:r.status, statusText:r.statusText, body:text };
       }
-      const json = await r.json().catch(async (err)=>{
+      try {
+        const json = await r.json();
+        console.log(`Loaded link file: ${f}`, json);
+        return json;
+      } catch(parseErr){
         const txt = await r.text().catch(()=>'<no body>');
-        return { __error:true, file:f, parseErr: (err && err.message), body: txt };
-      });
-      return json;
+        console.error(`JSON parse failed for ${f}`, parseErr, txt);
+        return { __error:true, file:f, parseErr: (parseErr && parseErr.message), body: txt };
+      }
     } catch(err){
+      console.error(`Network fetch error for ${f}`, err);
       return { __error:true, file:f, err: (err && err.message) };
     }
   });
@@ -543,14 +402,20 @@ async function loadAllLinks(){
   const results = await Promise.all(fetches);
   allCrewData = [];
   const anySuccess = results.some(r => r && !r.__error && Array.isArray(r.crew) && r.crew.length>0);
+
   if(!anySuccess){
     dutyTable.innerHTML = '';
-    results.forEach(res=>{
-      const msg = res && res.__error ? `${res.file} — ${res.status||''} ${res.parseErr||res.err||''}` : 'Unknown or empty file';
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td colspan="5" class="no-data">Failed to load: ${escapeHtml(msg)}</td>`;
-      dutyTable.appendChild(tr);
-    });
+    const errors = results.map(res => {
+      if(!res) return 'No response';
+      if(res.__error) return `${res.file} — ${res.status||''} ${res.parseErr||res.err||'fetch error'}`;
+      if(!Array.isArray(res.crew)) return `${res.file || '[object]'} — missing crew array`;
+      return null;
+    }).filter(Boolean);
+    const msg = errors.length ? errors.join(' · ') : 'No link files with crew data found';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td colspan="5" class="no-data">Failed to load link files: ${escapeHtml(msg)}</td>`;
+    dutyTable.appendChild(tr);
+    console.warn('loadAllLinks: no link file succeeded', results);
     setTableWrapPaddingAndHeader();
     return;
   }
@@ -564,17 +429,28 @@ async function loadAllLinks(){
     crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex, friendlyLabel: friendly}));
   });
 
+  console.log('All crew data loaded. entries:', allCrewData.length);
   await renderCombinedDuties();
 }
 
-/* render duties */
+/* ---------- render duties (uses latestFbEdits cache when present) ---------- */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
 
   let fbEdits = {};
-  if(firebaseDb){
-    try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; reconcileLocalWithFirebase(fbEdits); }catch(e){ fbEdits = {}; console.warn('fbEdits load failed', e); }
+  if(latestFbEdits !== null){
+    fbEdits = latestFbEdits;
+  } else if(firebaseDb){
+    try{
+      const snap = await firebaseDb.ref('/edits').once('value');
+      fbEdits = snap.val() || {};
+      latestFbEdits = fbEdits;
+      reconcileLocalWithFirebase(fbEdits);
+    }catch(e){
+      fbEdits = {};
+      console.warn('fbEdits load failed', e);
+    }
   }
 
   const crewsByLink = allCrewData.reduce((acc,crew)=>{ (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
@@ -600,7 +476,6 @@ async function renderCombinedDuties(){
       if(!combined || combined === 'REST') continue;
       const linkId = crew.linkId;
 
-      // get raw edit objects (normalize to revisions on-the-fly)
       const localRaw = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || null;
       const fbRaw = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || null;
       const local = localRaw ? normalizeToRevisions(localRaw) : null;
@@ -609,7 +484,6 @@ async function renderCombinedDuties(){
       const ownerUid = (fb && (fb._updatedBy)) || (local && local._updatedBy) || null;
       const ownerName = (fb && (fb._updatedByName)) || (local && local._updatedByName) || null;
 
-      // resolve field values: prefer local revision value (if any), otherwise firebase revision, otherwise default
       const localLP = getFieldFromEdit(local, 'crewLPName');
       const fbLP = getFieldFromEdit(fb, 'crewLPName');
       const lpName = localLP || fbLP || (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
@@ -633,19 +507,9 @@ async function renderCombinedDuties(){
     const inHtml  = r.incoming ? formatTrainToken(r.incoming) : '';
     let trainInner = '';
     if(inHtml){
-      trainInner = `
-        <div class="train-stack">
-          <div class="train-slot">${outHtml}</div>
-          <div class="train-divider" aria-hidden="true"></div>
-          <div class="train-slot">${inHtml}</div>
-        </div>`;
+      trainInner = `<div class="train-stack"><div class="train-slot">${outHtml}</div><div class="train-divider" aria-hidden="true"></div><div class="train-slot">${inHtml}</div></div>`;
     } else {
-      trainInner = `
-        <div class="train-stack">
-          <div class="train-slot">${outHtml}</div>
-          <div class="train-divider" style="opacity:0" aria-hidden="true"></div>
-          <div class="train-slot">&nbsp;</div>
-        </div>`;
+      trainInner = `<div class="train-stack"><div class="train-slot">${outHtml}</div><div class="train-divider" style="opacity:0" aria-hidden="true"></div><div class="train-slot">&nbsp;</div></div>`;
     }
 
     const tr = document.createElement('tr');
@@ -674,23 +538,15 @@ async function renderCombinedDuties(){
         </div>
       </td>`;
 
-    const trainCell = `<td class="train-cell">
-        <div class="dep-pill">${escapeHtml(r.depTime||'')}</div>
-        <div class="cell-inner">${trainInner}</div>
-      </td>`;
-
-    const depCell = `<td>
-        <div class="cell-inner">${escapeHtml(r.depTime||'')}</div>
-      </td>`;
-    const linkCell = `<td>
-        <div class="cell-inner" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div>
-      </td>`;
+    const trainCell = `<td class="train-cell"><div class="dep-pill">${escapeHtml(r.depTime||'')}</div><div class="cell-inner">${trainInner}</div></td>`;
+    const depCell = `<td><div class="cell-inner">${escapeHtml(r.depTime||'')}</div></td>`;
+    const linkCell = `<td><div class="cell-inner" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>`;
 
     tr.innerHTML = `${lpCell}${alpCell}${trainCell}${depCell}${linkCell}`;
     dutyTable.appendChild(tr);
   });
 
-  /* editable handlers (unchanged behaviour) */
+  /* editable handlers */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
@@ -699,28 +555,18 @@ async function renderCombinedDuties(){
       if(!isAdmin){ el.blur(); return; }
       const txt = el.textContent.trim();
       if(/^(MAO|RN|OL|SL|L)\d+/i.test(txt) || /^(LP|ALP)\d+/i.test(txt)){
-        el.dataset._orig = txt;
-        el.textContent = '';
-      } else {
-        el.dataset._orig = '';
-      }
+        el.dataset._orig = txt; el.textContent = '';
+      } else { el.dataset._orig = ''; }
       placeCaretAtEnd(el);
     });
 
     el.addEventListener('keydown', (ev)=>{
-      if(ev.key === 'Escape'){
-        if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); }
-      } else if(ev.key === 'Enter'){
-        ev.preventDefault();
-        el.blur();
-      }
+      if(ev.key === 'Escape'){ if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); } }
+      else if(ev.key === 'Enter'){ ev.preventDefault(); el.blur(); }
     });
 
     el.addEventListener('blur', async (ev)=>{
-      if(!isAdmin){
-        await renderCombinedDuties();
-        return;
-      }
+      if(!isAdmin){ await renderCombinedDuties(); return; }
       await onEditableCommit(ev);
     });
   });
@@ -728,14 +574,11 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* Commit handler — now writes revisions keyed by date so older data is preserved */
+/* ---------- commit edits as revisions ---------- */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
-  if(!isAdmin){
-    await renderCombinedDuties();
-    return;
-  }
+  if(!isAdmin){ await renderCombinedDuties(); return; }
 
   const linkId = el.dataset.link;
   const crewIndex = Number(el.dataset.crew);
@@ -745,31 +588,22 @@ async function onEditableCommit(e){
   const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
   const userReadable = (currentUser && (currentUser.email || currentUser.displayName)) || userUid;
 
-  // ensure object exists locally
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
 
-  // normalize existing local to revisions (migrate legacy)
+  // migrate local to revisions shape
   localEdits[linkId][crewIndex] = normalizeToRevisions(localEdits[linkId][crewIndex]);
 
-  // effectiveFrom is date-only string for the selected date
   const effectiveFrom = dateOnlyISO(selectedDate);
 
-  // If clearing -> remove only that field from the revision of effectiveFrom (locally + Firebase)
   if(!newVal){
+    // remove only the field from the specific revision
     const revs = localEdits[linkId][crewIndex]._revisions || {};
-    if(revs[effectiveFrom] && revs[effectiveFrom][field]){
-      delete revs[effectiveFrom][field];
-      // also remove metadata if present? keep metadata unless no fields left
-    }
-    // if revision becomes empty (no non-underscore keys), remove revision
+    if(revs[effectiveFrom] && revs[effectiveFrom][field]) delete revs[effectiveFrom][field];
     if(revs[effectiveFrom]){
       const remaining = Object.keys(revs[effectiveFrom]).filter(k => !k.startsWith('_'));
-      if(remaining.length === 0){
-        delete revs[effectiveFrom];
-      }
+      if(remaining.length === 0) delete revs[effectiveFrom];
     }
-    // if no revisions left, remove entire entry
     if(Object.keys(revs || {}).length === 0){
       delete localEdits[linkId][crewIndex];
       if(Object.keys(localEdits[linkId]||{}).length === 0) delete localEdits[linkId];
@@ -779,34 +613,26 @@ async function onEditableCommit(e){
     saveLocalEdits();
     showToast('Cleared locally');
 
-    // Update Firebase: remove the field from the revision path (use update with null)
     if(firebaseDb){
       try{
         const revPath = `/edits/${linkId}/${crewIndex}/_revisions/${effectiveFrom}/${field}`;
         await firebaseDb.ref(revPath).set(null);
-        // if revision object becomes empty on firebase, it's okay; DB cleanup can be done manually if needed
         showToast('Cleared on Firebase');
-      }catch(err){
-        console.error('Firebase clear failed', err);
-        showToast('Firebase clear failed');
-      }
+      }catch(err){ console.error('Firebase clear failed', err); showToast('Firebase clear failed'); }
     }
-
     await renderCombinedDuties();
     return;
   }
 
-  // Otherwise set/overwrite only this field in the revision for effectiveFrom (locally + Firebase)
+  // set/overwrite only this field in the selected revision
   const revs = localEdits[linkId][crewIndex]._revisions || {};
   revs[effectiveFrom] = revs[effectiveFrom] || {};
   revs[effectiveFrom][field] = newVal;
-  // metadata
   revs[effectiveFrom]['_updatedBy'] = userUid;
   revs[effectiveFrom]['_updatedByName'] = userReadable;
   revs[effectiveFrom]['_updatedAt'] = new Date().toISOString();
 
   localEdits[linkId][crewIndex]['_revisions'] = revs;
-  // Keep top-level last-updated metadata for convenience
   localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
   localEdits[linkId][crewIndex]['_updatedByName'] = userReadable;
   localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
@@ -816,24 +642,20 @@ async function onEditableCommit(e){
 
   if(firebaseDb){
     try{
-      // write only the revision node for the date
       const revPath = `/edits/${linkId}/${crewIndex}/_revisions/${effectiveFrom}`;
-      const payload = Object.assign({}, revs[effectiveFrom]); // includes field and metadata
+      const payload = Object.assign({}, revs[effectiveFrom]);
       await firebaseDb.ref(revPath).update(payload);
-      // also update top-level metadata for convenience
+      // update metadata
       const metaPath = `/edits/${linkId}/${crewIndex}`;
       await firebaseDb.ref(metaPath).update({_updatedBy: userUid, _updatedByName: userReadable, _updatedAt: new Date().toISOString()});
       showToast('Synced to Firebase');
-    }catch(err){
-      console.error('Firebase push failed', err);
-      showToast('Firebase sync failed');
-    }
+    }catch(err){ console.error('Firebase push failed', err); showToast('Firebase sync failed'); }
   }
 
   await renderCombinedDuties();
 }
 
-/* admin sign-in & detection (unchanged) */
+/* ---------- admin sign-in & detection ---------- */
 if(adminSignInBtn){
   adminSignInBtn.addEventListener('click', async ()=>{
     if(!firebaseAuth){ alert('Firebase not initialized.'); return; }
@@ -848,12 +670,7 @@ if(adminSignInBtn){
       const cred = await firebaseAuth.signInWithEmailAndPassword(email, pwd);
       const fbUser = firebaseAuth.currentUser || (cred && cred.user);
       if(fbUser){
-        currentUser = {
-          uid: fbUser.uid,
-          displayName: fbUser.displayName || fbUser.email || fbUser.uid,
-          email: fbUser.email || null,
-          anon: !!fbUser.isAnonymous
-        };
+        currentUser = { uid: fbUser.uid, displayName: fbUser.displayName || fbUser.email || fbUser.uid, email: fbUser.email || null, anon: !!fbUser.isAnonymous };
         saveLocalUser(currentUser);
       }
       showToast('Signed in');
@@ -886,13 +703,60 @@ function updateLoginStatusUI(){
   adminSignInBtn.style.display = 'inline-block';
 }
 
-/* init */
+/* ---------- visibility / online handlers to keep fresh ---------- */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState === 'visible' && firebaseDb){
+    firebaseDb.ref('/edits').once('value').then(snap=>{
+      latestFbEdits = snap.val() || {};
+      reconcileLocalWithFirebase(latestFbEdits);
+      renderCombinedDuties();
+    }).catch(()=>{});
+  }
+});
+window.addEventListener('online', ()=>{
+  if(firebaseDb){
+    attachRealtimeEditsListener();
+    firebaseDb.ref('/edits').once('value').then(snap=>{
+      latestFbEdits = snap.val() || {};
+      reconcileLocalWithFirebase(latestFbEdits);
+      renderCombinedDuties();
+    }).catch(()=>{});
+  }
+});
+
+/* ---------- init firebase & app ---------- */
+try {
+  firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+  firebaseAuth = firebase.auth();
+  firebaseDb = firebase.database();
+  if (firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
+    firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
+  }
+  firebaseAuth.onAuthStateChanged(async (user) => {
+    if (user){
+      currentUser = { uid: user.uid, displayName: user.displayName || user.email || user.uid, email: user.email || null, anon: user.isAnonymous || false };
+    } else {
+      currentUser = loadLocalUser() || createLocalUser();
+    }
+    await detectAdmin();
+    updateLoginStatusUI();
+    await renderCombinedDuties();
+  });
+} catch(e){
+  console.warn('Firebase init error', e);
+  currentUser = loadLocalUser() || createLocalUser();
+  updateLoginStatusUI();
+}
+
+/* ---------- app start ---------- */
 async function init(){
   setSelectedDate(new Date());
   currentUser = loadLocalUser() || createLocalUser();
   saveLocalUser(currentUser);
   localEdits = loadLocalEdits();
   await loadAllLinks();
+  attachRealtimeEditsListener();
+  startPollingFallback();
   window.addEventListener('resize', () => setTimeout(setTableWrapPaddingAndHeader, 60));
   window.addEventListener('orientationchange', () => setTimeout(setTableWrapPaddingAndHeader, 140));
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(setTableWrapPaddingAndHeader, 80));
