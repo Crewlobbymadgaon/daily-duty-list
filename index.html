@@ -33,7 +33,8 @@ body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,S
 .headerArea h1{margin:0;font-size:1.25rem;font-weight:700;text-align:center}
 .headerArea .sub{font-size:0.9rem;color:var(--muted);text-align:center}
 .headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center}
-.headerArea #loginStatus{font-size:0.9rem;color:var(--muted);margin-top:4px}
+/* Center the admin status line */
+.headerArea #loginStatus{font-size:0.9rem;color:var(--muted);margin-top:4px;width:100%;text-align:center;display:block;}
 .controls{position:sticky;top:0;background:var(--card);z-index:55;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.03)}
 .nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:44px;height:36px;padding:0 10px;cursor:pointer}
@@ -303,6 +304,13 @@ function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(
 /* sanitize edit input - trim, collapse spaces, cap length */
 function sanitizeName(s){ const x = (s||"").replace(/\s+/g," ").trim(); return x.slice(0, 40); }
 
+/* date-only ISO helper (YYYY-MM-DD) */
+function dateOnlyISO(d){
+  if(!d) return '';
+  if(d instanceof Date) return d.toISOString().slice(0,10);
+  try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); }
+}
+
 /* mapping */
 function getShortLinkLabel(linkId) {
   if (!linkId) return '';
@@ -437,6 +445,14 @@ async function renderCombinedDuties(){
   const crewsByLink = allCrewData.reduce((acc,crew)=>{ (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
   const rows = [];
 
+  // helper: decide whether an edit's effectiveFrom allows applying it for selectedDate
+  function isEffective(editObj){
+    const eff = editObj && (editObj._effectiveFrom || editObj._effective_from || editObj._from) || null;
+    if(!eff) return true; // no marker -> backward-compatible: apply everywhere
+    const sel = dateOnlyISO(selectedDate);
+    return eff <= sel; // apply if effectiveFrom is on or before selectedDate
+  }
+
   Object.values(crewsByLink).forEach(crewList=>{
     if(!crewList.length) return;
     const lastUpdatedDate = crewList[0].lastUpdatedDate ? new Date(crewList[0].lastUpdatedDate) : new Date();
@@ -457,20 +473,31 @@ async function renderCombinedDuties(){
       if(!combined || combined === 'REST') continue;
       const linkId = crew.linkId;
 
+      // get raw edit objects
       const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
       const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
       const ownerUid = fb._updatedBy || local._updatedBy || null;
       const ownerName = (fb._updatedByName || local._updatedByName) || null;
 
-      const lpName =
-        (local.crewLPName && local.crewLPName.trim()) ||
-        (fb.crewLPName && fb.crewLPName.trim()) ||
-        (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
+      // choose LP name: prefer local (if effective), then fb (if effective), else default
+      let lpName = '';
+      if(local && isEffective(local) && local.crewLPName && local.crewLPName.trim()){
+        lpName = local.crewLPName.trim();
+      } else if(fb && isEffective(fb) && fb.crewLPName && fb.crewLPName.trim()){
+        lpName = fb.crewLPName.trim();
+      } else {
+        lpName = (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
+      }
 
-      const alpName =
-        (local.crewALPName && local.crewALPName.trim()) ||
-        (fb.crewALPName && fb.crewALPName.trim()) ||
-        (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
+      // choose ALP name similarly
+      let alpName = '';
+      if(local && isEffective(local) && local.crewALPName && local.crewALPName.trim()){
+        alpName = local.crewALPName.trim();
+      } else if(fb && isEffective(fb) && fb.crewALPName && fb.crewALPName.trim()){
+        alpName = fb.crewALPName.trim();
+      } else {
+        alpName = (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
+      }
 
       rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, ownerUid, ownerName });
     }
@@ -585,11 +612,7 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* Commit handler — UPDATED: only modify the specific field.
-   When clearing, we ONLY remove that field locally and on Firebase
-   (we do not wipe other fields or metadata). If the local edit object
-   has no editable fields left afterwards we remove the row object.
-*/
+/* Commit handler — updated to include _effectiveFrom (date-only) so edits apply from selected date forward */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
@@ -652,18 +675,24 @@ async function onEditableCommit(e){
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
 
+  // effectiveFrom is date-only string for the currently selected date
+  const effectiveFrom = dateOnlyISO(selectedDate);
+
   localEdits[linkId][crewIndex][field] = newVal;
   // update metadata for this crew entry
   localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
   localEdits[linkId][crewIndex]['_updatedByName'] = userReadable;
   localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
+  // set effective-from marker so the change only applies from this date onward
+  localEdits[linkId][crewIndex]['_effectiveFrom'] = effectiveFrom;
+
   saveLocalEdits();
   showToast('Saved locally');
 
   if(firebaseDb){
     try{
       const path = `/edits/${linkId}/${crewIndex}`;
-      const payload = { [field]: newVal, _updatedBy: userUid, _updatedByName: userReadable, _updatedAt: new Date().toISOString() };
+      const payload = { [field]: newVal, _updatedBy: userUid, _updatedByName: userReadable, _updatedAt: new Date().toISOString(), _effectiveFrom: effectiveFrom };
       await firebaseDb.ref(path).update(payload);
       showToast('Synced to Firebase');
     }catch(err){
