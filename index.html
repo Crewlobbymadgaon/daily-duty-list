@@ -33,6 +33,7 @@ body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,S
 .headerArea h1{margin:0;font-size:1.25rem;font-weight:700;text-align:center}
 .headerArea .sub{font-size:0.9rem;color:var(--muted);text-align:center}
 .headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center}
+.headerArea #loginStatus{font-size:0.9rem;color:var(--muted);margin-top:4px}
 .controls{position:sticky;top:0;background:var(--card);z-index:55;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.03)}
 .nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:44px;height:36px;padding:0 10px;cursor:pointer}
@@ -156,7 +157,7 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
   cursor:text;
 }
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
-.editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6)}
+.editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6);pointer-events:none}
 
 #adminSignInBtn{position:fixed;top:10px;right:10px;z-index:200;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
@@ -221,13 +222,13 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-/* FIREBASE CONFIG (your provided config) */
+/* FIREBASE CONFIG (updated storageBucket) */
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyA39vWi_90CUyj0davz4XAXqMey1aNM6FU",
   authDomain: "crewdutytable.firebaseapp.com",
   databaseURL: "https://crewdutytable-default-rtdb.firebaseio.com",
   projectId: "crewdutytable",
-  storageBucket: "crewdutytable.firebasestorage.app",
+  storageBucket: "crewdutytable.appspot.com", // corrected bucket host
   messagingSenderId: "190634478615",
   appId: "1:190634478615:web:28e998325f69fb8bf36052"
 };
@@ -298,6 +299,9 @@ function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stri
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `Viewer-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
+
+/* sanitize edit input - trim, collapse spaces, cap length */
+function sanitizeName(s){ const x = (s||"").replace(/\s+/g," ").trim(); return x.slice(0, 40); }
 
 /* mapping */
 function getShortLinkLabel(linkId) {
@@ -394,11 +398,12 @@ async function loadAllLinks(){
 
   const results = await Promise.all(fetches);
   allCrewData = [];
-  const anySuccess = results.some(r => r && !r.__error);
+  // require that at least one file succeeded and has crew array
+  const anySuccess = results.some(r => r && !r.__error && Array.isArray(r.crew) && r.crew.length>0);
   if(!anySuccess){
     dutyTable.innerHTML = '';
     results.forEach(res=>{
-      const msg = res && res.__error ? `${res.file} — ${res.status||''} ${res.parseErr||res.err||''}` : 'Unknown error';
+      const msg = res && res.__error ? `${res.file} — ${res.status||''} ${res.parseErr||res.err||''}` : 'Unknown or empty file';
       const tr = document.createElement('tr');
       tr.innerHTML = `<td colspan="5" class="no-data">Failed to load: ${escapeHtml(msg)}</td>`;
       dutyTable.appendChild(tr);
@@ -480,24 +485,23 @@ async function renderCombinedDuties(){
   rows.forEach(r=>{
     const outHtml = formatTrainToken(r.outgoing || '');
     const inHtml  = r.incoming ? formatTrainToken(r.incoming) : '';
-    /* IMPORTANT: to ensure equal spacing for single vs. double numbers,
-       when there is no incoming (bottom) number we still render an empty
-       .train-slot (reserved space). We keep the divider (but invisible
-       via opacity) to preserve spacing. */
+    /* IMPORTANT: formatTrainToken returns a <span class="train-number"> so we insert it directly
+       (avoid double-wrapping). When there is no incoming number we still render an empty slot
+       to preserve spacing. */
     let trainInner = '';
     if(inHtml){
       trainInner = `
         <div class="train-stack">
-          <div class="train-slot"><div class="train-number">${outHtml}</div></div>
+          <div class="train-slot">${outHtml}</div>
           <div class="train-divider" aria-hidden="true"></div>
-          <div class="train-slot"><div class="train-number">${inHtml}</div></div>
+          <div class="train-slot">${inHtml}</div>
         </div>`;
     } else {
       trainInner = `
         <div class="train-stack">
-          <div class="train-slot"><div class="train-number">${outHtml}</div></div>
+          <div class="train-slot">${outHtml}</div>
           <div class="train-divider" style="opacity:0" aria-hidden="true"></div>
-          <div class="train-slot"><div class="train-number">&nbsp;</div></div>
+          <div class="train-slot">&nbsp;</div>
         </div>`;
     }
 
@@ -543,7 +547,7 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  /* editable handlers (unchanged) */
+  /* editable handlers (unchanged behaviour) */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
@@ -597,7 +601,7 @@ async function onEditableCommit(e){
   const linkId = el.dataset.link;
   const crewIndex = Number(el.dataset.crew);
   const field = el.dataset.field;
-  const newVal = el.textContent.trim();
+  const newVal = sanitizeName(el.textContent);
 
   const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
   const userReadable = (currentUser && (currentUser.email || currentUser.displayName)) || userUid;
@@ -708,7 +712,7 @@ async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
   try{
-    const ADMIN_UIDS = [];
+    const ADMIN_UIDS = []; // keep as a convenience list (can add UIDs here)
     if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
     if(firebaseDb && currentUser && currentUser.uid){
       const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value');
@@ -720,7 +724,7 @@ async function detectAdmin(){
 function updateLoginStatusUI(){
   const u = currentUser || loadLocalUser();
   if(!u){ loginStatus.textContent = ''; adminSignInBtn.style.display = 'inline-block'; return; }
-  if(isAdmin){ loginStatus.textContent = 'Admin — editing enabled'; } else { loginStatus.textContent = ''; }
+  loginStatus.textContent = isAdmin ? `Admin — editing enabled (${u.email || u.displayName})` : '';
   adminSignInBtn.style.display = 'inline-block';
 }
 
