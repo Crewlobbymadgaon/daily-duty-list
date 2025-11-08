@@ -41,7 +41,7 @@ input[type="date"].native-date{position:absolute;left:-9999px}
 .tableWrap{max-height:calc(100vh - 112px);overflow:auto;border-radius:0;background:#fff;padding:6px;position:relative}
 table{width:100%;border-collapse:collapse;min-width:640px;table-layout:fixed;border:1px solid var(--border)}
 thead th{background:var(--card);padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);border-top:1px solid rgba(0,0,0,0.04);position:sticky;z-index:70;top:0;box-sizing:border-box}
-tbody td{padding:0;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;position:relative;height:var(--row-height);}
+tbody td{padding:0;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;position:relative;height:var(--row-height);} /* uniform height */
 tbody tr:nth-child(odd){background:#fbfdff}
 .no-data{text-align:center;color:var(--muted);padding:14px}
 
@@ -115,6 +115,8 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
   padding:2px 4px;
   max-width:100%;
   box-sizing:border-box;
+  /* total height of the two slots + gap roughly:
+     2 * --train-slot-height + --train-gap */
   min-height: calc( (var(--train-slot-height) * 2) + var(--train-gap) );
 }
 .train-slot{
@@ -136,10 +138,10 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
 }
 .train-number.nowrap{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 
-/* divider */
+/* divider is decorative; keep height but make transparent for single-line case */
 .train-divider{ width:60%; height:2px; background:var(--divider); border-radius:2px; margin:0; opacity:1; }
 
-/* editable names */
+/* editable names fill cell and center text */
 .editable{
   width:100%;
   height:100%;
@@ -162,6 +164,7 @@ thead th:nth-child(5), td:nth-child(5){width:60px}
 .toast.show{opacity:1;transform:translateY(0)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
 
+/* mobile tuning */
 @media (max-width:640px){
   :root{ --train-col-width:110px; --row-height:60px; --pill-space:32px; --train-slot-height:20px; --train-gap:4px; }
   table{min-width:0;table-layout:auto}
@@ -230,6 +233,7 @@ const FIREBASE_CONFIG = {
   appId: "1:190634478615:web:28e998325f69fb8bf36052"
 };
 
+/* link files & storage key */
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json',
@@ -237,17 +241,12 @@ const linkFiles = [
 ];
 const LS_KEY = 'lp_alp_edits_owner_v1';
 
+/* state */
 let localEdits = loadLocalEdits();
 let allCrewData = [];
 let selectedDate = new Date();
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
-
-// Auto-refresh globals
-let latestFbEdits = null;
-let realtimeListenerAttached = false;
-let pollingIntervalId = null;
-const POLL_MS = 15000; // polling fallback interval
 
 /* init firebase */
 try {
@@ -300,12 +299,98 @@ function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stri
 function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `Viewer-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
+
+/* sanitize edit input - trim, collapse spaces, cap length */
 function sanitizeName(s){ const x = (s||"").replace(/\s+/g," ").trim(); return x.slice(0, 40); }
-function dateOnlyISO(d){ if(!d) return ''; if(d instanceof Date) return d.toISOString().slice(0,10); try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); } }
+
+/* date-only ISO helper (YYYY-MM-DD) */
+function dateOnlyISO(d){
+  if(!d) return '';
+  if(d instanceof Date) return d.toISOString().slice(0,10);
+  try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); }
+}
+
+/**
+ * Convert an old flat edit object into revisions if needed.
+ * Returns normalized object (does not mutate input).
+ */
+function normalizeToRevisions(editObj){
+  if(!editObj || typeof editObj !== 'object') return {};
+  // if already has _revisions, return shallow copy
+  if(editObj._revisions && typeof editObj._revisions === 'object'){
+    return Object.assign({}, editObj);
+  }
+  const res = Object.assign({}, editObj);
+  // if there's a root-level _effectiveFrom (old style) or fields, move them into revisions
+  const eff = editObj._effectiveFrom || editObj._effective_from || null;
+  if(eff){
+    res._revisions = res._revisions || {};
+    // take all non-underscore fields as part of the revision
+    const rev = {};
+    Object.keys(editObj).forEach(k=>{
+      if(k.startsWith('_')) return;
+      rev[k] = editObj[k];
+      delete res[k];
+    });
+    // copy metadata into revision
+    rev._updatedBy = editObj._updatedBy || editObj._updated_by || null;
+    rev._updatedByName = editObj._updatedByName || editObj._updated_by_name || null;
+    rev._updatedAt = editObj._updatedAt || editObj._updated_at || new Date().toISOString();
+    res._revisions[eff] = rev;
+    // remove old legacy markers
+    delete res._effectiveFrom; delete res._effective_from; delete res._effectiveFrom;
+  } else {
+    // no eff marker and no revisions: keep as-is but not ideal; treat it as a "base" revision at 1970-01-01
+    const hasFields = Object.keys(editObj).some(k => !k.startsWith('_'));
+    if(hasFields){
+      res._revisions = res._revisions || {};
+      const rev = {};
+      Object.keys(editObj).forEach(k=>{
+        if(k.startsWith('_')) return;
+        rev[k] = editObj[k];
+        delete res[k];
+      });
+      rev._updatedBy = editObj._updatedBy || null;
+      rev._updatedByName = editObj._updatedByName || null;
+      rev._updatedAt = editObj._updatedAt || new Date().toISOString();
+      res._revisions['1970-01-01'] = rev;
+    }
+  }
+  return res;
+}
+
+/**
+ * Get a field value from an edit object, considering revisions.
+ * Preference: look in editObj._revisions for the newest date <= selectedDate.
+ * Returns null if not found.
+ */
+function getFieldFromEdit(editObj, field){
+  if(!editObj) return null;
+  const revs = editObj._revisions;
+  const sel = dateOnlyISO(selectedDate);
+  if(revs && typeof revs === 'object'){
+    const dates = Object.keys(revs).filter(d => typeof d === 'string' && d <= sel).sort();
+    if(dates.length){
+      for(let i = dates.length - 1; i >= 0; i--){
+        const candidate = revs[dates[i]];
+        if(candidate && typeof candidate === 'object' && candidate[field] && String(candidate[field]).trim()){
+          return String(candidate[field]).trim();
+        }
+      }
+    }
+  }
+  // fallback to legacy flat field if present and effective (backwards compatibility)
+  if(editObj[field] && editObj[field].toString().trim()){
+    const eff = editObj._effectiveFrom || editObj._effective_from || null;
+    if(!eff) return String(editObj[field]).trim();
+    if(eff && eff <= sel) return String(editObj[field]).trim();
+  }
+  return null;
+}
 
 /**
  * Reconcile localEdits with what's in Firebase (fbEdits).
- * - If Firebase has an entry for link/idx, and its _updatedAt is newer, prefer Firebase.
+ * - If Firebase has an entry for link/idx, prefer firebase (copy revisions).
  * - If Firebase has no entry for link/idx, remove the local entry (reflect deletion).
  * - Returns true if localEdits was modified.
  */
@@ -317,25 +402,31 @@ function reconcileLocalWithFirebase(fbEdits){
     const localLink = localEdits[linkId] || {};
     Object.keys(localLink).forEach(idxKey => {
       const localObj = localLink[idxKey];
-      const fbObj = fbEdits[linkId] && fbEdits[linkId][idxKey];
+      const fbObjRaw = fbEdits[linkId] && fbEdits[linkId][idxKey];
 
-      if(!fbObj){
+      if(!fbObjRaw){
         // Firebase has no entry — treat as deleted => remove local cached edit
         delete localEdits[linkId][idxKey];
         changed = true;
       } else {
-        // Both exist: compare timestamps if available
-        try {
-          const fbTs = fbObj && fbObj._updatedAt ? Date.parse(fbObj._updatedAt) : null;
-          const localTs = localObj && localObj._updatedAt ? Date.parse(localObj._updatedAt) : null;
-
-          if(fbTs && (!localTs || fbTs >= localTs)){
-            // Overwrite local with firebase copy
-            localEdits[linkId][idxKey] = Object.assign({}, localEdits[linkId][idxKey] || {}, fbObj);
-            changed = true;
+        // normalize both sides to revisions and decide
+        const fbObj = normalizeToRevisions(fbObjRaw);
+        // If firebase has revisions, prefer firebase as source-of-truth for that row
+        if(fbObj._revisions && Object.keys(fbObj._revisions).length){
+          localEdits[linkId][idxKey] = fbObj;
+          changed = true;
+        } else {
+          // otherwise merge conservatively: ensure local is normalized too and keep whichever revision is newer per date
+          const localNorm = normalizeToRevisions(localObj);
+          // merge revisions (keep both sides)
+          const merged = Object.assign({}, localNorm);
+          merged._revisions = merged._revisions || {};
+          if(fbObj._revisions){
+            Object.keys(fbObj._revisions).forEach(d=>{
+              merged._revisions[d] = merged._revisions[d] || fbObj._revisions[d];
+            });
           }
-        } catch(e){
-          localEdits[linkId][idxKey] = Object.assign({}, localEdits[linkId][idxKey] || {}, fbObj);
+          localEdits[linkId][idxKey] = merged;
           changed = true;
         }
       }
@@ -352,47 +443,7 @@ function reconcileLocalWithFirebase(fbEdits){
   return changed;
 }
 
-/* Realtime / polling helpers */
-function attachRealtimeEditsListener(){
-  if(!firebaseDb || realtimeListenerAttached) return;
-  try {
-    realtimeListenerAttached = true;
-    firebaseDb.ref('/edits').on('value', snap => {
-      try{
-        latestFbEdits = snap.val() || {};
-        reconcileLocalWithFirebase(latestFbEdits);
-        // re-render with latest edits
-        renderCombinedDuties();
-      }catch(e){
-        console.warn('Realtime on value handler error', e);
-      }
-    });
-    // stop polling if attached
-    if(pollingIntervalId){ clearInterval(pollingIntervalId); pollingIntervalId = null; }
-  } catch(e){
-    console.warn('attachRealtimeEditsListener failed', e);
-  }
-}
-
-function startPollingFallback(){
-  if(pollingIntervalId || !firebaseDb || realtimeListenerAttached) return;
-  pollingIntervalId = setInterval(async ()=>{
-    try{
-      const snap = await firebaseDb.ref('/edits').once('value');
-      const fb = snap.val() || {};
-      // shallow compare stringified; if different update
-      if(JSON.stringify(fb) !== JSON.stringify(latestFbEdits)){
-        latestFbEdits = fb;
-        reconcileLocalWithFirebase(latestFbEdits);
-        renderCombinedDuties();
-      }
-    }catch(e){
-      // ignore network errors
-    }
-  }, POLL_MS);
-}
-
-/* mapping and formatting functions (unchanged) */
+/* mapping */
 function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase();
@@ -404,6 +455,11 @@ function getShortLinkLabel(linkId) {
   if(digits) return `L${digits[0]}`;
   return String(linkId).toUpperCase();
 }
+
+/* format train token:
+   - exact 5-digit numbers -> nowrap slot
+   - otherwise insert <wbr> after slashes
+*/
 function formatTrainToken(token){
   if(!token) return '';
   const cleaned = token.toString().trim();
@@ -414,7 +470,7 @@ function formatTrainToken(token){
   return `<span class="train-number">${withBreaks}</span>`;
 }
 
-/* layout helpers (unchanged) */
+/* layout helpers */
 function setTableWrapPaddingAndHeader(){
   const header = document.querySelector('.headerArea');
   const controls = document.querySelector('.controls');
@@ -452,7 +508,11 @@ function alignHeaderWidths(){
   mainTable.style.width = mainWidth + 'px';
 }
 
-/* date controls (unchanged) */
+/* date controls */
+const dateBtn = document.getElementById('dateBtn');
+const datePicker = document.getElementById('datePicker');
+const prevBtn = document.getElementById('prevDay');
+const nextBtn = document.getElementById('nextDay');
 dateBtn.addEventListener('click', ()=>{ datePicker.focus(); datePicker.click(); });
 datePicker.addEventListener('change', ()=>{ selectedDate = datePicker.value ? new Date(datePicker.value+'T00:00:00') : new Date(); setSelectedDate(selectedDate); renderCombinedDuties(); });
 prevBtn.addEventListener('click', ()=> changeDate(-1));
@@ -460,7 +520,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* load JSON link files (unchanged) */
+/* load JSON link files */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async (f, idx) => {
@@ -507,37 +567,18 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* render duties (uses latestFbEdits cache when available to avoid fetching again) */
+/* render duties */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
 
   let fbEdits = {};
-
-  // Prefer realtime cache if available
-  if(latestFbEdits !== null){
-    fbEdits = latestFbEdits;
-  } else if(firebaseDb){
-    try{
-      const snap = await firebaseDb.ref('/edits').once('value');
-      fbEdits = snap.val() || {};
-      latestFbEdits = fbEdits;
-      reconcileLocalWithFirebase(fbEdits);
-    }catch(e){
-      fbEdits = {};
-      console.warn('fbEdits load failed', e);
-    }
+  if(firebaseDb){
+    try{ const snap = await firebaseDb.ref('/edits').once('value'); fbEdits = snap.val() || {}; reconcileLocalWithFirebase(fbEdits); }catch(e){ fbEdits = {}; console.warn('fbEdits load failed', e); }
   }
 
   const crewsByLink = allCrewData.reduce((acc,crew)=>{ (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
   const rows = [];
-
-  function isEffective(editObj){
-    const eff = editObj && (editObj._effectiveFrom || editObj._effective_from || editObj._from) || null;
-    if(!eff) return true;
-    const sel = dateOnlyISO(selectedDate);
-    return eff <= sel;
-  }
 
   Object.values(crewsByLink).forEach(crewList=>{
     if(!crewList.length) return;
@@ -559,29 +600,23 @@ async function renderCombinedDuties(){
       if(!combined || combined === 'REST') continue;
       const linkId = crew.linkId;
 
-      // get raw edit objects
-      const local = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || {};
-      const fb = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || {};
-      const ownerUid = fb._updatedBy || local._updatedBy || null;
-      const ownerName = (fb._updatedByName || local._updatedByName) || null;
+      // get raw edit objects (normalize to revisions on-the-fly)
+      const localRaw = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || null;
+      const fbRaw = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || null;
+      const local = localRaw ? normalizeToRevisions(localRaw) : null;
+      const fb = fbRaw ? normalizeToRevisions(fbRaw) : null;
 
-      let lpName = '';
-      if(local && isEffective(local) && local.crewLPName && local.crewLPName.trim()){
-        lpName = local.crewLPName.trim();
-      } else if(fb && isEffective(fb) && fb.crewLPName && fb.crewLPName.trim()){
-        lpName = fb.crewLPName.trim();
-      } else {
-        lpName = (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
-      }
+      const ownerUid = (fb && (fb._updatedBy)) || (local && local._updatedBy) || null;
+      const ownerName = (fb && (fb._updatedByName)) || (local && local._updatedByName) || null;
 
-      let alpName = '';
-      if(local && isEffective(local) && local.crewALPName && local.crewALPName.trim()){
-        alpName = local.crewALPName.trim();
-      } else if(fb && isEffective(fb) && fb.crewALPName && fb.crewALPName.trim()){
-        alpName = fb.crewALPName.trim();
-      } else {
-        alpName = (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
-      }
+      // resolve field values: prefer local revision value (if any), otherwise firebase revision, otherwise default
+      const localLP = getFieldFromEdit(local, 'crewLPName');
+      const fbLP = getFieldFromEdit(fb, 'crewLPName');
+      const lpName = localLP || fbLP || (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
+
+      const localALP = getFieldFromEdit(local, 'crewALPName');
+      const fbALP = getFieldFromEdit(fb, 'crewALPName');
+      const alpName = localALP || fbALP || (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
 
       rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, ownerUid, ownerName });
     }
@@ -655,7 +690,7 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  /* editable handlers */
+  /* editable handlers (unchanged behaviour) */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
@@ -693,7 +728,7 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* Commit handler */
+/* Commit handler — now writes revisions keyed by date so older data is preserved */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
@@ -710,30 +745,46 @@ async function onEditableCommit(e){
   const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
   const userReadable = (currentUser && (currentUser.email || currentUser.displayName)) || userUid;
 
+  // ensure object exists locally
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
 
-  if(!newVal){
-    if(localEdits[linkId] && localEdits[linkId][crewIndex] && localEdits[linkId][crewIndex][field]){
-      delete localEdits[linkId][crewIndex][field];
-    }
+  // normalize existing local to revisions (migrate legacy)
+  localEdits[linkId][crewIndex] = normalizeToRevisions(localEdits[linkId][crewIndex]);
 
-    const remainingKeys = Object.keys(localEdits[linkId][crewIndex] || {}).filter(k => !k.startsWith('_'));
-    if(remainingKeys.length === 0){
-      delete localEdits[linkId][crewIndex];
-      if(Object.keys(localEdits[linkId]||{}).length === 0){
-        delete localEdits[linkId];
+  // effectiveFrom is date-only string for the selected date
+  const effectiveFrom = dateOnlyISO(selectedDate);
+
+  // If clearing -> remove only that field from the revision of effectiveFrom (locally + Firebase)
+  if(!newVal){
+    const revs = localEdits[linkId][crewIndex]._revisions || {};
+    if(revs[effectiveFrom] && revs[effectiveFrom][field]){
+      delete revs[effectiveFrom][field];
+      // also remove metadata if present? keep metadata unless no fields left
+    }
+    // if revision becomes empty (no non-underscore keys), remove revision
+    if(revs[effectiveFrom]){
+      const remaining = Object.keys(revs[effectiveFrom]).filter(k => !k.startsWith('_'));
+      if(remaining.length === 0){
+        delete revs[effectiveFrom];
       }
+    }
+    // if no revisions left, remove entire entry
+    if(Object.keys(revs || {}).length === 0){
+      delete localEdits[linkId][crewIndex];
+      if(Object.keys(localEdits[linkId]||{}).length === 0) delete localEdits[linkId];
+    } else {
+      localEdits[linkId][crewIndex]._revisions = revs;
     }
     saveLocalEdits();
     showToast('Cleared locally');
 
+    // Update Firebase: remove the field from the revision path (use update with null)
     if(firebaseDb){
       try{
-        const path = `/edits/${linkId}/${crewIndex}`;
-        const payload = { };
-        payload[field] = null;
-        await firebaseDb.ref(path).update(payload);
+        const revPath = `/edits/${linkId}/${crewIndex}/_revisions/${effectiveFrom}/${field}`;
+        await firebaseDb.ref(revPath).set(null);
+        // if revision object becomes empty on firebase, it's okay; DB cleanup can be done manually if needed
         showToast('Cleared on Firebase');
       }catch(err){
         console.error('Firebase clear failed', err);
@@ -745,25 +796,33 @@ async function onEditableCommit(e){
     return;
   }
 
-  if(!localEdits[linkId]) localEdits[linkId] = {};
-  if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
+  // Otherwise set/overwrite only this field in the revision for effectiveFrom (locally + Firebase)
+  const revs = localEdits[linkId][crewIndex]._revisions || {};
+  revs[effectiveFrom] = revs[effectiveFrom] || {};
+  revs[effectiveFrom][field] = newVal;
+  // metadata
+  revs[effectiveFrom]['_updatedBy'] = userUid;
+  revs[effectiveFrom]['_updatedByName'] = userReadable;
+  revs[effectiveFrom]['_updatedAt'] = new Date().toISOString();
 
-  const effectiveFrom = dateOnlyISO(selectedDate);
-
-  localEdits[linkId][crewIndex][field] = newVal;
+  localEdits[linkId][crewIndex]['_revisions'] = revs;
+  // Keep top-level last-updated metadata for convenience
   localEdits[linkId][crewIndex]['_updatedBy'] = userUid;
   localEdits[linkId][crewIndex]['_updatedByName'] = userReadable;
   localEdits[linkId][crewIndex]['_updatedAt'] = new Date().toISOString();
-  localEdits[linkId][crewIndex]['_effectiveFrom'] = effectiveFrom;
 
   saveLocalEdits();
   showToast('Saved locally');
 
   if(firebaseDb){
     try{
-      const path = `/edits/${linkId}/${crewIndex}`;
-      const payload = { [field]: newVal, _updatedBy: userUid, _updatedByName: userReadable, _updatedAt: new Date().toISOString(), _effectiveFrom: effectiveFrom };
-      await firebaseDb.ref(path).update(payload);
+      // write only the revision node for the date
+      const revPath = `/edits/${linkId}/${crewIndex}/_revisions/${effectiveFrom}`;
+      const payload = Object.assign({}, revs[effectiveFrom]); // includes field and metadata
+      await firebaseDb.ref(revPath).update(payload);
+      // also update top-level metadata for convenience
+      const metaPath = `/edits/${linkId}/${crewIndex}`;
+      await firebaseDb.ref(metaPath).update({_updatedBy: userUid, _updatedByName: userReadable, _updatedAt: new Date().toISOString()});
       showToast('Synced to Firebase');
     }catch(err){
       console.error('Firebase push failed', err);
@@ -774,7 +833,7 @@ async function onEditableCommit(e){
   await renderCombinedDuties();
 }
 
-/* admin sign-in */
+/* admin sign-in & detection (unchanged) */
 if(adminSignInBtn){
   adminSignInBtn.addEventListener('click', async ()=>{
     if(!firebaseAuth){ alert('Firebase not initialized.'); return; }
@@ -827,29 +886,6 @@ function updateLoginStatusUI(){
   adminSignInBtn.style.display = 'inline-block';
 }
 
-/* Visibility and network handlers to keep data fresh */
-document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState === 'visible' && firebaseDb){
-    // fetch latest edits on visibility regain
-    firebaseDb.ref('/edits').once('value').then(snap=>{
-      latestFbEdits = snap.val() || {};
-      reconcileLocalWithFirebase(latestFbEdits);
-      renderCombinedDuties();
-    }).catch(()=>{});
-  }
-});
-window.addEventListener('online', ()=>{
-  // re-attach realtime or perform one immediate fetch
-  if(firebaseDb){
-    attachRealtimeEditsListener();
-    firebaseDb.ref('/edits').once('value').then(snap=>{
-      latestFbEdits = snap.val() || {};
-      reconcileLocalWithFirebase(latestFbEdits);
-      renderCombinedDuties();
-    }).catch(()=>{});
-  }
-});
-
 /* init */
 async function init(){
   setSelectedDate(new Date());
@@ -857,10 +893,6 @@ async function init(){
   saveLocalUser(currentUser);
   localEdits = loadLocalEdits();
   await loadAllLinks();
-  // attach realtime listener if possible; otherwise start polling fallback
-  attachRealtimeEditsListener();
-  startPollingFallback();
-
   window.addEventListener('resize', () => setTimeout(setTableWrapPaddingAndHeader, 60));
   window.addEventListener('orientationchange', () => setTimeout(setTableWrapPaddingAndHeader, 140));
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(setTableWrapPaddingAndHeader, 80));
