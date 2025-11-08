@@ -1,13 +1,11 @@
 const CACHE_NAME = 'duty-table-v1';
+const BASE_PATH = '/daily-duty-list';
 const PRECACHE_URLS = [
-  '/',                 // index
-  '/index.html',
-  '/manifest.json',
-  // list other static assets you want cached:
-  '/styles.css',       // if you moved CSS to file
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
-  // add your link JSON files if desired for offline: '/link1.json', ...
+  `${BASE_PATH}/`,
+  `${BASE_PATH}/index.html`,
+  `${BASE_PATH}/manifest.json`,
+  `${BASE_PATH}/icons/icon-192.png`,
+  `${BASE_PATH}/icons/icon-512.png`
 ];
 
 self.addEventListener('install', event => {
@@ -19,29 +17,32 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-    ))
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+    )
   );
   self.clients.claim();
 });
 
 self.addEventListener('fetch', event => {
-  // network-first for firebase (real-time data), cache-first for static assets
   const url = new URL(event.request.url);
-  // treat dynamic API / firebase requests as network-first:
+
+  // External requests (Firebase, Google Fonts, etc.) – always network-first
   if (url.origin !== location.origin) {
-    return event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+    event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+    return;
   }
-  // for local requests use cache-first
+
+  // Cache-first for local assets, network fallback
   event.respondWith(
-    caches.match(event.request).then(cached => cached || fetch(event.request).then(resp => {
-      // optionally cache fetched responses for subsequent visits
-      if (event.request.method === 'GET' && resp && resp.status === 200) {
-        const respClone = resp.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, respClone));
-      }
-      return resp;
-    }).catch(()=> caches.match('/')))
+    caches.match(event.request).then(cached => {
+      if (cached) return cached;
+      return fetch(event.request).then(resp => {
+        if (!resp || resp.status !== 200 || resp.type !== 'basic') return resp;
+        const clone = resp.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        return resp;
+      }).catch(() => caches.match(`${BASE_PATH}/index.html`));
+    })
   );
 });
