@@ -248,7 +248,7 @@ function reconcileLocalWithFirebase(fbEdits){
     });
     if(localEdits[linkId] && Object.keys(localEdits[linkId]).length === 0){
       delete localEdits[linkId];
-      changed = true;
+      changed = true;link.json
     }
   });
   if(changed) saveLocalEdits();
@@ -292,22 +292,30 @@ function startPollingFallback(){
 function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase();
-  if (id.startsWith('link')) { const num = id.replace(/\D/g, ''); return `MAO${num}`; }
-  if (id.startsWith('rnlink')) { const num = id.replace(/\D/g, ''); return `RN${num}`; }
-  if (id.startsWith('ollink')) { const num = id.replace(/\D/g, ''); return `OL${num}`; }
-  if (id.startsWith('sllink')) { const num = id.replace(/\D/g, ''); return `SL${num}`; }
-  const digits = id.match(/\d+/);
-  if(digits) return `L${digits[0]}`;
-  return String(linkId).toUpperCase();
-}
-function formatTrainToken(token){
-  if(!token) return '';
-  const cleaned = token.toString().trim();
-  if(/^\d{5}$/.test(cleaned)){
-    return `<span class="train-number nowrap">${escapeHtml(cleaned)}</span>`;
+
+  // Convert link.json names to friendly codes
+  if (id.startsWith('link')) {
+    const num = id.replace(/\D/g, '');
+    return `MAO${num}`;
   }
-  const withBreaks = escapeHtml(cleaned).replace(/\//g, '/<wbr>');
-  return `<span class="train-number">${withBreaks}</span>`;
+  if (id.startsWith('rnlink')) {
+    const num = id.replace(/\D/g, '');
+    return `RN${num}`;
+  }
+  if (id.startsWith('ollink')) {
+    const num = id.replace(/\D/g, '');
+    return `OL${num}`;
+  }
+  if (id.startsWith('sllink')) {
+    const num = id.replace(/\D/g, '');
+    return `SL${num}`;
+  }
+
+  // Default fallback: if it has a number, prefix with MAO
+  const digits = id.match(/\d+/);
+  if (digits) return `MAO${digits[0]}`;
+
+  return String(linkId).toUpperCase();
 }
 
 /* ---------- layout helpers ---------- */
