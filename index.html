@@ -71,9 +71,14 @@ tbody tr:nth-child(odd){background:#fbfdff}
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
+
+/* HIDE the Link No column on desktop (visual only). Keeps DOM intact so JS sizing and accessibility remain stable) */
+table th:nth-child(5), table td:nth-child(5){ display: none; }
+
 @media (max-width:640px){
   :root{ --train-col-width:110px; --row-height:60px; --pill-space:32px; --train-slot-height:20px; --train-gap:4px; }
   table{min-width:0;table-layout:auto}
+  /* On small screens continue hiding Dep and Link columns to keep table compact */
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
   thead th,tbody td{padding:6px}
   .train-number{font-size:0.86rem; max-width:calc(var(--train-col-width) - 16px)}
@@ -160,6 +165,10 @@ let latestFbEdits = null;
 let realtimeListenerAttached = false;
 let pollingIntervalId = null;
 
+/* write debouncing */
+const writeDebounce = {};
+const WRITE_DEBOUNCE_MS = 700;
+
 /* ---------- DOM refs ---------- */
 const dutyTable = document.getElementById('dutyTable');
 const mainTable = document.getElementById('mainTable');
@@ -185,15 +194,13 @@ function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(
 function sanitizeName(s){ const x = (s||"").replace(/\s+/g," ").trim(); return x.slice(0, 40); }
 function dateOnlyISO(d){ if(!d) return ''; if(d instanceof Date) return d.toISOString().slice(0,10); try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); } }
 
-/* ---------- normalize / revisions helpers ---------- */
-/* Convert legacy flat edit object into revisioned shape (non-mutating) */
+/* ---------- normalize / revisions helpers (unchanged) ---------- */
 function normalizeToRevisions(editObj){
   if(!editObj || typeof editObj !== 'object') return {};
   if(editObj._revisions && typeof editObj._revisions === 'object') return Object.assign({}, editObj);
   const res = Object.assign({}, editObj);
   const eff = editObj._effectiveFrom || editObj._effective_from || null;
   const revs = {};
-  // collect non-underscore keys as a revision
   const fields = {};
   Object.keys(editObj).forEach(k=>{
     if(k.startsWith('_')) return;
@@ -210,8 +217,6 @@ function normalizeToRevisions(editObj){
   }
   return res;
 }
-
-/* retrieve a named field for the selectedDate from an edit object (revisions-aware) */
 function getFieldFromEdit(editObj, field){
   if(!editObj) return null;
   const revs = editObj._revisions;
@@ -225,7 +230,6 @@ function getFieldFromEdit(editObj, field){
       }
     }
   }
-  // fallback to old flat field if present and effective
   if(editObj[field] && String(editObj[field]).trim()){
     const eff = editObj._effectiveFrom || editObj._effective_from || null;
     if(!eff) return String(editObj[field]).trim();
@@ -234,13 +238,7 @@ function getFieldFromEdit(editObj, field){
   return null;
 }
 
-/* ---------- reconciliation ---------- */
-/**
- * Reconcile localEdits with Firebase snapshot:
- * - If Firebase has no entry -> remove local entry (reflect deletion).
- * - If Firebase has revisions -> prefer Firebase for that row (overwrite local).
- * - If both have revisions -> merge conservatively (keep both).
- */
+/* ---------- reconciliation (unchanged behavior) ---------- */
 function reconcileLocalWithFirebase(fbEdits){
   if(!fbEdits || typeof fbEdits !== 'object') return false;
   let changed = false;
@@ -250,17 +248,14 @@ function reconcileLocalWithFirebase(fbEdits){
       const localObj = localLink[idxKey];
       const fbObjRaw = fbEdits[linkId] && fbEdits[linkId][idxKey];
       if(!fbObjRaw){
-        // deleted in firebase -> remove local cache
         delete localEdits[linkId][idxKey];
         changed = true;
       } else {
         const fbObj = normalizeToRevisions(fbObjRaw);
-        // If firebase has revisions, prefer it (overwrite local) to ensure DB is authoritative
         if(fbObj._revisions && Object.keys(fbObj._revisions).length){
           localEdits[linkId][idxKey] = fbObj;
           changed = true;
         } else {
-          // merge: ensure local normalized and add any firebase revisions
           const localNorm = normalizeToRevisions(localObj);
           localNorm._revisions = localNorm._revisions || {};
           if(fbObj._revisions){
@@ -372,7 +367,7 @@ function alignHeaderWidths(){
   ths.forEach((th,i)=>{ const w = widths[i] || 60; th.style.width = w+'px'; th.style.minWidth = w+'px'; th.style.maxWidth = w+'px'; th.style.boxSizing='border-box'; });
   const mainWidth = Math.round(mainTable.getBoundingClientRect().width);
   mainTable.style.tableLayout = 'fixed';
-  mainTable.style.width = mainWidth + 'px';
+  if(mainWidth) mainTable.style.width = mainWidth + 'px';
 }
 
 /* ---------- date controls ---------- */
@@ -396,11 +391,9 @@ async function loadAllLinks(){
       }
       try {
         const json = await r.json();
-        console.log(`Loaded link file: ${f}`, json);
         return json;
       } catch(parseErr){
         const txt = await r.text().catch(()=>'<no body>');
-        console.error(`JSON parse failed for ${f}`, parseErr, txt);
         return { __error:true, file:f, parseErr: (parseErr && parseErr.message), body: txt };
       }
     } catch(err){
@@ -425,7 +418,6 @@ async function loadAllLinks(){
     const tr = document.createElement('tr');
     tr.innerHTML = `<td colspan="5" class="no-data">Failed to load link files: ${escapeHtml(msg)}</td>`;
     dutyTable.appendChild(tr);
-    console.warn('loadAllLinks: no link file succeeded', results);
     setTableWrapPaddingAndHeader();
     return;
   }
@@ -439,7 +431,6 @@ async function loadAllLinks(){
     crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex, friendlyLabel: friendly}));
   });
 
-  console.log('All crew data loaded. entries:', allCrewData.length);
   await renderCombinedDuties();
 }
 
@@ -524,9 +515,10 @@ async function renderCombinedDuties(){
 
     const tr = document.createElement('tr');
 
-    const mayEditLP = !!isAdmin;
-    const mayEditALP = !!isAdmin;
-    const ownerTag = (isAdmin && r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
+    // editable if admin or owner of the edit
+    const mayEditLP = !!isAdmin || (currentUser && currentUser.uid && r.ownerUid && currentUser.uid === r.ownerUid);
+    const mayEditALP = !!isAdmin || (currentUser && currentUser.uid && r.ownerUid && currentUser.uid === r.ownerUid);
+    const ownerTag = (r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
     const linkLabel = escapeHtml(getShortLinkLabel(r.link));
 
     const lpCell = `
@@ -550,7 +542,7 @@ async function renderCombinedDuties(){
 
     const trainCell = `<td class="train-cell"><div class="dep-pill">${escapeHtml(r.depTime||'')}</div><div class="cell-inner">${trainInner}</div></td>`;
     const depCell = `<td><div class="cell-inner">${escapeHtml(r.depTime||'')}</div></td>`;
-    const linkCell = `<td><div class="cell-inner" title="${isAdmin ? escapeHtml(r.ownerUid || '') : ''}">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>`;
+    const linkCell = `<td><div class="cell-inner" >${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>`;
 
     tr.innerHTML = `${lpCell}${alpCell}${trainCell}${depCell}${linkCell}`;
     dutyTable.appendChild(tr);
@@ -562,11 +554,10 @@ async function renderCombinedDuties(){
     el.__bound = true;
 
     el.addEventListener('focus', (ev)=>{
-      if(!isAdmin){ el.blur(); return; }
+      // if not editable, blur immediately (avoid weird blanking)
+      if(el.getAttribute('contenteditable') !== 'true'){ el.blur(); return; }
       const txt = el.textContent.trim();
-      if(/^(MAO|RN|OL|SL|L)\d+/i.test(txt) || /^(LP|ALP)\d+/i.test(txt)){
-        el.dataset._orig = txt; el.textContent = '';
-      } else { el.dataset._orig = ''; }
+      el.dataset._orig = txt;
       placeCaretAtEnd(el);
     });
 
@@ -576,7 +567,8 @@ async function renderCombinedDuties(){
     });
 
     el.addEventListener('blur', async (ev)=>{
-      if(!isAdmin){ await renderCombinedDuties(); return; }
+      // on blur, commit if editable
+      if(el.getAttribute('contenteditable') !== 'true'){ await renderCombinedDuties(); return; }
       await onEditableCommit(ev);
     });
   });
@@ -584,11 +576,10 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* ---------- commit edits as revisions ---------- */
+/* ---------- commit edits as revisions (with debounce for firebase writes) ---------- */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
-  if(!isAdmin){ await renderCombinedDuties(); return; }
 
   const linkId = el.dataset.link;
   const crewIndex = Number(el.dataset.crew);
@@ -601,13 +592,12 @@ async function onEditableCommit(e){
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
 
-  // migrate local to revisions shape
   localEdits[linkId][crewIndex] = normalizeToRevisions(localEdits[linkId][crewIndex]);
 
   const effectiveFrom = dateOnlyISO(selectedDate);
 
+  // handle clearing the field
   if(!newVal){
-    // remove only the field from the specific revision
     const revs = localEdits[linkId][crewIndex]._revisions || {};
     if(revs[effectiveFrom] && revs[effectiveFrom][field]) delete revs[effectiveFrom][field];
     if(revs[effectiveFrom]){
@@ -626,9 +616,10 @@ async function onEditableCommit(e){
     if(firebaseDb){
       try{
         const revPath = `/edits/${linkId}/${crewIndex}/_revisions/${effectiveFrom}/${field}`;
-        await firebaseDb.ref(revPath).set(null);
-        showToast('Cleared on Firebase');
-      }catch(err){ console.error('Firebase clear failed', err); showToast('Firebase clear failed'); }
+        // debounce deletion as well
+        scheduleFirebaseUpdate(revPath, null);
+        showToast('Cleared (pending sync)');
+      }catch(err){ console.error('Firebase clear schedule failed', err); showToast('Firebase clear failed'); }
     }
     await renderCombinedDuties();
     return;
@@ -653,25 +644,46 @@ async function onEditableCommit(e){
   if(firebaseDb){
     try{
       const revPath = `/edits/${linkId}/${crewIndex}/_revisions/${effectiveFrom}`;
-      const payload = Object.assign({}, revs[effectiveFrom]);
-      await firebaseDb.ref(revPath).update(payload);
-      // update metadata
+      // schedule an update (debounced)
+      scheduleFirebaseUpdate(revPath, Object.assign({}, revs[effectiveFrom]));
+      // schedule metadata update (debounced)
       const metaPath = `/edits/${linkId}/${crewIndex}`;
-      await firebaseDb.ref(metaPath).update({_updatedBy: userUid, _updatedByName: userReadable, _updatedAt: new Date().toISOString()});
-      showToast('Synced to Firebase');
-    }catch(err){ console.error('Firebase push failed', err); showToast('Firebase sync failed'); }
+      scheduleFirebaseUpdate(metaPath, {_updatedBy: userUid, _updatedByName: userReadable, _updatedAt: new Date().toISOString()});
+      showToast('Sync scheduled');
+    }catch(err){ console.error('Firebase push schedule failed', err); showToast('Firebase sync failed'); }
   }
 
   await renderCombinedDuties();
 }
 
-/* ---------- admin sign-in & detection ---------- */
+/* ---------- Debounced firebase updater to avoid rapid double-writes ---------- */
+function scheduleFirebaseUpdate(path, value){
+  if(!firebaseDb) return;
+  // simple debounce per-path
+  if(writeDebounce[path]) clearTimeout(writeDebounce[path].t);
+  writeDebounce[path] = writeDebounce[path] || {};
+  writeDebounce[path].v = value;
+  writeDebounce[path].t = setTimeout(async ()=>{
+    try{
+      const payload = writeDebounce[path].v;
+      // if payload === null -> remove
+      if(payload === null) await firebaseDb.ref(path).set(null);
+      else await firebaseDb.ref(path).update(payload);
+    }catch(err){
+      console.error('Debounced firebase write failed', path, err);
+    } finally {
+      delete writeDebounce[path];
+    }
+  }, WRITE_DEBOUNCE_MS);
+}
+
+/* ---------- admin sign-in & detection (improved) ---------- */
 if(adminSignInBtn){
   adminSignInBtn.addEventListener('click', async ()=>{
     if(!firebaseAuth){ alert('Firebase not initialized.'); return; }
     const choice = confirm('Use existing admin account to sign in? OK = Sign in, Cancel = Sign out');
     if(!choice){
-      try { await firebaseAuth.signOut(); showToast('Signed out'); await detectAdmin(); await renderCombinedDuties(); updateLoginStatusUI(); } catch(e){ console.warn(e); }
+      try { await firebaseAuth.signOut(); showToast('Signed out'); currentUser = loadLocalUser() || createLocalUser(); await detectAdmin(); await renderCombinedDuties(); updateLoginStatusUI(); } catch(e){ console.warn(e); alert('Sign-out failed'); }
       return;
     }
     const email = prompt('Admin email:'); if(!email) return;
@@ -697,7 +709,7 @@ async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
   try{
-    const ADMIN_UIDS = [];
+    const ADMIN_UIDS = []; // keep empty; prefer DB-driven
     if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
     if(firebaseDb && currentUser && currentUser.uid){
       const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value');
@@ -801,17 +813,11 @@ window.addEventListener('beforeinstallprompt', (e) => {
       if(!deferredPrompt) return;
       deferredPrompt.prompt();
       const choice = await deferredPrompt.userChoice;
-      if(choice.outcome === 'accepted'){
-        console.log('User accepted the install prompt');
-      } else {
-        console.log('User dismissed the install prompt');
-      }
       deferredPrompt = null;
     });
   }
 });
 
-/* optional: track when app is installed */
 window.addEventListener('appinstalled', () => {
   console.log('PWA was installed');
   if(installBtn) installBtn.style.display = 'none';
