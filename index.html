@@ -1,4 +1,5 @@
 <!doctype html>
+
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -8,9 +9,7 @@
   <!-- PWA / Install -->
 <link rel="manifest" href="/daily-duty-list/manifest.json">
 <link rel="apple-touch-icon" href="/daily-duty-list/icons/icon-192.png">
-<meta name="theme-color" content="#2563eb">
-
-<meta name="apple-mobile-web-app-title" content="Duty Table">
+<meta name="theme-color" content="#2563eb"><meta name="apple-mobile-web-app-title" content="Duty Table">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
@@ -70,23 +69,10 @@ tbody tr:nth-child(odd){background:#fbfdff}
 #adminSignInBtn{position:fixed;top:10px;right:10px;z-index:200;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
-.ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
+.ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}/* HIDE the Link No column on desktop (visual only). Keeps DOM intact so JS sizing and accessibility remain stable) */ table th:nth-child(5), table td:nth-child(5){ display: none; }
 
-/* HIDE the Link No column on desktop (visual only). Keeps DOM intact so JS sizing and accessibility remain stable) */
-table th:nth-child(5), table td:nth-child(5){ display: none; }
+@media (max-width:640px){ :root{ --train-col-width:110px; --row-height:60px; --pill-space:32px; --train-slot-height:20px; --train-gap:4px; } table{min-width:0;table-layout:auto} /* On small screens continue hiding Dep and Link columns to keep table compact */ thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none} thead th,tbody td{padding:6px} .train-number{font-size:0.86rem; max-width:calc(var(--train-col-width) - 16px)} .link-pill{font-size:0.64rem;padding:3px 6px;left:6px;top:6px} .dep-pill{font-size:0.64rem;padding:3px 6px;right:6px;top:6px} .cell-inner{padding: calc(var(--pill-space) / 10) var(--cell-padding-x)} } </style>
 
-@media (max-width:640px){
-  :root{ --train-col-width:110px; --row-height:60px; --pill-space:32px; --train-slot-height:20px; --train-gap:4px; }
-  table{min-width:0;table-layout:auto}
-  /* On small screens continue hiding Dep and Link columns to keep table compact */
-  thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
-  thead th,tbody td{padding:6px}
-  .train-number{font-size:0.86rem; max-width:calc(var(--train-col-width) - 16px)}
-  .link-pill{font-size:0.64rem;padding:3px 6px;left:6px;top:6px}
-  .dep-pill{font-size:0.64rem;padding:3px 6px;right:6px;top:6px}
-  .cell-inner{padding: calc(var(--pill-space) / 10) var(--cell-padding-x)}
-}
-</style>
 </head>
 <body>
   <div class="wrap">
@@ -96,44 +82,36 @@ table th:nth-child(5), table td:nth-child(5){ display: none; }
         <div class="sub">Madgaon Lobby</div>
         <div id="dateHeading">Loading date…</div>
         <div id="loginStatus" aria-live="polite"></div>
-      </div>
-
-      <div class="controls" role="toolbar" aria-label="Date controls">
-        <button id="prevDay" class="nav-btn" title="Previous day">◀</button>
-        <button id="dateBtn" class="date-icon-btn" title="Pick a date">📅</button>
-        <input id="datePicker" class="native-date" type="date" />
-        <button id="nextDay" class="nav-btn" title="Next day">▶</button>
-      </div>
-
-      <div class="tableWrap" aria-live="polite">
-        <table id="mainTable" aria-describedby="dateHeading">
-          <thead>
-            <tr>
-              <th style="text-align:center">LP</th>
-              <th style="text-align:center">ALP</th>
-              <th style="text-align:center">Train No:</th>
-              <th style="text-align:center">Dep</th>
-              <th style="text-align:center">Link No</th>
-            </tr>
-          </thead>
-          <tbody id="dutyTable">
-            <tr><td colspan="5" class="no-data">Loading data...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+      </div><div class="controls" role="toolbar" aria-label="Date controls">
+    <button id="prevDay" class="nav-btn" title="Previous day">◀</button>
+    <button id="dateBtn" class="date-icon-btn" title="Pick a date">📅</button>
+    <input id="datePicker" class="native-date" type="date" />
+    <button id="nextDay" class="nav-btn" title="Next day">▶</button>
   </div>
 
-  <button id="adminSignInBtn" title="Admin sign-in">Admin</button>
-  <!-- put next to adminSignInBtn or in headerArea -->
-<button id="installBtn" class="date-icon-btn" style="display:none; margin-left:8px;">Install</button>
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div class="tableWrap" aria-live="polite">
+    <table id="mainTable" aria-describedby="dateHeading">
+      <thead>
+        <tr>
+          <th style="text-align:center">LP</th>
+          <th style="text-align:center">ALP</th>
+          <th style="text-align:center">Train No:</th>
+          <th style="text-align:center">Dep</th>
+          <th style="text-align:center">Link No</th>
+        </tr>
+      </thead>
+      <tbody id="dutyTable">
+        <tr><td colspan="5" class="no-data">Loading data...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  </div><button id="adminSignInBtn" title="Admin sign-in">Admin</button>
 
-<script>
+  <!-- put next to adminSignInBtn or in headerArea --><button id="installBtn" class="date-icon-btn" style="display:none; margin-left:8px;">Install</button>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script><script>
 /* ---------- CONFIG: update if needed ---------- */
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyA39vWi_90CUyj0davz4XAXqMey1aNM6FU",
@@ -424,7 +402,7 @@ async function loadAllLinks(){
 
   results.forEach((linkData, idx) => {
     if(!linkData || linkData.__error) return;
-    const linkId = linkData.linkId ?? (`file#${idx+1}`);
+    const linkId = linkData.linkId ?? (typeof linkFiles[idx] === 'string' ? String(linkFiles[idx]).replace(/\.json$/i,'') : `file#${idx+1}`);
     const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
     const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
     const friendly = (linkData && (linkData.label || linkData.linkName || linkData.displayName || linkData.name)) || null;
@@ -823,6 +801,5 @@ window.addEventListener('appinstalled', () => {
   if(installBtn) installBtn.style.display = 'none';
 });
 
-</script>
-</body>
+</script></body>
 </html>
