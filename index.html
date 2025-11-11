@@ -5,12 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>MAO Link</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-<link rel="manifest" href="/daily-duty-list/manifest.json">
-<link rel="apple-touch-icon" href="/daily-duty-list/icons/icon-192.png">
 <meta name="theme-color" content="#2563eb">
-<meta name="apple-mobile-web-app-title" content="Duty Table">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
 :root{
   --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb;
@@ -59,7 +54,7 @@ tbody tr:nth-child(odd){background:#fbfdff}
 .toast.show{opacity:1;transform:translateY(0)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
 
-/* visually hide Link No column on desktop */
+/* hide Link No column visually on desktop */
 table th:nth-child(5), table td:nth-child(5){ display: none; }
 
 @media (max-width:640px){
@@ -111,25 +106,10 @@ table th:nth-child(5), table td:nth-child(5){ display: none; }
   </div>
 
   <button id="adminSignInBtn" title="Admin sign-in">Admin</button>
-  <button id="installBtn" class="date-icon-btn" style="display:none; margin-left:8px;">Install</button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-
 <script>
-/* ---------- CONFIG ---------- */
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyA39vWi_90CUyj0davz4XAXqMey1aNM6FU",
-  authDomain: "crewdutytable.firebaseapp.com",
-  databaseURL: "https://crewdutytable-default-rtdb.firebaseio.com",
-  projectId: "crewdutytable",
-  storageBucket: "crewdutytable.appspot.com",
-  messagingSenderId: "190634478615",
-  appId: "1:190634478615:web:28e998325f69fb8bf36052"
-};
-
+/* ----------- CONFIG ----------- */
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json','rnlink4.json',
@@ -139,20 +119,17 @@ const linkFiles = [
 const LS_KEY = 'lp_alp_edits_owner_v1';
 const POLL_MS = 15000;
 
+/* ----------- STATE ----------- */
 let localEdits = loadLocalEdits();
 let allCrewData = [];
 let selectedDate = new Date();
-let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
-
 let latestFbEdits = null;
+let firebaseDb = null;
 let realtimeListenerAttached = false;
 let pollingIntervalId = null;
 
-const writeDebounce = {};
-const WRITE_DEBOUNCE_MS = 700;
-
-/* ---------- DOM refs ---------- */
+/* ----------- DOM refs ----------- */
 const dutyTable = document.getElementById('dutyTable');
 const mainTable = document.getElementById('mainTable');
 const tableWrap = document.querySelector('.tableWrap');
@@ -165,7 +142,7 @@ const toast = document.getElementById('toast');
 const adminSignInBtn = document.getElementById('adminSignInBtn');
 const loginStatus = document.getElementById('loginStatus');
 
-/* ---------- utilities ---------- */
+/* ----------- UTILITIES ----------- */
 function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
@@ -177,123 +154,18 @@ function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(
 function sanitizeName(s){ const x = (s||"").replace(/\s+/g," ").trim(); return x.slice(0, 40); }
 function dateOnlyISO(d){ if(!d) return ''; if(d instanceof Date) return d.toISOString().slice(0,10); try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); } }
 
-/* ---------- revision helpers ---------- */
-function normalizeToRevisions(editObj){
-  if(!editObj || typeof editObj !== 'object') return {};
-  if(editObj._revisions && typeof editObj._revisions === 'object') return Object.assign({}, editObj);
-  const res = Object.assign({}, editObj);
-  const eff = editObj._effectiveFrom || editObj._effective_from || null;
-  const revs = {};
-  const fields = {};
-  Object.keys(editObj).forEach(k=>{
-    if(k.startsWith('_')) return;
-    fields[k] = editObj[k];
-    delete res[k];
-  });
-  if(Object.keys(fields).length){
-    const dateKey = eff || '1970-01-01';
-    revs[dateKey] = Object.assign({}, fields);
-    revs[dateKey]._updatedBy = editObj._updatedBy || editObj._updated_by || null;
-    revs[dateKey]._updatedByName = editObj._updatedByName || editObj._updated_by_name || null;
-    revs[dateKey]._updatedAt = editObj._updatedAt || editObj._updated_at || new Date().toISOString();
-    res._revisions = revs;
+/* ----------- short helpers ----------- */
+function formatTrainToken(token){
+  if(!token) return '';
+  const cleaned = token.toString().trim();
+  if(/^\d{5}$/.test(cleaned)){
+    return `<span class="train-number nowrap">${escapeHtml(cleaned)}</span>`;
   }
-  return res;
-}
-function getFieldFromEdit(editObj, field){
-  if(!editObj) return null;
-  const revs = editObj._revisions;
-  const sel = dateOnlyISO(selectedDate);
-  if(revs && typeof revs === 'object'){
-    const validDates = Object.keys(revs).filter(d=>typeof d === 'string' && d <= sel).sort();
-    if(validDates.length){
-      for(let i=validDates.length-1;i>=0;i--){
-        const candidate = revs[validDates[i]];
-        if(candidate && candidate[field] && String(candidate[field]).trim()) return String(candidate[field]).trim();
-      }
-    }
-  }
-  if(editObj[field] && String(editObj[field]).trim()){
-    const eff = editObj._effectiveFrom || editObj._effective_from || null;
-    if(!eff) return String(editObj[field]).trim();
-    if(eff && eff <= sel) return String(editObj[field]).trim();
-  }
-  return null;
+  const withBreaks = escapeHtml(cleaned).replace(/\//g, '/<wbr>');
+  return `<span class="train-number">${withBreaks}</span>`;
 }
 
-/* ---------- reconcile ---------- */
-function reconcileLocalWithFirebase(fbEdits){
-  if(!fbEdits || typeof fbEdits !== 'object') return false;
-  let changed = false;
-  Object.keys(localEdits || {}).forEach(linkId=>{
-    const localLink = localEdits[linkId] || {};
-    Object.keys(localLink).forEach(idxKey=>{
-      const localObj = localLink[idxKey];
-      const fbObjRaw = fbEdits[linkId] && fbEdits[linkId][idxKey];
-      if(!fbObjRaw){
-        delete localEdits[linkId][idxKey];
-        changed = true;
-      } else {
-        const fbObj = normalizeToRevisions(fbObjRaw);
-        if(fbObj._revisions && Object.keys(fbObj._revisions).length){
-          localEdits[linkId][idxKey] = fbObj;
-          changed = true;
-        } else {
-          const localNorm = normalizeToRevisions(localObj);
-          localNorm._revisions = localNorm._revisions || {};
-          if(fbObj._revisions){
-            Object.keys(fbObj._revisions).forEach(d=>{
-              localNorm._revisions[d] = localNorm._revisions[d] || fbObj._revisions[d];
-            });
-            localEdits[linkId][idxKey] = localNorm;
-            changed = true;
-          }
-        }
-      }
-    });
-    if(localEdits[linkId] && Object.keys(localEdits[linkId]).length === 0){
-      delete localEdits[linkId];
-      changed = true;
-    }
-  });
-  if(changed) saveLocalEdits();
-  return changed;
-}
-
-/* ---------- firebase realtime & polling ---------- */
-function attachRealtimeEditsListener(){
-  if(!firebaseDb || realtimeListenerAttached) return;
-  try{
-    realtimeListenerAttached = true;
-    firebaseDb.ref('/edits').on('value', snap=>{
-      try{
-        latestFbEdits = snap.val() || {};
-        reconcileLocalWithFirebase(latestFbEdits);
-        renderCombinedDuties();
-      }catch(e){
-        console.warn('Realtime handler error', e);
-      }
-    });
-    if(pollingIntervalId){ clearInterval(pollingIntervalId); pollingIntervalId = null; }
-  }catch(e){ console.warn('attachRealtimeEditsListener failed', e); }
-}
-
-function startPollingFallback(){
-  if(pollingIntervalId || !firebaseDb || realtimeListenerAttached) return;
-  pollingIntervalId = setInterval(async ()=>{
-    try{
-      const snap = await firebaseDb.ref('/edits').once('value');
-      const fb = snap.val() || {};
-      if(JSON.stringify(fb) !== JSON.stringify(latestFbEdits)){
-        latestFbEdits = fb;
-        reconcileLocalWithFirebase(latestFbEdits);
-        renderCombinedDuties();
-      }
-    }catch(e){ /* ignore network errors */ }
-  }, POLL_MS);
-}
-
-/* ---------- deterministic mapper ---------- */
+/* ----------- mapping / normalization ----------- */
 function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase().trim();
@@ -314,17 +186,7 @@ function getShortLinkLabel(linkId) {
   return String(linkId).toUpperCase();
 }
 
-function formatTrainToken(token){
-  if(!token) return '';
-  const cleaned = token.toString().trim();
-  if(/^\d{5}$/.test(cleaned)){
-    return `<span class="train-number nowrap">${escapeHtml(cleaned)}</span>`;
-  }
-  const withBreaks = escapeHtml(cleaned).replace(/\//g, '/<wbr>');
-  return `<span class="train-number">${withBreaks}</span>`;
-}
-
-/* ---------- layout helpers ---------- */
+/* ----------- layout helpers ----------- */
 function setTableWrapPaddingAndHeader(){
   const header = document.querySelector('.headerArea');
   const controls = document.querySelector('.controls');
@@ -362,7 +224,7 @@ function alignHeaderWidths(){
   if(mainWidth) mainTable.style.width = mainWidth + 'px';
 }
 
-/* ---------- date controls ---------- */
+/* ----------- date controls ----------- */
 dateBtn.addEventListener('click', ()=>{ datePicker.focus(); datePicker.click(); });
 datePicker.addEventListener('change', ()=>{ selectedDate = datePicker.value ? new Date(datePicker.value+'T00:00:00') : new Date(); setSelectedDate(selectedDate); renderCombinedDuties(); });
 prevBtn.addEventListener('click', ()=> changeDate(-1));
@@ -370,7 +232,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* ---------- load link files (normalizes linkId) ---------- */
+/* ----------- load link files (normalize linkId) ----------- */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async (f, idx) => {
@@ -462,7 +324,7 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* ---------- render duties (uses linkIdRaw to decide pill label) ---------- */
+/* ----------- render duties (uses raw hint to prefer RN/OL/SL) ----------- */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
@@ -470,16 +332,6 @@ async function renderCombinedDuties(){
   let fbEdits = {};
   if(latestFbEdits !== null){
     fbEdits = latestFbEdits;
-  } else if(firebaseDb){
-    try{
-      const snap = await firebaseDb.ref('/edits').once('value');
-      fbEdits = snap.val() || {};
-      latestFbEdits = fbEdits;
-      reconcileLocalWithFirebase(fbEdits);
-    }catch(e){
-      fbEdits = {};
-      console.warn('fbEdits load failed', e);
-    }
   }
 
   const crewsByLink = allCrewData.reduce((acc,crew)=>{ (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
@@ -547,22 +399,48 @@ async function renderCombinedDuties(){
     const mayEditALP = !!isAdmin || (currentUser && currentUser.uid && r.ownerUid && currentUser.uid === r.ownerUid);
     const ownerTag = (r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
-    // ----- prefer linkIdRaw when deciding label (ensures RN/OL/SL show correctly) -----
+    // --- improved mapping: prefer linkIdRaw to detect RN/OL/SL hints ---
     let linkLabel = '';
     (function(){
       try{
         const sample = Array.isArray(allCrewData) ? allCrewData.find(x => String(x.linkId) === String(r.link)) : null;
-        let raw = sample && sample.linkIdRaw ? String(sample.linkIdRaw).toLowerCase() : null;
-        if(raw) raw = raw.replace(/^.*[\/\\]/, '').replace(/\.json$/i, '').trim();
-        let chosen = raw || String(r.link || '').toLowerCase();
-        chosen = chosen.replace(/\.json$/i,'').trim();
-        const computed = (typeof getShortLinkLabel === 'function') ? getShortLinkLabel(chosen) : String(chosen).toUpperCase();
-        linkLabel = escapeHtml(computed || getShortLinkLabel(r.link) || r.link || '');
+        let raw = sample && sample.linkIdRaw ? String(sample.linkIdRaw).toLowerCase().trim() : null;
+        if(raw) raw = raw.replace(/^.*[\/\\]/, '').replace(/\.json$/i,'').trim();
+
+        // helper to extract number for prefixes
+        const numForRaw = (prefixes) => {
+          if(!raw) return null;
+          for(const p of prefixes){
+            const re = new RegExp('^' + p + '[^\\d]*?(\\d+)$', 'i');
+            const m = raw.match(re);
+            if(m && m[1]) return m[1];
+          }
+          return null;
+        };
+
+        let computed = '';
+        const rnNum = numForRaw(['rnlink','rn','rn-?link']);
+        if(rnNum){ computed = 'RN' + rnNum; }
+        const olNum = numForRaw(['ollink','ol','ol-?link']);
+        if(!computed && olNum){ computed = 'OL' + olNum; }
+        const slNum = numForRaw(['sllink','sl','sl-?link']);
+        if(!computed && slNum){ computed = 'SL' + slNum; }
+
+        if(!computed && raw){
+          const maoNum = (raw.match(/^(?:link|l|mao)[^\d]*?(\d+)$/i) || [])[1];
+          if(maoNum) computed = 'MAO' + maoNum;
+        }
+
+        if(!computed){
+          const chosen = (raw || String(r.link || '')).replace(/\.json$/i,'').trim();
+          computed = (typeof getShortLinkLabel === 'function') ? getShortLinkLabel(chosen) : (chosen||'').toUpperCase();
+        }
+
+        linkLabel = escapeHtml(computed || getShortLinkLabel(r.link) || (r.link || '').toUpperCase());
       }catch(e){
-        linkLabel = escapeHtml(getShortLinkLabel(r.link) || r.link || '');
+        linkLabel = escapeHtml(getShortLinkLabel(r.link) || (r.link || '').toUpperCase());
       }
     })();
-    // -------------------------------------------------------------------------------
 
     const lpCell = `
       <td class="lp-cell">
@@ -591,6 +469,7 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
+  /* editable handlers */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
@@ -616,7 +495,51 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* ---------- commit edits ---------- */
+/* ----------- revisions helpers used earlier ----------- */
+function normalizeToRevisions(editObj){
+  if(!editObj || typeof editObj !== 'object') return {};
+  if(editObj._revisions && typeof editObj._revisions === 'object') return Object.assign({}, editObj);
+  const res = Object.assign({}, editObj);
+  const eff = editObj._effectiveFrom || editObj._effective_from || null;
+  const revs = {};
+  const fields = {};
+  Object.keys(editObj).forEach(k=>{
+    if(k.startsWith('_')) return;
+    fields[k] = editObj[k];
+    delete res[k];
+  });
+  if(Object.keys(fields).length){
+    const dateKey = eff || '1970-01-01';
+    revs[dateKey] = Object.assign({}, fields);
+    revs[dateKey]._updatedBy = editObj._updatedBy || editObj._updated_by || null;
+    revs[dateKey]._updatedByName = editObj._updatedByName || editObj._updated_by_name || null;
+    revs[dateKey]._updatedAt = editObj._updatedAt || editObj._updated_at || new Date().toISOString();
+    res._revisions = revs;
+  }
+  return res;
+}
+function getFieldFromEdit(editObj, field){
+  if(!editObj) return null;
+  const revs = editObj._revisions;
+  const sel = dateOnlyISO(selectedDate);
+  if(revs && typeof revs === 'object'){
+    const validDates = Object.keys(revs).filter(d=>typeof d === 'string' && d <= sel).sort();
+    if(validDates.length){
+      for(let i=validDates.length-1;i>=0;i--){
+        const candidate = revs[validDates[i]];
+        if(candidate && candidate[field] && String(candidate[field]).trim()) return String(candidate[field]).trim();
+      }
+    }
+  }
+  if(editObj[field] && String(editObj[field]).trim()){
+    const eff = editObj._effectiveFrom || editObj._effective_from || null;
+    if(!eff) return String(editObj[field]).trim();
+    if(eff && eff <= sel) return String(editObj[field]).trim();
+  }
+  return null;
+}
+
+/* ----------- commit edits (simplified) ----------- */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
@@ -651,14 +574,6 @@ async function onEditableCommit(e){
     }
     saveLocalEdits();
     showToast('Cleared locally');
-
-    if(firebaseDb){
-      try{
-        const revPath = `/edits/${linkId}/${crewIndex}/_revisions/${effectiveFrom}/${field}`;
-        scheduleFirebaseUpdate(revPath, null);
-        showToast('Cleared (pending sync)');
-      }catch(err){ console.error('Firebase clear schedule failed', err); showToast('Firebase clear failed'); }
-    }
     await renderCombinedDuties();
     return;
   }
@@ -677,78 +592,27 @@ async function onEditableCommit(e){
 
   saveLocalEdits();
   showToast('Saved locally');
-
-  if(firebaseDb){
-    try{
-      const revPath = `/edits/${linkId}/${crewIndex}/_revisions/${effectiveFrom}`;
-      scheduleFirebaseUpdate(revPath, Object.assign({}, revs[effectiveFrom]));
-      const metaPath = `/edits/${linkId}/${crewIndex}`;
-      scheduleFirebaseUpdate(metaPath, {_updatedBy: userUid, _updatedByName: userReadable, _updatedAt: new Date().toISOString()});
-      showToast('Sync scheduled');
-    }catch(err){ console.error('Firebase push schedule failed', err); showToast('Firebase sync failed'); }
-  }
-
   await renderCombinedDuties();
 }
 
-/* ---------- debounced firebase writes ---------- */
-function scheduleFirebaseUpdate(path, value){
-  if(!firebaseDb) return;
-  if(writeDebounce[path]) clearTimeout(writeDebounce[path].t);
-  writeDebounce[path] = writeDebounce[path] || {};
-  writeDebounce[path].v = value;
-  writeDebounce[path].t = setTimeout(async ()=>{
-    try{
-      const payload = writeDebounce[path].v;
-      if(payload === null) await firebaseDb.ref(path).set(null);
-      else await firebaseDb.ref(path).update(payload);
-    }catch(err){
-      console.error('Debounced firebase write failed', path, err);
-    } finally {
-      delete writeDebounce[path];
-    }
-  }, WRITE_DEBOUNCE_MS);
+/* ----------- init (no firebase inlined here) ----------- */
+async function init(){
+  setSelectedDate(new Date());
+  currentUser = loadLocalUser() || createLocalUser();
+  saveLocalUser(currentUser);
+  localEdits = loadLocalEdits();
+  await loadAllLinks();
+  window.addEventListener('resize', () => setTimeout(setTableWrapPaddingAndHeader, 60));
+  window.addEventListener('orientationchange', () => setTimeout(setTableWrapPaddingAndHeader, 140));
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(setTableWrapPaddingAndHeader, 80));
+  updateLoginStatusUI();
 }
+document.addEventListener('DOMContentLoaded', init);
 
-/* ---------- admin sign-in & detection ---------- */
-if(adminSignInBtn){
-  adminSignInBtn.addEventListener('click', async ()=>{
-    if(!firebaseAuth){ alert('Firebase not initialized.'); return; }
-    const choice = confirm('Use existing admin account to sign in? OK = Sign in, Cancel = Sign out');
-    if(!choice){
-      try { await firebaseAuth.signOut(); showToast('Signed out'); currentUser = loadLocalUser() || createLocalUser(); await detectAdmin(); await renderCombinedDuties(); updateLoginStatusUI(); } catch(e){ console.warn(e); alert('Sign-out failed'); }
-      return;
-    }
-    const email = prompt('Admin email:'); if(!email) return;
-    const pwd = prompt('Password:'); if(!pwd) return;
-    try {
-      const cred = await firebaseAuth.signInWithEmailAndPassword(email, pwd);
-      const fbUser = firebaseAuth.currentUser || (cred && cred.user);
-      if(fbUser){
-        currentUser = { uid: fbUser.uid, displayName: fbUser.displayName || fbUser.email || fbUser.uid, email: fbUser.email || null, anon: !!fbUser.isAnonymous };
-        saveLocalUser(currentUser);
-      }
-      showToast('Signed in');
-      await detectAdmin();
-      await renderCombinedDuties();
-      updateLoginStatusUI();
-    } catch (err){
-      alert('Sign-in failed: ' + (err.message || err));
-    }
-  });
-}
-
+/* ----------- login helpers (minimal) ----------- */
 async function detectAdmin(){
   currentUser = currentUser || loadLocalUser() || createLocalUser();
   isAdmin = false;
-  try{
-    const ADMIN_UIDS = [];
-    if(ADMIN_UIDS.includes(currentUser.uid)) isAdmin = true;
-    if(firebaseDb && currentUser && currentUser.uid){
-      const snap = await firebaseDb.ref(`/meta/admins/${currentUser.uid}`).once('value');
-      if(snap.exists() && snap.val() === true) isAdmin = true;
-    }
-  }catch(e){ console.warn('admin detect err', e); }
   updateLoginStatusUI();
 }
 function updateLoginStatusUI(){
@@ -758,103 +622,11 @@ function updateLoginStatusUI(){
   adminSignInBtn.style.display = 'inline-block';
 }
 
-/* ---------- visibility / online handlers ---------- */
-document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState === 'visible' && firebaseDb){
-    firebaseDb.ref('/edits').once('value').then(snap=>{
-      latestFbEdits = snap.val() || {};
-      reconcileLocalWithFirebase(latestFbEdits);
-      renderCombinedDuties();
-    }).catch(()=>{});
-  }
-});
-window.addEventListener('online', ()=>{
-  if(firebaseDb){
-    attachRealtimeEditsListener();
-    firebaseDb.ref('/edits').once('value').then(snap=>{
-      latestFbEdits = snap.val() || {};
-      reconcileLocalWithFirebase(latestFbEdits);
-      renderCombinedDuties();
-    }).catch(()=>{});
-  }
-});
+/* ----------- end ---------- */
 
-/* ---------- init firebase & app ---------- */
-try {
-  firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
-  firebaseAuth = firebase.auth();
-  firebaseDb = firebase.database();
-  if (firebaseAuth && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
-    firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
-  }
-  firebaseAuth.onAuthStateChanged(async (user) => {
-    if (user){
-      currentUser = { uid: user.uid, displayName: user.displayName || user.email || user.uid, email: user.email || null, anon: user.isAnonymous || false };
-    } else {
-      currentUser = loadLocalUser() || createLocalUser();
-    }
-    await detectAdmin();
-    updateLoginStatusUI();
-    await renderCombinedDuties();
-  });
-} catch(e){
-  console.warn('Firebase init error', e);
-  currentUser = loadLocalUser() || createLocalUser();
-  updateLoginStatusUI();
-}
-
-/* ---------- app start ---------- */
-async function init(){
-  setSelectedDate(new Date());
-  currentUser = loadLocalUser() || createLocalUser();
-  saveLocalUser(currentUser);
-  localEdits = loadLocalEdits();
-  await loadAllLinks();
-  attachRealtimeEditsListener();
-  startPollingFallback();
-  window.addEventListener('resize', () => setTimeout(setTableWrapPaddingAndHeader, 60));
-  window.addEventListener('orientationchange', () => setTimeout(setTableWrapPaddingAndHeader, 140));
-  if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(setTableWrapPaddingAndHeader, 80));
-  updateLoginStatusUI();
-}
-document.addEventListener('DOMContentLoaded', init);
-
-/* Service worker registration */
-if('serviceWorker' in navigator){
-  window.addEventListener('load', async () => {
-    try {
-      await navigator.serviceWorker.register('/daily-duty-list/service-worker.js');
-      console.log('Service Worker registered');
-    } catch (err) {
-      console.warn('Service Worker registration failed:', err);
-    }
-  });
-}
-
-/* Install prompt handling */
-let deferredPrompt = null;
-const installBtn = document.getElementById('installBtn');
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  if (installBtn) {
-    installBtn.style.display = 'inline-flex';
-    installBtn.addEventListener('click', async () => {
-      installBtn.style.display = 'none';
-      if(!deferredPrompt) return;
-      deferredPrompt.prompt();
-      deferredPrompt = null;
-    });
-  }
-});
-window.addEventListener('appinstalled', () => {
-  if(installBtn) installBtn.style.display = 'none';
-});
-/* ---------- End ---------- */
-
-/* Diagnostics to run in Console after load:
+/* Quick diagnostic to run in Console:
    const uniq = Array.from(new Set((allCrewData||[]).map(x=>x.linkId)));
-   console.table(uniq.map(id => ({ linkId: id, raw: (allCrewData.find(x=>x.linkId===id)||{}).linkIdRaw, mapped: getShortLinkLabel(id) })));
+   console.table(uniq.map(id => ({ linkId: id, raw: (allCrewData.find(x=>x.linkId===id)||{}).linkIdRaw, mapped: getShortLinkLabel((allCrewData.find(x=>x.linkId===id)||{}).linkIdRaw || id) })));
 */
 </script>
 </body>
