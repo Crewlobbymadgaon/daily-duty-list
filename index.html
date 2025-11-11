@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>MAO Link</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<!-- PWA / Install -->
 <link rel="manifest" href="/daily-duty-list/manifest.json">
 <link rel="apple-touch-icon" href="/daily-duty-list/icons/icon-192.png">
 <meta name="theme-color" content="#2563eb">
@@ -14,10 +15,21 @@
 
 <style>
 :root{
-  --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb;
-  --radius:12px; --divider:#1f6feb; --border:#cdd4e1; --pill-border: rgba(0,0,0,0.08);
-  --row-height:64px; --train-col-width:120px; --pill-space:36px; --cell-padding-x:10px;
-  --train-slot-height:24px; --train-gap:6px;
+  --bg:#f4f7fb;
+  --card:#fff;
+  --muted:#6b7280;
+  --accent:#0f172a;
+  --accent-2:#2563eb;
+  --radius:12px;
+  --divider:#1f6feb;
+  --border:#cdd4e1;
+  --pill-border: rgba(0,0,0,0.08);
+  --row-height:64px;
+  --train-col-width:120px;
+  --pill-space:36px;
+  --cell-padding-x:10px;
+  --train-slot-height:24px;
+  --train-gap:6px;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -301,39 +313,38 @@ function startPollingFallback(){
   }, POLL_MS);
 }
 
-  function getShortLinkLabel(linkId) {
+/* ---------- deterministic mapper (expects normalized tokens like link1, rnlink1, sllink1, ollink1) ---------- */
+function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase().trim();
 
-  // Exact patterns first:
-  let m;
-
-  // RN: rnlink1, rnlink2, rn1 (etc)
-  m = id.match(/^rnlink?[-_]?(\d+)$/) || id.match(/^rn[-_]?(\d+)$/);
-  if (m) return `RN${m[1]}`;
-
-  // OL: ollink1, ol1, ol-link1
-  m = id.match(/^ollink?[-_]?(\d+)$/) || id.match(/^ol[-_]?(\d+)$/);
-  if (m) return `OL${m[1]}`;
-
-  // SL: sllink1, sl1
-  m = id.match(/^sllink?[-_]?(\d+)$/) || id.match(/^sl[-_]?(\d+)$/);
-  if (m) return `SL${m[1]}`;
-
-  // MAO: link1, l1, mao1
-  m = id.match(/^link[-_]?(\d+)$/) || id.match(/^l[-_]?(\d+)$/) || id.match(/^mao[-_]?(\d+)$/);
+  // link1 => MAO1
+  let m = id.match(/^link(\d+)$/);
   if (m) return `MAO${m[1]}`;
 
-  // If the id contains a number and also contains a hint for RN/OL/SL use that, else MAO<number>
+  // rnlink1 => RN1
+  m = id.match(/^rnlink(\d+)$/);
+  if (m) return `RN${m[1]}`;
+
+  // sllink1 => SL1
+  m = id.match(/^sllink(\d+)$/);
+  if (m) return `SL${m[1]}`;
+
+  // ollink1 => OL1
+  m = id.match(/^ollink(\d+)$/);
+  if (m) return `OL${m[1]}`;
+
+  // fallback: try to extract number and hint
   const digits = id.match(/(\d+)/);
   if (digits) {
-    if (id.includes('rn')) return `RN${digits[1]}`;
-    if (id.includes('ol')) return `OL${digits[1]}`;
-    if (id.includes('sl')) return `SL${digits[1]}`;
-    return `MAO${digits[1]}`;
+    const d = digits[1];
+    if (id.includes('rn')) return `RN${d}`;
+    if (id.includes('ol')) return `OL${d}`;
+    if (id.includes('sl')) return `SL${d}`;
+    return `MAO${d}`;
   }
 
-  // fallback: uppercase raw
+  // final fallback
   return String(linkId).toUpperCase();
 }
 
@@ -393,7 +404,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* ---------- load link files (diagnostic, robust) ---------- */
+/* ---------- load link files (diagnostic, normalized linkId) ---------- */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async (f, idx) => {
@@ -446,15 +457,48 @@ async function loadAllLinks(){
     return;
   }
 
+  // Build allCrewData with normalized linkId tokens
   results.forEach((res, idx) => {
     if(!res || !res.ok || !res.json) return;
     const linkData = res.json;
-    const fallbackId = (typeof linkFiles[res.idx] === 'string') ? String(linkFiles[res.idx]).replace(/\.json$/i,'') : `file#${idx+1}`;
-    const linkId = linkData.linkId ?? fallbackId;
+
+    // derive fallback from filename
+    const rawFallback = (typeof linkFiles[res.idx] === 'string') ? String(linkFiles[res.idx]).replace(/\.json$/i,'') : `file#${idx+1}`;
+
+    // prefer explicit linkId from JSON, else fallback
+    let rawLinkId = (linkData.linkId && String(linkData.linkId)) || rawFallback || '';
+
+    // normalize: drop path, drop .json, trim, lowercase
+    rawLinkId = rawLinkId.replace(/^.*[\/\\]/, '').replace(/\.json$/i, '').trim().toLowerCase();
+
+    // canonicalize common forms into predictable tokens:
+    rawLinkId = rawLinkId
+      .replace(/^l(\d+)$/,'link$1')
+      .replace(/^link[-_]?(\d+)$/,'link$1')
+      .replace(/^mao[-_]?(\d+)$/,'link$1')   // treat maoN as linkN
+      .replace(/^rn[-_]?(\d+)$/,'rnlink$1')
+      .replace(/^rn-?link[-_]?(\d+)$/,'rnlink$1')
+      .replace(/^ol[-_]?(\d+)$/,'ollink$1')
+      .replace(/^s?l[-_]?(\d+)$/,'sllink$1')
+      .replace(/[^a-z0-9]/g,''); // strip stray chars
+
+    if(!rawLinkId) rawLinkId = rawFallback.replace(/[^a-z0-9]/g,'');
+
+    const linkId = rawLinkId;
     const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
     const crewArr = Array.isArray(linkData.crew) ? linkData.crew : [];
     const friendly = linkData.label || linkData.linkName || linkData.displayName || linkData.name || null;
-    crewArr.forEach((crew, crewIndex) => allCrewData.push({...crew, linkId, lastUpdatedDate: lastUpdated, crewIndex, friendlyLabel: friendly}));
+
+    crewArr.forEach((crew, crewIndex) => {
+      allCrewData.push({
+        ...crew,
+        linkId,               // normalized token (e.g. link1, rnlink2, sllink1, ollink1)
+        linkIdRaw: linkData.linkId || rawFallback, // original value for debugging
+        lastUpdatedDate: lastUpdated,
+        crewIndex,
+        friendlyLabel: friendly
+      });
+    });
   });
 
   await renderCombinedDuties();
@@ -549,7 +593,7 @@ async function renderCombinedDuties(){
 
     const lpCell = `
       <td class="lp-cell">
-        <div class="link-pill" title="${linkLabel}">${linkLabel}</div>
+        <div class="link-pill">${linkLabel}</div>
         <div class="cell-inner">
           <div class="editable" contenteditable="${mayEditLP? 'true':'false'}"
             data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName"
@@ -838,6 +882,20 @@ window.addEventListener('appinstalled', () => {
   console.log('PWA was installed');
   if(installBtn) installBtn.style.display = 'none';
 });
+
+/* ---------- end of script ---------- */
+/*
+  Diagnostics you can run in DevTools (Console) after page loads:
+  1) See normalized linkIds and mapping:
+     const uniq = Array.from(new Set((allCrewData||[]).map(x=>x.linkId)));
+     console.table(uniq.map(id => ({ linkId: id, raw: (allCrewData.find(x=>x.linkId===id)||{}).linkIdRaw, mapped: getShortLinkLabel(id) })));
+
+  2) Quick checks:
+     getShortLinkLabel('link1')   // MAO1
+     getShortLinkLabel('rnlink2') // RN2
+     getShortLinkLabel('sllink1') // SL1
+     getShortLinkLabel('ollink1') // OL1
+*/
 </script>
 </body>
 </html>
