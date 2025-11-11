@@ -7,7 +7,25 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#2563eb">
 <style>
-:root{--bg:#f4f7fb;--card:#fff;--muted:#6b7280;--accent:#0f172a;--accent-2:#2563eb;--radius:12px;--divider:#1f6feb;--border:#cdd4e1;--pill-border: rgba(0,0,0,0.08);--row-height:64px;--train-col-width:120px;--pill-space:36px;--cell-padding-x:10px;--train-slot-height:24px;--train-gap:6px}
+:root{
+  --bg:#f4f7fb;
+  --card:#fff;
+  --muted:#6b7280;
+  --accent:#0f172a;
+  --accent-2:#2563eb;
+  --radius:12px;
+  --divider:#1f6feb;
+  --border:#cdd4e1;
+  --pill-border: rgba(0,0,0,0.08);
+
+  /* TUNED: smaller row & train column to give more room for names */
+  --row-height:58px;        /* slightly shorter rows */
+  --train-col-width:96px;   /* reduced from 120px to 96px */
+  --pill-space:34px;
+  --cell-padding-x:10px;
+  --train-slot-height:22px;
+  --train-gap:6px;
+}
 *{box-sizing:border-box}html,body{height:100%}body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent);-webkit-font-smoothing:antialiased}
 .wrap{max-width:1100px;margin:0 auto;padding:14px}.card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);overflow:hidden}
 .headerArea{position:sticky; top:0;background:var(--card);padding:14px 16px;border-bottom:1px solid rgba(0,0,0,0.04);z-index:60;display:flex;flex-direction:column;align-items:center;gap:6px;}
@@ -26,8 +44,24 @@ tbody tr:nth-child(odd){background:#fbfdff}.no-data{text-align:center;color:var(
 .train-cell{ position:relative; padding-top:var(--pill-space); box-sizing:border-box; }.dep-pill{ position:absolute; top:6px; right:8px; background:transparent; border:1.5px solid var(--pill-border); padding:4px 8px; border-radius:999px; font-size:0.72rem; font-weight:700; color:var(--muted); pointer-events:none; z-index:60; }
 .train-stack{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--train-gap); padding:2px 4px; max-width:100%; box-sizing:border-box; min-height: calc( (var(--train-slot-height) * 2) + var(--train-gap) ); }
 .train-slot{ height:var(--train-slot-height); display:flex; align-items:center; justify-content:center; width:100%; box-sizing:border-box; }
-.train-number{ font-weight:700; font-size:0.9rem; line-height:1; text-align:center; max-width:calc(var(--train-col-width) - 16px); white-space:normal; word-break:break-word; }
-.train-number.nowrap{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+/* TUNED: make train-number respect the reduced train-col-width and wrap earlier */
+.train-number{
+  font-weight:700;
+  font-size:0.9rem;
+  line-height:1;
+  text-align:center;
+  max-width:calc(var(--train-col-width) - 18px);
+  white-space:normal;
+  word-break:break-word;
+}
+.train-number.nowrap{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:calc(var(--train-col-width) - 18px);
+}
+
 .train-divider{ width:60%; height:2px; background:var(--divider); border-radius:2px; margin:0; opacity:1; }
 .editable{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; padding:6px 8px; box-sizing:border-box; text-align:center; font-weight:700; border-radius:6px; outline:none; cursor:text; }
 .editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
@@ -38,7 +72,7 @@ tbody tr:nth-child(odd){background:#fbfdff}.no-data{text-align:center;color:var(
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
 table th:nth-child(5), table td:nth-child(5){ display: none; }
 @media (max-width:640px){
-  :root{ --train-col-width:110px; --row-height:60px; --pill-space:32px; --train-slot-height:20px; --train-gap:4px; }
+  :root{ --train-col-width:90px; --row-height:60px; --pill-space:32px; --train-slot-height:20px; --train-gap:4px; }
   table{min-width:0;table-layout:auto}
   thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
   thead th,tbody td{padding:6px}
@@ -262,16 +296,12 @@ async function loadAllLinks(){
     if(!res || !res.ok || !res.json) return;
     const linkData = res.json;
 
-    // --- IMPORTANT: prefer the FILENAME (linkFiles[res.idx]) when deriving linkId ---
     const filenameFallback = (typeof linkFiles[res.idx] === 'string') ? String(linkFiles[res.idx]).replace(/\.json$/i,'') : `file${idx+1}`;
-    // keep original JSON linkId (if any) for debugging but DO NOT let it override filename hint
     const originalJsonLinkId = linkData.linkId ? String(linkData.linkId) : null;
 
-    // base raw token comes from filenameFallback (this fixes mao5-from-json issues)
     let rawLinkId = filenameFallback || originalJsonLinkId || '';
     rawLinkId = rawLinkId.replace(/^.*[\/\\]/, '').replace(/\.json$/i, '').trim().toLowerCase();
 
-    // normalize common variants into canonical tokens: link1, rnlink1, sllink1, ollink1
     rawLinkId = rawLinkId
       .replace(/^l(\d+)$/,'link$1')
       .replace(/^link[-_]?(\d+)$/,'link$1')
@@ -293,7 +323,6 @@ async function loadAllLinks(){
       allCrewData.push({
         ...crew,
         linkId,
-        // store original JSON id separately for diagnostics (but do NOT use it for label)
         linkIdOriginal: originalJsonLinkId || filenameFallback,
         lastUpdatedDate: lastUpdated,
         crewIndex,
@@ -371,7 +400,6 @@ async function renderCombinedDuties(){
     const mayEditALP = !!isAdmin || (currentUser && currentUser.uid && r.ownerUid && currentUser.uid === r.ownerUid);
     const ownerTag = (r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
-    // prefer filename-derived label (linkId) which was set from filenameFallback in loadAllLinks()
     const linkLabel = escapeHtml(getShortLinkLabel(r.link));
 
     const lpCell = `
