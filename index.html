@@ -302,36 +302,40 @@ function startPollingFallback(){
 }
 
 /* ---------- defensive getShortLinkLabel ---------- */
+// Robust getShortLinkLabel — handles: link1, l1, rnlink1, rn1, ollink1, ol1, sllink1, sl1
 function getShortLinkLabel(linkId) {
-  try {
-    if (!linkId) return '';
-    const id = String(linkId).toLowerCase();
+  if (!linkId) return '';
+  const id = String(linkId).toLowerCase().trim();
 
-    if (id.startsWith('link')) {
-      const num = id.replace(/\D/g, '') || '';
-      return `MAO${num}`;
-    }
-    if (id.startsWith('rnlink')) {
-      const num = id.replace(/\D/g, '') || '';
-      return `RN${num}`;
-    }
-    if (id.startsWith('ollink')) {
-      const num = id.replace(/\D/g, '') || '';
-      return `OL${num}`;
-    }
-    if (id.startsWith('sllink')) {
-      const num = id.replace(/\D/g, '') || '';
-      return `SL${num}`;
-    }
+  // exact / common patterns
+  // rn (rnlink, rn, rn-link), prefer RN
+  let m = id.match(/^(?:rn(?:link)?|rn-?link|rn)[^\d]*(\d+)$/);
+  if (m) return `RN${m[1]}`;
 
-    const digits = id.match(/\d+/);
-    if (digits) return `MAO${digits[0]}`;
+  // ol (ollink, ol, ol-link)
+  m = id.match(/^(?:ol(?:link)?|ol-?link|ol)[^\d]*(\d+)$/);
+  if (m) return `OL${m[1]}`;
 
-    return String(linkId).toUpperCase();
-  } catch (err) {
-    console.error('getShortLinkLabel error', err, linkId);
-    return String(linkId || '').toUpperCase();
+  // sl (sllink, sl, sl-link)
+  m = id.match(/^(?:sl(?:link)?|sl-?link|sl)[^\d]*(\d+)$/);
+  if (m) return `SL${m[1]}`;
+
+  // MAO link pattern: linkX, lX, maoX, mao-linkX
+  m = id.match(/^(?:link|l|mao|mao-?link)[^\d]*(\d+)$/);
+  if (m) return `MAO${m[1]}`;
+
+  // If it's something like "link1" but with extra text, try to extract the first number and use prefix mapping:
+  const digits = id.match(/\d+/);
+  if (digits) {
+    // try to detect prefix letters to map: if it contains rn -> RN, ol -> OL, sl -> SL else MAO
+    if (id.includes('rn')) return `RN${digits[0]}`;
+    if (id.includes('ol')) return `OL${digits[0]}`;
+    if (id.includes('sl')) return `SL${digits[0]}`;
+    return `MAO${digits[0]}`;
   }
+
+  // fallback: uppercase raw
+  return String(linkId).toUpperCase();
 }
 
 function formatTrainToken(token){
