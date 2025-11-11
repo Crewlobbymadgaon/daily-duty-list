@@ -5,31 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>MAO Link</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-<!-- PWA / Install -->
 <link rel="manifest" href="/daily-duty-list/manifest.json">
 <link rel="apple-touch-icon" href="/daily-duty-list/icons/icon-192.png">
 <meta name="theme-color" content="#2563eb">
 <meta name="apple-mobile-web-app-title" content="Duty Table">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-
 <style>
 :root{
-  --bg:#f4f7fb;
-  --card:#fff;
-  --muted:#6b7280;
-  --accent:#0f172a;
-  --accent-2:#2563eb;
-  --radius:12px;
-  --divider:#1f6feb;
-  --border:#cdd4e1;
-  --pill-border: rgba(0,0,0,0.08);
-  --row-height:64px;
-  --train-col-width:120px;
-  --pill-space:36px;
-  --cell-padding-x:10px;
-  --train-slot-height:24px;
-  --train-gap:6px;
+  --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb;
+  --radius:12px; --divider:#1f6feb; --border:#cdd4e1; --pill-border: rgba(0,0,0,0.08);
+  --row-height:64px; --train-col-width:120px; --pill-space:36px; --cell-padding-x:10px;
+  --train-slot-height:24px; --train-gap:6px;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -72,7 +59,7 @@ tbody tr:nth-child(odd){background:#fbfdff}
 .toast.show{opacity:1;transform:translateY(0)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
 
-/* HIDE the Link No column on desktop (visual only). Keeps DOM intact so JS sizing and accessibility remain stable) */
+/* visually hide Link No column on desktop */
 table th:nth-child(5), table td:nth-child(5){ display: none; }
 
 @media (max-width:640px){
@@ -132,7 +119,7 @@ table th:nth-child(5), table td:nth-child(5){ display: none; }
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-/* ---------- CONFIG: update if needed ---------- */
+/* ---------- CONFIG ---------- */
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyA39vWi_90CUyj0davz4XAXqMey1aNM6FU",
   authDomain: "crewdutytable.firebaseapp.com",
@@ -143,29 +130,25 @@ const FIREBASE_CONFIG = {
   appId: "1:190634478615:web:28e998325f69fb8bf36052"
 };
 
-/* list of JSON link files (must exist on same origin or be reachable) */
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
-  'rnlink1.json','rnlink2.json','rnlink3.json',
+  'rnlink1.json','rnlink2.json','rnlink3.json','rnlink4.json',
   'ollink1.json','sllink1.json'
 ];
 
 const LS_KEY = 'lp_alp_edits_owner_v1';
-const POLL_MS = 15000; // polling fallback when realtime fails
+const POLL_MS = 15000;
 
-/* ---------- app state ---------- */
 let localEdits = loadLocalEdits();
 let allCrewData = [];
 let selectedDate = new Date();
 let firebaseApp = null, firebaseAuth = null, firebaseDb = null;
 let currentUser = null, isAdmin = false;
 
-/* realtime helpers */
 let latestFbEdits = null;
 let realtimeListenerAttached = false;
 let pollingIntervalId = null;
 
-/* write debouncing */
 const writeDebounce = {};
 const WRITE_DEBOUNCE_MS = 700;
 
@@ -182,7 +165,7 @@ const toast = document.getElementById('toast');
 const adminSignInBtn = document.getElementById('adminSignInBtn');
 const loginStatus = document.getElementById('loginStatus');
 
-/* ---------- small utilities ---------- */
+/* ---------- utilities ---------- */
 function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
@@ -194,7 +177,7 @@ function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(
 function sanitizeName(s){ const x = (s||"").replace(/\s+/g," ").trim(); return x.slice(0, 40); }
 function dateOnlyISO(d){ if(!d) return ''; if(d instanceof Date) return d.toISOString().slice(0,10); try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); } }
 
-/* ---------- normalize / revisions helpers ---------- */
+/* ---------- revision helpers ---------- */
 function normalizeToRevisions(editObj){
   if(!editObj || typeof editObj !== 'object') return {};
   if(editObj._revisions && typeof editObj._revisions === 'object') return Object.assign({}, editObj);
@@ -238,7 +221,7 @@ function getFieldFromEdit(editObj, field){
   return null;
 }
 
-/* ---------- reconciliation (fixed stray token) ---------- */
+/* ---------- reconcile ---------- */
 function reconcileLocalWithFirebase(fbEdits){
   if(!fbEdits || typeof fbEdits !== 'object') return false;
   let changed = false;
@@ -248,17 +231,14 @@ function reconcileLocalWithFirebase(fbEdits){
       const localObj = localLink[idxKey];
       const fbObjRaw = fbEdits[linkId] && fbEdits[linkId][idxKey];
       if(!fbObjRaw){
-        // deleted in firebase -> remove local cache
         delete localEdits[linkId][idxKey];
         changed = true;
       } else {
         const fbObj = normalizeToRevisions(fbObjRaw);
-        // If firebase has revisions, prefer it (overwrite local) to ensure DB is authoritative
         if(fbObj._revisions && Object.keys(fbObj._revisions).length){
           localEdits[linkId][idxKey] = fbObj;
           changed = true;
         } else {
-          // merge: ensure local normalized and add any firebase revisions
           const localNorm = normalizeToRevisions(localObj);
           localNorm._revisions = localNorm._revisions || {};
           if(fbObj._revisions){
@@ -313,28 +293,16 @@ function startPollingFallback(){
   }, POLL_MS);
 }
 
-/* ---------- deterministic mapper (expects normalized tokens like link1, rnlink1, sllink1, ollink1) ---------- */
+/* ---------- deterministic mapper ---------- */
 function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase().trim();
 
-  // link1 => MAO1
-  let m = id.match(/^link(\d+)$/);
-  if (m) return `MAO${m[1]}`;
+  let m = id.match(/^link(\d+)$/); if (m) return `MAO${m[1]}`;
+  m = id.match(/^rnlink(\d+)$/); if (m) return `RN${m[1]}`;
+  m = id.match(/^sllink(\d+)$/); if (m) return `SL${m[1]}`;
+  m = id.match(/^ollink(\d+)$/); if (m) return `OL${m[1]}`;
 
-  // rnlink1 => RN1
-  m = id.match(/^rnlink(\d+)$/);
-  if (m) return `RN${m[1]}`;
-
-  // sllink1 => SL1
-  m = id.match(/^sllink(\d+)$/);
-  if (m) return `SL${m[1]}`;
-
-  // ollink1 => OL1
-  m = id.match(/^ollink(\d+)$/);
-  if (m) return `OL${m[1]}`;
-
-  // fallback: try to extract number and hint
   const digits = id.match(/(\d+)/);
   if (digits) {
     const d = digits[1];
@@ -343,8 +311,6 @@ function getShortLinkLabel(linkId) {
     if (id.includes('sl')) return `SL${d}`;
     return `MAO${d}`;
   }
-
-  // final fallback
   return String(linkId).toUpperCase();
 }
 
@@ -404,7 +370,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* ---------- load link files (diagnostic, normalized linkId) ---------- */
+/* ---------- load link files (normalizes linkId) ---------- */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async (f, idx) => {
@@ -457,30 +423,22 @@ async function loadAllLinks(){
     return;
   }
 
-  // Build allCrewData with normalized linkId tokens
   results.forEach((res, idx) => {
     if(!res || !res.ok || !res.json) return;
     const linkData = res.json;
-
-    // derive fallback from filename
     const rawFallback = (typeof linkFiles[res.idx] === 'string') ? String(linkFiles[res.idx]).replace(/\.json$/i,'') : `file#${idx+1}`;
-
-    // prefer explicit linkId from JSON, else fallback
     let rawLinkId = (linkData.linkId && String(linkData.linkId)) || rawFallback || '';
-
-    // normalize: drop path, drop .json, trim, lowercase
     rawLinkId = rawLinkId.replace(/^.*[\/\\]/, '').replace(/\.json$/i, '').trim().toLowerCase();
 
-    // canonicalize common forms into predictable tokens:
     rawLinkId = rawLinkId
       .replace(/^l(\d+)$/,'link$1')
       .replace(/^link[-_]?(\d+)$/,'link$1')
-      .replace(/^mao[-_]?(\d+)$/,'link$1')   // treat maoN as linkN
+      .replace(/^mao[-_]?(\d+)$/,'link$1')
       .replace(/^rn[-_]?(\d+)$/,'rnlink$1')
       .replace(/^rn-?link[-_]?(\d+)$/,'rnlink$1')
       .replace(/^ol[-_]?(\d+)$/,'ollink$1')
       .replace(/^s?l[-_]?(\d+)$/,'sllink$1')
-      .replace(/[^a-z0-9]/g,''); // strip stray chars
+      .replace(/[^a-z0-9]/g,'');
 
     if(!rawLinkId) rawLinkId = rawFallback.replace(/[^a-z0-9]/g,'');
 
@@ -492,8 +450,8 @@ async function loadAllLinks(){
     crewArr.forEach((crew, crewIndex) => {
       allCrewData.push({
         ...crew,
-        linkId,               // normalized token (e.g. link1, rnlink2, sllink1, ollink1)
-        linkIdRaw: linkData.linkId || rawFallback, // original value for debugging
+        linkId,
+        linkIdRaw: linkData.linkId || rawFallback,
         lastUpdatedDate: lastUpdated,
         crewIndex,
         friendlyLabel: friendly
@@ -504,7 +462,7 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* ---------- render duties ---------- */
+/* ---------- render duties (uses linkIdRaw to decide pill label) ---------- */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
@@ -585,11 +543,26 @@ async function renderCombinedDuties(){
 
     const tr = document.createElement('tr');
 
-    // editable if admin or owner of the edit
     const mayEditLP = !!isAdmin || (currentUser && currentUser.uid && r.ownerUid && currentUser.uid === r.ownerUid);
     const mayEditALP = !!isAdmin || (currentUser && currentUser.uid && r.ownerUid && currentUser.uid === r.ownerUid);
     const ownerTag = (r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
-    const linkLabel = escapeHtml(getShortLinkLabel(r.link));
+
+    // ----- prefer linkIdRaw when deciding label (ensures RN/OL/SL show correctly) -----
+    let linkLabel = '';
+    (function(){
+      try{
+        const sample = Array.isArray(allCrewData) ? allCrewData.find(x => String(x.linkId) === String(r.link)) : null;
+        let raw = sample && sample.linkIdRaw ? String(sample.linkIdRaw).toLowerCase() : null;
+        if(raw) raw = raw.replace(/^.*[\/\\]/, '').replace(/\.json$/i, '').trim();
+        let chosen = raw || String(r.link || '').toLowerCase();
+        chosen = chosen.replace(/\.json$/i,'').trim();
+        const computed = (typeof getShortLinkLabel === 'function') ? getShortLinkLabel(chosen) : String(chosen).toUpperCase();
+        linkLabel = escapeHtml(computed || getShortLinkLabel(r.link) || r.link || '');
+      }catch(e){
+        linkLabel = escapeHtml(getShortLinkLabel(r.link) || r.link || '');
+      }
+    })();
+    // -------------------------------------------------------------------------------
 
     const lpCell = `
       <td class="lp-cell">
@@ -612,13 +585,12 @@ async function renderCombinedDuties(){
 
     const trainCell = `<td class="train-cell"><div class="dep-pill">${escapeHtml(r.depTime||'')}</div><div class="cell-inner">${trainInner}</div></td>`;
     const depCell = `<td><div class="cell-inner">${escapeHtml(r.depTime||'')}</div></td>`;
-    const linkCell = `<td><div class="cell-inner">${escapeHtml(getShortLinkLabel(r.link))} ${ownerTag}</div></td>`;
+    const linkCell = `<td><div class="cell-inner">${linkLabel} ${ownerTag}</div></td>`;
 
     tr.innerHTML = `${lpCell}${alpCell}${trainCell}${depCell}${linkCell}`;
     dutyTable.appendChild(tr);
   });
 
-  /* editable handlers */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
@@ -644,7 +616,7 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* ---------- commit edits as revisions (with debounce for firebase writes) ---------- */
+/* ---------- commit edits ---------- */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
@@ -664,7 +636,6 @@ async function onEditableCommit(e){
 
   const effectiveFrom = dateOnlyISO(selectedDate);
 
-  // handle clearing the field
   if(!newVal){
     const revs = localEdits[linkId][crewIndex]._revisions || {};
     if(revs[effectiveFrom] && revs[effectiveFrom][field]) delete revs[effectiveFrom][field];
@@ -692,7 +663,6 @@ async function onEditableCommit(e){
     return;
   }
 
-  // set/overwrite only this field in the selected revision
   const revs = localEdits[linkId][crewIndex]._revisions || {};
   revs[effectiveFrom] = revs[effectiveFrom] || {};
   revs[effectiveFrom][field] = newVal;
@@ -721,7 +691,7 @@ async function onEditableCommit(e){
   await renderCombinedDuties();
 }
 
-/* ---------- Debounced firebase updater ---------- */
+/* ---------- debounced firebase writes ---------- */
 function scheduleFirebaseUpdate(path, value){
   if(!firebaseDb) return;
   if(writeDebounce[path]) clearTimeout(writeDebounce[path].t);
@@ -861,10 +831,9 @@ if('serviceWorker' in navigator){
   });
 }
 
-/* Handling the install prompt (Android/Chrome) */
+/* Install prompt handling */
 let deferredPrompt = null;
 const installBtn = document.getElementById('installBtn');
-
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
@@ -879,22 +848,13 @@ window.addEventListener('beforeinstallprompt', (e) => {
   }
 });
 window.addEventListener('appinstalled', () => {
-  console.log('PWA was installed');
   if(installBtn) installBtn.style.display = 'none';
 });
+/* ---------- End ---------- */
 
-/* ---------- end of script ---------- */
-/*
-  Diagnostics you can run in DevTools (Console) after page loads:
-  1) See normalized linkIds and mapping:
-     const uniq = Array.from(new Set((allCrewData||[]).map(x=>x.linkId)));
-     console.table(uniq.map(id => ({ linkId: id, raw: (allCrewData.find(x=>x.linkId===id)||{}).linkIdRaw, mapped: getShortLinkLabel(id) })));
-
-  2) Quick checks:
-     getShortLinkLabel('link1')   // MAO1
-     getShortLinkLabel('rnlink2') // RN2
-     getShortLinkLabel('sllink1') // SL1
-     getShortLinkLabel('ollink1') // OL1
+/* Diagnostics to run in Console after load:
+   const uniq = Array.from(new Set((allCrewData||[]).map(x=>x.linkId)));
+   console.table(uniq.map(id => ({ linkId: id, raw: (allCrewData.find(x=>x.linkId===id)||{}).linkIdRaw, mapped: getShortLinkLabel(id) })));
 */
 </script>
 </body>
