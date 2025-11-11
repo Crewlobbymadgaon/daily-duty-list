@@ -7,22 +7,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#2563eb">
 <style>
-:root{
-  --bg:#f4f7fb; --card:#fff; --muted:#6b7280; --accent:#0f172a; --accent-2:#2563eb;
-  --radius:12px; --divider:#1f6feb; --border:#cdd4e1; --pill-border: rgba(0,0,0,0.08);
-  --row-height:64px; --train-col-width:120px; --pill-space:36px; --cell-padding-x:10px;
-  --train-slot-height:24px; --train-gap:6px;
-}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent);-webkit-font-smoothing:antialiased}
-.wrap{max-width:1100px;margin:0 auto;padding:14px}
-.card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);overflow:hidden}
+:root{--bg:#f4f7fb;--card:#fff;--muted:#6b7280;--accent:#0f172a;--accent-2:#2563eb;--radius:12px;--divider:#1f6feb;--border:#cdd4e1;--pill-border: rgba(0,0,0,0.08);--row-height:64px;--train-col-width:120px;--pill-space:36px;--cell-padding-x:10px;--train-slot-height:24px;--train-gap:6px}
+*{box-sizing:border-box}html,body{height:100%}body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1100px;margin:0 auto;padding:14px}.card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);overflow:hidden}
 .headerArea{position:sticky; top:0;background:var(--card);padding:14px 16px;border-bottom:1px solid rgba(0,0,0,0.04);z-index:60;display:flex;flex-direction:column;align-items:center;gap:6px;}
-.headerArea h1{margin:0;font-size:1.25rem;font-weight:700;text-align:center}
-.headerArea .sub{font-size:0.9rem;color:var(--muted);text-align:center}
-.headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center}
-.headerArea #loginStatus{font-size:0.95rem;color:var(--muted);margin-top:4px;width:100%;text-align:center;display:block}
+.headerArea h1{margin:0;font-size:1.25rem;font-weight:700;text-align:center}.headerArea .sub{font-size:0.9rem;color:var(--muted);text-align:center}
+.headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center}.headerArea #loginStatus{font-size:0.95rem;color:var(--muted);margin-top:4px;width:100%;text-align:center;display:block}
 .controls{position:sticky;top:0;background:var(--card);z-index:55;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.03)}
 .nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:44px;height:36px;padding:0 10px;cursor:pointer}
@@ -31,16 +21,9 @@ input[type="date"].native-date{position:absolute;left:-9999px}
 table{width:100%;border-collapse:collapse;min-width:640px;table-layout:fixed;border:1px solid var(--border)}
 thead th{background:var(--card);padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);border-top:1px solid rgba(0,0,0,0.04);position:sticky;z-index:70;top:0;box-sizing:border-box}
 tbody td{padding:0;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;position:relative;height:var(--row-height);}
-tbody tr:nth-child(odd){background:#fbfdff}
-.no-data{text-align:center;color:var(--muted);padding:14px}
-.lp-cell{ position:relative; }
-.link-pill{
-  position:absolute; top:6px; left:8px; display:inline-flex; align-items:center; justify-content:center;
-  padding:4px 8px; border-radius:999px; font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.3px;
-  background:transparent; border:1.5px solid var(--pill-border); color:var(--muted); pointer-events:none; z-index:60; min-width:46px;
-}
-.train-cell{ position:relative; padding-top:var(--pill-space); box-sizing:border-box; }
-.dep-pill{ position:absolute; top:6px; right:8px; background:transparent; border:1.5px solid var(--pill-border); padding:4px 8px; border-radius:999px; font-size:0.72rem; font-weight:700; color:var(--muted); pointer-events:none; z-index:60; }
+tbody tr:nth-child(odd){background:#fbfdff}.no-data{text-align:center;color:var(--muted);padding:14px}
+.lp-cell{ position:relative; }.link-pill{position:absolute; top:6px; left:8px; display:inline-flex; align-items:center; justify-content:center;padding:4px 8px; border-radius:999px; font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.3px;background:transparent; border:1.5px solid var(--pill-border); color:var(--muted); pointer-events:none; z-index:60; min-width:46px;}
+.train-cell{ position:relative; padding-top:var(--pill-space); box-sizing:border-box; }.dep-pill{ position:absolute; top:6px; right:8px; background:transparent; border:1.5px solid var(--pill-border); padding:4px 8px; border-radius:999px; font-size:0.72rem; font-weight:700; color:var(--muted); pointer-events:none; z-index:60; }
 .train-stack{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--train-gap); padding:2px 4px; max-width:100%; box-sizing:border-box; min-height: calc( (var(--train-slot-height) * 2) + var(--train-gap) ); }
 .train-slot{ height:var(--train-slot-height); display:flex; align-items:center; justify-content:center; width:100%; box-sizing:border-box; }
 .train-number{ font-weight:700; font-size:0.9rem; line-height:1; text-align:center; max-width:calc(var(--train-col-width) - 16px); white-space:normal; word-break:break-word; }
@@ -53,10 +36,7 @@ tbody tr:nth-child(odd){background:#fbfdff}
 .toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
 .toast.show{opacity:1;transform:translateY(0)}
 .ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
-
-/* hide Link No column visually on desktop */
 table th:nth-child(5), table td:nth-child(5){ display: none; }
-
 @media (max-width:640px){
   :root{ --train-col-width:110px; --row-height:60px; --pill-space:32px; --train-slot-height:20px; --train-gap:4px; }
   table{min-width:0;table-layout:auto}
@@ -109,27 +89,21 @@ table th:nth-child(5), table td:nth-child(5){ display: none; }
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
-/* ----------- CONFIG ----------- */
+/* ---------- CONFIG ---------- */
 const linkFiles = [
   'link1.json','link2.json','link3.json','link4.json',
   'rnlink1.json','rnlink2.json','rnlink3.json','rnlink4.json',
   'ollink1.json','sllink1.json'
 ];
-
 const LS_KEY = 'lp_alp_edits_owner_v1';
-const POLL_MS = 15000;
 
-/* ----------- STATE ----------- */
 let localEdits = loadLocalEdits();
 let allCrewData = [];
 let selectedDate = new Date();
 let currentUser = null, isAdmin = false;
 let latestFbEdits = null;
-let firebaseDb = null;
-let realtimeListenerAttached = false;
-let pollingIntervalId = null;
 
-/* ----------- DOM refs ----------- */
+/* ---------- DOM refs ---------- */
 const dutyTable = document.getElementById('dutyTable');
 const mainTable = document.getElementById('mainTable');
 const tableWrap = document.querySelector('.tableWrap');
@@ -142,7 +116,7 @@ const toast = document.getElementById('toast');
 const adminSignInBtn = document.getElementById('adminSignInBtn');
 const loginStatus = document.getElementById('loginStatus');
 
-/* ----------- UTILITIES ----------- */
+/* ---------- utils ---------- */
 function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
@@ -154,7 +128,7 @@ function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(
 function sanitizeName(s){ const x = (s||"").replace(/\s+/g," ").trim(); return x.slice(0, 40); }
 function dateOnlyISO(d){ if(!d) return ''; if(d instanceof Date) return d.toISOString().slice(0,10); try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); } }
 
-/* ----------- short helpers ----------- */
+/* ---------- formatting ---------- */
 function formatTrainToken(token){
   if(!token) return '';
   const cleaned = token.toString().trim();
@@ -165,7 +139,7 @@ function formatTrainToken(token){
   return `<span class="train-number">${withBreaks}</span>`;
 }
 
-/* ----------- mapping / normalization ----------- */
+/* ---------- deterministic mapper ---------- */
 function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase().trim();
@@ -186,7 +160,7 @@ function getShortLinkLabel(linkId) {
   return String(linkId).toUpperCase();
 }
 
-/* ----------- layout helpers ----------- */
+/* ---------- layout ---------- */
 function setTableWrapPaddingAndHeader(){
   const header = document.querySelector('.headerArea');
   const controls = document.querySelector('.controls');
@@ -224,7 +198,7 @@ function alignHeaderWidths(){
   if(mainWidth) mainTable.style.width = mainWidth + 'px';
 }
 
-/* ----------- date controls ----------- */
+/* ---------- date controls ---------- */
 dateBtn.addEventListener('click', ()=>{ datePicker.focus(); datePicker.click(); });
 datePicker.addEventListener('change', ()=>{ selectedDate = datePicker.value ? new Date(datePicker.value+'T00:00:00') : new Date(); setSelectedDate(selectedDate); renderCombinedDuties(); });
 prevBtn.addEventListener('click', ()=> changeDate(-1));
@@ -232,7 +206,7 @@ nextBtn.addEventListener('click', ()=> changeDate(1));
 function changeDate(offset){ const d=new Date(selectedDate.getTime()); d.setDate(d.getDate()+offset); setSelectedDate(d); renderCombinedDuties(); }
 function setSelectedDate(d){ selectedDate = d||new Date(); const yyyy=selectedDate.getFullYear(), mm=String(selectedDate.getMonth()+1).padStart(2,'0'), dd=String(selectedDate.getDate()).padStart(2,'0'); datePicker.value = `${yyyy}-${mm}-${dd}`; dateHeading.textContent = `${selectedDate.toLocaleString('en-US',{weekday:'long'})}, ${selectedDate.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'})}`; }
 
-/* ----------- load link files (normalize linkId) ----------- */
+/* ---------- load link files (FILENAME-PRIORITY) ---------- */
 async function loadAllLinks(){
   dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">Loading data…</td></tr>`;
   const fetches = linkFiles.map(async (f, idx) => {
@@ -262,7 +236,6 @@ async function loadAllLinks(){
   allCrewData = [];
 
   const anySuccess = results.some(r => r && r.ok && r.json && Array.isArray(r.json.crew) && r.json.crew.length>0);
-
   if(!anySuccess){
     dutyTable.innerHTML = '';
     const errors = results.map(res => {
@@ -288,10 +261,17 @@ async function loadAllLinks(){
   results.forEach((res, idx) => {
     if(!res || !res.ok || !res.json) return;
     const linkData = res.json;
-    const rawFallback = (typeof linkFiles[res.idx] === 'string') ? String(linkFiles[res.idx]).replace(/\.json$/i,'') : `file#${idx+1}`;
-    let rawLinkId = (linkData.linkId && String(linkData.linkId)) || rawFallback || '';
+
+    // --- IMPORTANT: prefer the FILENAME (linkFiles[res.idx]) when deriving linkId ---
+    const filenameFallback = (typeof linkFiles[res.idx] === 'string') ? String(linkFiles[res.idx]).replace(/\.json$/i,'') : `file${idx+1}`;
+    // keep original JSON linkId (if any) for debugging but DO NOT let it override filename hint
+    const originalJsonLinkId = linkData.linkId ? String(linkData.linkId) : null;
+
+    // base raw token comes from filenameFallback (this fixes mao5-from-json issues)
+    let rawLinkId = filenameFallback || originalJsonLinkId || '';
     rawLinkId = rawLinkId.replace(/^.*[\/\\]/, '').replace(/\.json$/i, '').trim().toLowerCase();
 
+    // normalize common variants into canonical tokens: link1, rnlink1, sllink1, ollink1
     rawLinkId = rawLinkId
       .replace(/^l(\d+)$/,'link$1')
       .replace(/^link[-_]?(\d+)$/,'link$1')
@@ -302,7 +282,7 @@ async function loadAllLinks(){
       .replace(/^s?l[-_]?(\d+)$/,'sllink$1')
       .replace(/[^a-z0-9]/g,'');
 
-    if(!rawLinkId) rawLinkId = rawFallback.replace(/[^a-z0-9]/g,'');
+    if(!rawLinkId) rawLinkId = filenameFallback.replace(/[^a-z0-9]/g,'');
 
     const linkId = rawLinkId;
     const lastUpdated = linkData.lastUpdated ? new Date(linkData.lastUpdated) : new Date();
@@ -313,7 +293,8 @@ async function loadAllLinks(){
       allCrewData.push({
         ...crew,
         linkId,
-        linkIdRaw: linkData.linkId || rawFallback,
+        // store original JSON id separately for diagnostics (but do NOT use it for label)
+        linkIdOriginal: originalJsonLinkId || filenameFallback,
         lastUpdatedDate: lastUpdated,
         crewIndex,
         friendlyLabel: friendly
@@ -324,15 +305,10 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* ----------- render duties (uses raw hint to prefer RN/OL/SL) ----------- */
+/* ---------- render duties (uses filename-priority linkId) ---------- */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
-
-  let fbEdits = {};
-  if(latestFbEdits !== null){
-    fbEdits = latestFbEdits;
-  }
 
   const crewsByLink = allCrewData.reduce((acc,crew)=>{ (acc[crew.linkId]=acc[crew.linkId]||[]).push(crew); return acc; }, {});
   const rows = [];
@@ -358,20 +334,16 @@ async function renderCombinedDuties(){
       const linkId = crew.linkId;
 
       const localRaw = (localEdits[linkId] && localEdits[linkId][crew.crewIndex]) || null;
-      const fbRaw = (fbEdits[linkId] && fbEdits[linkId][crew.crewIndex]) || null;
       const local = localRaw ? normalizeToRevisions(localRaw) : null;
-      const fb = fbRaw ? normalizeToRevisions(fbRaw) : null;
 
-      const ownerUid = (fb && (fb._updatedBy)) || (local && local._updatedBy) || null;
-      const ownerName = (fb && (fb._updatedByName)) || (local && local._updatedByName) || null;
+      const ownerUid = (local && local._updatedBy) || null;
+      const ownerName = (local && local._updatedByName) || null;
 
       const localLP = getFieldFromEdit(local, 'crewLPName');
-      const fbLP = getFieldFromEdit(fb, 'crewLPName');
-      const lpName = localLP || fbLP || (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
+      const lpName = localLP || (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
 
       const localALP = getFieldFromEdit(local, 'crewALPName');
-      const fbALP = getFieldFromEdit(fb, 'crewALPName');
-      const alpName = localALP || fbALP || (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
+      const alpName = localALP || (crew.friendlyLabel ? crew.friendlyLabel : getShortLinkLabel(crew.linkId));
 
       rows.push({ depTime, outgoing, incoming, lpName, alpName, link: linkId, crewIndex: crew.crewIndex, ownerUid, ownerName });
     }
@@ -399,48 +371,8 @@ async function renderCombinedDuties(){
     const mayEditALP = !!isAdmin || (currentUser && currentUser.uid && r.ownerUid && currentUser.uid === r.ownerUid);
     const ownerTag = (r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
-    // --- improved mapping: prefer linkIdRaw to detect RN/OL/SL hints ---
-    let linkLabel = '';
-    (function(){
-      try{
-        const sample = Array.isArray(allCrewData) ? allCrewData.find(x => String(x.linkId) === String(r.link)) : null;
-        let raw = sample && sample.linkIdRaw ? String(sample.linkIdRaw).toLowerCase().trim() : null;
-        if(raw) raw = raw.replace(/^.*[\/\\]/, '').replace(/\.json$/i,'').trim();
-
-        // helper to extract number for prefixes
-        const numForRaw = (prefixes) => {
-          if(!raw) return null;
-          for(const p of prefixes){
-            const re = new RegExp('^' + p + '[^\\d]*?(\\d+)$', 'i');
-            const m = raw.match(re);
-            if(m && m[1]) return m[1];
-          }
-          return null;
-        };
-
-        let computed = '';
-        const rnNum = numForRaw(['rnlink','rn','rn-?link']);
-        if(rnNum){ computed = 'RN' + rnNum; }
-        const olNum = numForRaw(['ollink','ol','ol-?link']);
-        if(!computed && olNum){ computed = 'OL' + olNum; }
-        const slNum = numForRaw(['sllink','sl','sl-?link']);
-        if(!computed && slNum){ computed = 'SL' + slNum; }
-
-        if(!computed && raw){
-          const maoNum = (raw.match(/^(?:link|l|mao)[^\d]*?(\d+)$/i) || [])[1];
-          if(maoNum) computed = 'MAO' + maoNum;
-        }
-
-        if(!computed){
-          const chosen = (raw || String(r.link || '')).replace(/\.json$/i,'').trim();
-          computed = (typeof getShortLinkLabel === 'function') ? getShortLinkLabel(chosen) : (chosen||'').toUpperCase();
-        }
-
-        linkLabel = escapeHtml(computed || getShortLinkLabel(r.link) || (r.link || '').toUpperCase());
-      }catch(e){
-        linkLabel = escapeHtml(getShortLinkLabel(r.link) || (r.link || '').toUpperCase());
-      }
-    })();
+    // prefer filename-derived label (linkId) which was set from filenameFallback in loadAllLinks()
+    const linkLabel = escapeHtml(getShortLinkLabel(r.link));
 
     const lpCell = `
       <td class="lp-cell">
@@ -469,7 +401,6 @@ async function renderCombinedDuties(){
     dutyTable.appendChild(tr);
   });
 
-  /* editable handlers */
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
@@ -495,7 +426,7 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* ----------- revisions helpers used earlier ----------- */
+/* ---------- revisions helpers (kept minimal) ---------- */
 function normalizeToRevisions(editObj){
   if(!editObj || typeof editObj !== 'object') return {};
   if(editObj._revisions && typeof editObj._revisions === 'object') return Object.assign({}, editObj);
@@ -539,7 +470,7 @@ function getFieldFromEdit(editObj, field){
   return null;
 }
 
-/* ----------- commit edits (simplified) ----------- */
+/* ---------- commit edits (local only) ---------- */
 async function onEditableCommit(e){
   const el = e.currentTarget;
   if(!el) return;
@@ -595,7 +526,7 @@ async function onEditableCommit(e){
   await renderCombinedDuties();
 }
 
-/* ----------- init (no firebase inlined here) ----------- */
+/* ---------- init ---------- */
 async function init(){
   setSelectedDate(new Date());
   currentUser = loadLocalUser() || createLocalUser();
@@ -609,25 +540,13 @@ async function init(){
 }
 document.addEventListener('DOMContentLoaded', init);
 
-/* ----------- login helpers (minimal) ----------- */
-async function detectAdmin(){
-  currentUser = currentUser || loadLocalUser() || createLocalUser();
-  isAdmin = false;
-  updateLoginStatusUI();
-}
-function updateLoginStatusUI(){
-  const u = currentUser || loadLocalUser();
-  if(!u){ loginStatus.textContent = ''; adminSignInBtn.style.display = 'inline-block'; return; }
-  loginStatus.textContent = isAdmin ? `Admin — editing enabled (${u.email || u.displayName})` : '';
-  adminSignInBtn.style.display = 'inline-block';
-}
+/* ---------- simple UI helpers ---------- */
+async function detectAdmin(){ currentUser = currentUser || loadLocalUser() || createLocalUser(); isAdmin = false; updateLoginStatusUI(); }
+function updateLoginStatusUI(){ const u = currentUser || loadLocalUser(); if(!u){ loginStatus.textContent = ''; adminSignInBtn.style.display = 'inline-block'; return; } loginStatus.textContent = isAdmin ? `Admin — editing enabled (${u.email || u.displayName})` : ''; adminSignInBtn.style.display = 'inline-block'; }
 
-/* ----------- end ---------- */
+/* ---------- small helpers reused ---------- */
+function dateOnlyISO(d){ if(!d) return ''; if(d instanceof Date) return d.toISOString().slice(0,10); try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); } }
 
-/* Quick diagnostic to run in Console:
-   const uniq = Array.from(new Set((allCrewData||[]).map(x=>x.linkId)));
-   console.table(uniq.map(id => ({ linkId: id, raw: (allCrewData.find(x=>x.linkId===id)||{}).linkIdRaw, mapped: getShortLinkLabel((allCrewData.find(x=>x.linkId===id)||{}).linkIdRaw || id) })));
-*/
 </script>
 </body>
 </html>
