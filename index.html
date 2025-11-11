@@ -293,35 +293,38 @@ function startPollingFallback(){
 }
 
 /* ---------- mapping/format helpers ---------- */
+// Defensive getShortLinkLabel — safe to paste
 function getShortLinkLabel(linkId) {
-  if (!linkId) return '';
-  const id = String(linkId).toLowerCase();
+  try {
+    if (!linkId) return '';
+    const id = String(linkId).toLowerCase();
 
-  // Convert link.json names to friendly codes
-  if (id.startsWith('link')) {
-    const num = id.replace(/\D/g, '');
-    return `MAO${num}`;
-  }
-  if (id.startsWith('rnlink')) {
-    const num = id.replace(/\D/g, '');
-    return `RN${num}`;
-  }
-  if (id.startsWith('ollink')) {
-    const num = id.replace(/\D/g, '');
-    return `OL${num}`;
-  }
-  if (id.startsWith('sllink')) {
-    const num = id.replace(/\D/g, '');
-    return `SL${num}`;
-  }
+    if (id.startsWith('link')) {
+      const num = id.replace(/\D/g, '') || '';
+      return `MAO${num}`;
+    }
+    if (id.startsWith('rnlink')) {
+      const num = id.replace(/\D/g, '') || '';
+      return `RN${num}`;
+    }
+    if (id.startsWith('ollink')) {
+      const num = id.replace(/\D/g, '') || '';
+      return `OL${num}`;
+    }
+    if (id.startsWith('sllink')) {
+      const num = id.replace(/\D/g, '') || '';
+      return `SL${num}`;
+    }
 
-  // Default fallback: if it has a number, prefix with MAO
-  const digits = id.match(/\d+/);
-  if (digits) return `MAO${digits[0]}`;
+    const digits = id.match(/\d+/);
+    if (digits) return `MAO${digits[0]}`;
 
-  return String(linkId).toUpperCase();
+    return String(linkId).toUpperCase();
+  } catch (err) {
+    console.error('getShortLinkLabel error', err, linkId);
+    return String(linkId || '').toUpperCase();
+  }
 }
-
 /* ---------- layout helpers ---------- */
 function setTableWrapPaddingAndHeader(){
   const header = document.querySelector('.headerArea');
