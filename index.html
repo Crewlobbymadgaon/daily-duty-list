@@ -226,14 +226,17 @@ function reconcileLocalWithFirebase(fbEdits){
       const localObj = localLink[idxKey];
       const fbObjRaw = fbEdits[linkId] && fbEdits[linkId][idxKey];
       if(!fbObjRaw){
+        // deleted in firebase -> remove local cache
         delete localEdits[linkId][idxKey];
         changed = true;
       } else {
         const fbObj = normalizeToRevisions(fbObjRaw);
+        // If firebase has revisions, prefer it (overwrite local) to ensure DB is authoritative
         if(fbObj._revisions && Object.keys(fbObj._revisions).length){
           localEdits[linkId][idxKey] = fbObj;
           changed = true;
         } else {
+          // merge: ensure local normalized and add any firebase revisions
           const localNorm = normalizeToRevisions(localObj);
           localNorm._revisions = localNorm._revisions || {};
           if(fbObj._revisions){
@@ -246,9 +249,10 @@ function reconcileLocalWithFirebase(fbEdits){
         }
       }
     });
+    // if the link now has no crew entries, remove the link key
     if(localEdits[linkId] && Object.keys(localEdits[linkId]).length === 0){
       delete localEdits[linkId];
-      changed = true;link.json
+      changed = true;
     }
   });
   if(changed) saveLocalEdits();
