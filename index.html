@@ -301,37 +301,36 @@ function startPollingFallback(){
   }, POLL_MS);
 }
 
-/* ---------- defensive getShortLinkLabel ---------- */
-// Robust getShortLinkLabel — handles: link1, l1, rnlink1, rn1, ollink1, ol1, sllink1, sl1
-function getShortLinkLabel(linkId) {
+  function getShortLinkLabel(linkId) {
   if (!linkId) return '';
   const id = String(linkId).toLowerCase().trim();
 
-  // exact / common patterns
-  // rn (rnlink, rn, rn-link), prefer RN
-  let m = id.match(/^(?:rn(?:link)?|rn-?link|rn)[^\d]*(\d+)$/);
+  // Exact patterns first:
+  let m;
+
+  // RN: rnlink1, rnlink2, rn1 (etc)
+  m = id.match(/^rnlink?[-_]?(\d+)$/) || id.match(/^rn[-_]?(\d+)$/);
   if (m) return `RN${m[1]}`;
 
-  // ol (ollink, ol, ol-link)
-  m = id.match(/^(?:ol(?:link)?|ol-?link|ol)[^\d]*(\d+)$/);
+  // OL: ollink1, ol1, ol-link1
+  m = id.match(/^ollink?[-_]?(\d+)$/) || id.match(/^ol[-_]?(\d+)$/);
   if (m) return `OL${m[1]}`;
 
-  // sl (sllink, sl, sl-link)
-  m = id.match(/^(?:sl(?:link)?|sl-?link|sl)[^\d]*(\d+)$/);
+  // SL: sllink1, sl1
+  m = id.match(/^sllink?[-_]?(\d+)$/) || id.match(/^sl[-_]?(\d+)$/);
   if (m) return `SL${m[1]}`;
 
-  // MAO link pattern: linkX, lX, maoX, mao-linkX
-  m = id.match(/^(?:link|l|mao|mao-?link)[^\d]*(\d+)$/);
+  // MAO: link1, l1, mao1
+  m = id.match(/^link[-_]?(\d+)$/) || id.match(/^l[-_]?(\d+)$/) || id.match(/^mao[-_]?(\d+)$/);
   if (m) return `MAO${m[1]}`;
 
-  // If it's something like "link1" but with extra text, try to extract the first number and use prefix mapping:
-  const digits = id.match(/\d+/);
+  // If the id contains a number and also contains a hint for RN/OL/SL use that, else MAO<number>
+  const digits = id.match(/(\d+)/);
   if (digits) {
-    // try to detect prefix letters to map: if it contains rn -> RN, ol -> OL, sl -> SL else MAO
-    if (id.includes('rn')) return `RN${digits[0]}`;
-    if (id.includes('ol')) return `OL${digits[0]}`;
-    if (id.includes('sl')) return `SL${digits[0]}`;
-    return `MAO${digits[0]}`;
+    if (id.includes('rn')) return `RN${digits[1]}`;
+    if (id.includes('ol')) return `OL${digits[1]}`;
+    if (id.includes('sl')) return `SL${digits[1]}`;
+    return `MAO${digits[1]}`;
   }
 
   // fallback: uppercase raw
