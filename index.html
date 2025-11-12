@@ -1,268 +1,95 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>MAO Link</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-<meta name="theme-color" content="#2563eb">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Test — Duty Table</title>
 <style>
-:root{
-  --bg:#f4f7fb;
-  --card:#fff;
-  --muted:#6b7280;
-  --accent:#0f172a;
-  --accent-2:#2563eb;
-  --radius:12px;
-  --divider:#1f6feb;
-  --border:#cdd4e1;
-  --pill-border: rgba(0,0,0,0.08);
-
-  /* TUNED: slightly larger than previous narrow value so short slash tokens can fit in one line */
-  --row-height:58px;
-  --train-col-width:110px;   /* adjusted from 96 -> 110 */
-  --pill-space:34px;
-  --cell-padding-x:10px;
-  --train-slot-height:22px;
-  --train-gap:6px;
-}
-*{box-sizing:border-box}html,body{height:100%}body{margin:0;background:var(--bg);font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial;color:var(--accent);-webkit-font-smoothing:antialiased}
-.wrap{max-width:1100px;margin:0 auto;padding:14px}.card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(15,23,42,0.06);overflow:hidden}
-.headerArea{position:sticky; top:0;background:var(--card);padding:14px 16px;border-bottom:1px solid rgba(0,0,0,0.04);z-index:60;display:flex;flex-direction:column;align-items:center;gap:6px;}
-.headerArea h1{margin:0;font-size:1.25rem;font-weight:700;text-align:center}.headerArea .sub{font-size:0.9rem;color:var(--muted);text-align:center}
-.headerArea #dateHeading{font-weight:600;color:var(--accent-2);text-align:center}.headerArea #loginStatus{font-size:0.95rem;color:var(--muted);margin-top:4px;width:100%;text-align:center;display:block}
-.controls{position:sticky;top:0;background:var(--card);z-index:55;display:flex;gap:8px;align-items:center;justify-content:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.03)}
-.nav-btn{background:transparent;border:1px solid rgba(15,23,42,0.06);width:36px;height:36px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
-.date-icon-btn{display:inline-flex;align-items:center;justify-content:center;background:var(--accent-2);color:#fff;border:none;border-radius:8px;min-width:44px;height:36px;padding:0 10px;cursor:pointer}
-input[type="date"].native-date{position:absolute;left:-9999px}
-.tableWrap{max-height:calc(100vh - 112px);overflow:auto;border-radius:0;background:#fff;padding:6px;position:relative}
-table{width:100%;border-collapse:collapse;min-width:640px;table-layout:fixed;border:1px solid var(--border)}
-thead th{background:var(--card);padding:10px 12px;text-align:center;color:var(--muted);font-weight:700;border-bottom:1px solid var(--border);border-top:1px solid rgba(0,0,0,0.04);position:sticky;z-index:70;top:0;box-sizing:border-box}
-tbody td{padding:0;border:1px solid var(--border);font-size:0.95rem;color:var(--accent);vertical-align:middle;text-align:center;overflow:visible;position:relative;height:var(--row-height);}
-tbody tr:nth-child(odd){background:#fbfdff}.no-data{text-align:center;color:var(--muted);padding:14px}
-.lp-cell{ position:relative; }.link-pill{position:absolute; top:6px; left:8px; display:inline-flex; align-items:center; justify-content:center;padding:4px 8px; border-radius:999px; font-weight:700; font-size:0.72rem; text-transform:uppercase; letter-spacing:0.3px;background:transparent; border:1.5px solid var(--pill-border); color:var(--muted); pointer-events:none; z-index:60; min-width:46px;}
-.train-cell{ position:relative; padding-top:var(--pill-space); box-sizing:border-box; }.dep-pill{ position:absolute; top:6px; right:8px; background:transparent; border:1.5px solid var(--pill-border); padding:4px 8px; border-radius:999px; font-size:0.72rem; font-weight:700; color:var(--muted); pointer-events:none; z-index:60; }
-.train-stack{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--train-gap); padding:2px 4px; max-width:100%; box-sizing:border-box; min-height: calc( (var(--train-slot-height) * 2) + var(--train-gap) ); }
-.train-slot{ height:var(--train-slot-height); display:flex; align-items:center; justify-content:center; width:100%; box-sizing:border-box; }
-
-/* adjusted so short slash tokens (like sp/10107/) can display in one line */
-.train-number{
-  font-weight:700;
-  font-size:0.9rem;
-  line-height:1;
-  text-align:center;
-  max-width:calc(var(--train-col-width) - 18px);
-  white-space:normal;
-  word-break:break-word;
-}
-/* nowrap variant: used for 5-digit tokens OR short slash-containing tokens */
-.train-number.nowrap{
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  max-width:calc(var(--train-col-width) - 12px);
-}
-
-.train-divider{ width:60%; height:2px; background:var(--divider); border-radius:2px; margin:0; opacity:1; }
-.editable{ width:100%; height:100%; display:flex; align-items:center; justify-content:center; padding:6px 8px; box-sizing:border-box; text-align:center; font-weight:700; border-radius:6px; outline:none; cursor:text; }
-.editable:focus{box-shadow:0 0 0 3px rgba(37,99,235,0.08);border:1px dashed rgba(37,99,235,0.15)}
-.editable[contenteditable="false"]{background:transparent;cursor:not-allowed;color:rgba(0,0,0,0.6);pointer-events:none}
-#adminSignInBtn{position:fixed;top:10px;right:10px;z-index:200;background:#111;color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,0.12)}
-.toast{position:fixed;right:14px;bottom:14px;background:#111;color:#fff;padding:8px 12px;border-radius:8px;opacity:0;transform:translateY(8px);transition:all .18s}
-.toast.show{opacity:1;transform:translateY(0)}
-.ownerTag{font-size:0.7rem;color:#fff;background:#2563eb;padding:4px 6px;border-radius:6px;display:inline-block;margin-left:6px}
-table th:nth-child(5), table td:nth-child(5){ display: none; }
-@media (max-width:640px){
-  :root{ --train-col-width:90px; --row-height:60px; --pill-space:32px; --train-slot-height:20px; --train-gap:4px; }
-  table{min-width:0;table-layout:auto}
-  thead th:nth-child(4),thead th:nth-child(5),tbody td:nth-child(4),tbody td:nth-child(5){display:none}
-  thead th,tbody td{padding:6px}
-  .train-number{font-size:0.86rem; max-width:calc(var(--train-col-width) - 16px)}
-  .link-pill{font-size:0.64rem;padding:3px 6px;left:6px;top:6px}
-  .dep-pill{font-size:0.64rem;padding:3px 6px;right:6px;top:6px}
-  .cell-inner{padding: calc(var(--pill-space) / 10) var(--cell-padding-x)}
-}
+:root{--bg:#f4f7fb;--card:#fff;--muted:#6b7280;--accent:#0f172a;--train-col-width:110px;--row-height:58px;--pill-space:34px}
+body{margin:0;font-family:Inter,system-ui,Arial;background:var(--bg);color:var(--accent)}
+.wrap{max-width:1100px;margin:14px auto;padding:6px}
+.card{background:#fff;padding:8px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.06)}
+.tableWrap{overflow:auto}
+table{width:100%;border-collapse:collapse}
+thead th, tbody td{border:1px solid #e0e6ef;padding:8px;text-align:center;height:var(--row-height)}
+.link-pill{position:relative;display:inline-block;padding:4px 8px;border-radius:999px;border:1px solid rgba(0,0,0,0.06);font-weight:700;background:transparent;color:#666}
+.train-number{font-weight:700;max-width:calc(var(--train-col-width) - 12px);display:inline-block}
+.ownerTag{margin-left:6px;background:#2563eb;color:#fff;padding:3px 6px;border-radius:6px;font-size:12px}
 </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <div class="headerArea" role="banner" aria-label="Header">
-        <h1>LP/ALP Duty Table</h1>
-        <div class="sub">Madgaon Lobby</div>
-        <div id="dateHeading">Loading date…</div>
-        <div id="loginStatus" aria-live="polite"></div>
-      </div>
-
-      <div class="controls" role="toolbar" aria-label="Date controls">
-        <button id="prevDay" class="nav-btn" title="Previous day">◀</button>
-        <button id="dateBtn" class="date-icon-btn" title="Pick a date">📅</button>
-        <input id="datePicker" class="native-date" type="date" />
-        <button id="nextDay" class="nav-btn" title="Next day">▶</button>
-      </div>
-
-      <div class="tableWrap" aria-live="polite">
+      <h3>LP/ALP Duty Table — Test</h3>
+      <div class="tableWrap">
         <table id="mainTable" aria-describedby="dateHeading">
           <thead>
-            <tr>
-              <th style="text-align:center">LP</th>
-              <th style="text-align:center">ALP</th>
-              <th style="text-align:center">Train No:</th>
-              <th style="text-align:center">Dep</th>
-              <th style="text-align:center">Link No</th>
-            </tr>
+            <tr><th>LP</th><th>ALP</th><th>Train No</th><th>Dep</th><th>Link No</th></tr>
           </thead>
-          <tbody id="dutyTable">
-            <tr><td colspan="5" class="no-data">Loading data...</td></tr>
-          </tbody>
+          <tbody id="dutyTable"><tr><td colspan="5">Loading…</td></tr></tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <button id="adminSignInBtn" title="Admin sign-in">Admin</button>
-  <div id="toast" class="toast" role="status" aria-live="polite"></div>
-
 <script>
-/* ---------- CONFIG ---------- */
-const linkFiles = [
-  'link1.json','link2.json','link3.json','link4.json',
-  'rnlink1.json','rnlink2.json','rnlink3.json','rnlink4.json',
-  'ollink1.json','sllink1.json'
+/* Sample inline link data (instead of fetching) */
+const sampleFiles = [
+  { file: 'link1.json', linkId: 'link1', crew: [{ duties: { Monday: { outgoing: 'sp/10107/', depTime:'06:20' } }, name:'Crew A' }] },
+  { file: 'rnlink1.json', linkId: 'rnlink1', crew: [{ duties: { Monday: { outgoing: '12345', depTime:'07:05' } }, name:'Crew B' }] },
+  { file: 'sllink1.json', linkId: 'sllink1', crew: [{ duties: { Monday: { outgoing: 'sp/8888', depTime:'08:00' } }, name:'Crew C' }] },
+  { file: 'ollink1.json', linkId: 'ollink1', crew: [{ duties: { Monday: { outgoing: '67890', depTime:'09:10' } }, name:'Crew D' }] }
 ];
-const LS_KEY = 'lp_alp_edits_owner_v1';
 
-let localEdits = loadLocalEdits();
 let allCrewData = [];
-let selectedDate = new Date();
-let currentUser = null, isAdmin = false;
-let latestFbEdits = null;
-
-/* ---------- DOM refs ---------- */
 const dutyTable = document.getElementById('dutyTable');
-const mainTable = document.getElementById('mainTable');
-const tableWrap = document.querySelector('.tableWrap');
-const dateBtn = document.getElementById('dateBtn');
-const datePicker = document.getElementById('datePicker');
-const prevBtn = document.getElementById('prevDay');
-const nextBtn = document.getElementById('nextDay');
-const dateHeading = document.getElementById('dateHeading');
-const toast = document.getElementById('toast');
-const adminSignInBtn = document.getElementById('adminSignInBtn');
-const loginStatus = document.getElementById('loginStatus');
 
-/* ---------- utils ---------- */
-function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
-function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
-function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
-function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
-function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
-function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `Viewer-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
-function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
-function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
-function sanitizeName(s){ const x = (s||"").replace(/\s+/g," ").trim(); return x.slice(0, 40); }
-function dateOnlyISO(d){ if(!d) return ''; if(d instanceof Date) return d.toISOString().slice(0,10); try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); } }
-
-/* ---------- formatting ---------- */
-/* UPDATED: tokens containing '/' and short (<=12 chars) will be nowrap so they show in one line (eg. sp/10107/) */
-function formatTrainToken(token){
-  if(!token) return '';
-  const cleaned = token.toString().trim();
-
-  // If exactly 5 digits, keep nowrap (existing behaviour)
-  if(/^\d{5}$/.test(cleaned)) return `<span class="train-number nowrap">${escapeHtml(cleaned)}</span>`;
-
-  // If token contains slash and is relatively short -> keep single-line (helpful for tokens like sp/10107/)
-  if(cleaned.includes('/') && cleaned.length <= 12){
-    // escape and avoid inserting <wbr> so it stays one line
-    return `<span class="train-number nowrap">${escapeHtml(cleaned)}</span>`;
-  }
-
-  // Otherwise allow wrapping with <wbr> after slashes for long tokens
-  const withBreaks = escapeHtml(cleaned).replace(/\//g, '/<wbr>');
-  return `<span class="train-number">${withBreaks}</span>`;
-}
-
-/* ---------- deterministic mapper ---------- */
-function getShortLinkLabel(linkId) {
-  if (!linkId) return '';
+function getShortLinkLabel(linkId){
+  if(!linkId) return '';
   const id = String(linkId).toLowerCase().trim();
-
-  let m = id.match(/^link(\d+)$/); if (m) return `MAO${m[1]}`;
-  m = id.match(/^rnlink(\d+)$/); if (m) return `RN${m[1]}`;
-  m = id.match(/^sllink(\d+)$/); if (m) return `SL${m[1]}`;
-  m = id.match(/^ollink(\d+)$/); if (m) return `OL${m[1]}`;
-
-  const digits = id.match(/(\d+)/);
-  if (digits) {
-    const d = digits[1];
-    if (id.includes('rn')) return `RN${d}`;
-    if (id.includes('ol')) return `OL${d}`;
-    if (id.includes('sl')) return `SL${d}`;
-    return `MAO${d}`;
-  }
+  let m = id.match(/^link(\d+)$/); if(m) return `MAO${m[1]}`;
+  m = id.match(/^rnlink(\d+)$/); if(m) return `RN${m[1]}`;
+  m = id.match(/^sllink(\d+)$/); if(m) return `SL${m[1]}`;
+  m = id.match(/^ollink(\d+)$/); if(m) return `OL${m[1]}`;
+  const digits = id.match(/(\d+)/); if(digits){ if(id.includes('rn')) return `RN${digits[1]}`; if(id.includes('ol')) return `OL${digits[1]}`; if(id.includes('sl')) return `SL${digits[1]}`; return `MAO${digits[1]}`;}
   return String(linkId).toUpperCase();
 }
 
-/* ---------- rest of JS (unchanged) ---------- */
-/* layout, loadAllLinks, renderCombinedDuties, normalizeToRevisions, getFieldFromEdit, onEditableCommit, init, etc.
-   (kept the same as previous file — omitted here for brevity, but the full implementation should be the same
-   as the previously provided file). 
-*/
-
-/* ---------- For convenience: include the essential functions used by rendering below ---------- */
-
-function setTableWrapPaddingAndHeader(){
-  const header = document.querySelector('.headerArea');
-  const controls = document.querySelector('.controls');
-  if(!header || !controls || !tableWrap) return;
-  const headerRect = header.getBoundingClientRect();
-  const controlsRect = controls.getBoundingClientRect();
-  const wrapRect = tableWrap.getBoundingClientRect();
-  let numericTop = Math.round(controlsRect.bottom - wrapRect.top);
-  numericTop = Math.max(0, numericTop);
-  tableWrap.style.paddingTop = numericTop + 'px';
-  tableWrap.style.boxSizing = 'border-box';
-  document.querySelectorAll('thead th').forEach(th => { th.style.top = '0px'; });
-  const reserved = Math.round(headerRect.height + controlsRect.height) + 28;
-  tableWrap.style.maxHeight = Math.max(120, window.innerHeight - reserved) + 'px';
-  alignHeaderWidths();
-}
-function alignHeaderWidths(){
-  const thead = mainTable.querySelector('thead');
-  if(!thead) return;
-  const ths = Array.from(thead.querySelectorAll('th'));
-  const firstRow = mainTable.querySelector('tbody tr');
-  let widths = [];
-  if(firstRow){
-    const tds = Array.from(firstRow.querySelectorAll('td'));
-    if(tds.length === ths.length){
-      widths = tds.map(td => Math.round(td.getBoundingClientRect().width) || Math.round(ths[0].getBoundingClientRect().width));
-    }
-  }
-  if(widths.length !== ths.length){
-    widths = ths.map(th => Math.round(th.getBoundingClientRect().width) || 80);
-  }
-  ths.forEach((th,i)=>{ const w = widths[i] || 60; th.style.width = w+'px'; th.style.minWidth = w+'px'; th.style.maxWidth = w+'px'; th.style.boxSizing='border-box'; });
-  const mainWidth = Math.round(mainTable.getBoundingClientRect().width);
-  mainTable.style.tableLayout = 'fixed';
-  if(mainWidth) mainTable.style.width = mainWidth + 'px';
+function formatTrainToken(token){
+  if(!token) return '';
+  const s = String(token).trim();
+  if(/^\d{5}$/.test(s)) return `<span class="train-number">${s}</span>`;
+  if(s.includes('/') && s.length <= 12) return `<span class="train-number">${s}</span>`;
+  return `<span class="train-number">${s.replace(/\//g,'/<wbr>')}</span>`;
 }
 
-/* Minimal implementations of functions used elsewhere (you can keep your richer versions) */
-function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
-function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
-function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
-function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
-function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `Viewer-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
-function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
-function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
-function sanitizeName(s){ const x = (s||"").replace(/\s+/g," ").trim(); return x.slice(0, 40); }
-function dateOnlyISO(d){ if(!d) return ''; if(d instanceof Date) return d.toISOString().slice(0,10); try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); } }
+function loadInline(){
+  allCrewData = [];
+  sampleFiles.forEach((f, idx)=>{
+    const linkId = f.linkId || String(f.file).replace(/\.json$/,'');
+    const crew = Array.isArray(f.crew) ? f.crew : [];
+    crew.forEach((c,i)=> allCrewData.push({ ...c, linkId, crewIndex:i }));
+  });
+  render();
+}
 
-/* NOTE: to keep the reply compact I left the rest of your app's JS (loadAllLinks, renderCombinedDuties, etc.)
-   unchanged from your previous file. If you'd like I can paste the full file with this updated formatTrainToken
-   and CSS already integrated. */
+function render(){
+  if(!allCrewData.length){ dutyTable.innerHTML = '<tr><td colspan="5">No data</td></tr>'; return; }
+  dutyTable.innerHTML = '';
+  allCrewData.forEach(item=>{
+    const day = (new Date()).toLocaleString('en-US',{weekday:'long'});
+    const wk = item.duties && item.duties[day] ? item.duties[day] : (item.duties && item.duties.Monday ? item.duties.Monday : null);
+    const out = wk && wk.outgoing ? wk.outgoing : '';
+    const dep = wk && wk.depTime ? wk.depTime : '';
+    const tr = document.createElement('tr');
+    const linkLabel = getShortLinkLabel(item.linkId);
+    tr.innerHTML = `<td>${item.name || '—'}</td><td>—</td><td>${formatTrainToken(out)}</td><td>${dep}</td><td><span class="link-pill">${linkLabel}</span></td>`;
+    dutyTable.appendChild(tr);
+  });
+  console.log('Rendered rows:', allCrewData.length);
+}
+
+loadInline();
 </script>
 </body>
 </html>
