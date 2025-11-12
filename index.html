@@ -18,9 +18,9 @@
   --border:#cdd4e1;
   --pill-border: rgba(0,0,0,0.08);
 
-  /* TUNED: smaller row & train column to give more room for names */
-  --row-height:58px;        /* slightly shorter rows */
-  --train-col-width:96px;   /* reduced from 120px to 96px */
+  /* tuned sizes */
+  --row-height:58px;
+  --train-col-width:96px;
   --pill-space:34px;
   --cell-padding-x:10px;
   --train-slot-height:22px;
@@ -45,21 +45,24 @@ tbody tr:nth-child(odd){background:#fbfdff}.no-data{text-align:center;color:var(
 .train-stack{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--train-gap); padding:2px 4px; max-width:100%; box-sizing:border-box; min-height: calc( (var(--train-slot-height) * 2) + var(--train-gap) ); }
 .train-slot{ height:var(--train-slot-height); display:flex; align-items:center; justify-content:center; width:100%; box-sizing:border-box; }
 
-/* TUNED: make train-number respect the reduced train-col-width and wrap earlier */
+/* TUNED: make train-number respect the reduced train-col-width and prefer single-line for short tokens */
 .train-number{
   font-weight:700;
-  font-size:0.9rem;
+  font-size:0.85rem;           /* slightly reduced to help fit short slash tokens */
   line-height:1;
   text-align:center;
   max-width:calc(var(--train-col-width) - 18px);
   white-space:normal;
   word-break:break-word;
 }
+
+/* nowrap variant: used for 5-digit tokens OR short slash-containing tokens */
 .train-number.nowrap{
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
-  max-width:calc(var(--train-col-width) - 18px);
+  max-width:calc(var(--train-col-width) - 12px);
+  font-size:0.85rem;
 }
 
 .train-divider{ width:60%; height:2px; background:var(--divider); border-radius:2px; margin:0; opacity:1; }
@@ -162,13 +165,20 @@ function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(
 function sanitizeName(s){ const x = (s||"").replace(/\s+/g," ").trim(); return x.slice(0, 40); }
 function dateOnlyISO(d){ if(!d) return ''; if(d instanceof Date) return d.toISOString().slice(0,10); try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); } }
 
-/* ---------- formatting ---------- */
+/* ---------- formatting (updated) ---------- */
+/* Keep 5-digit tokens nowrap; short slash tokens (<=14 chars) also nowrap to stay on one line */
 function formatTrainToken(token){
   if(!token) return '';
-  const cleaned = token.toString().trim();
+  const cleaned = String(token).trim();
+
   if(/^\d{5}$/.test(cleaned)){
     return `<span class="train-number nowrap">${escapeHtml(cleaned)}</span>`;
   }
+
+  if(cleaned.includes('/') && cleaned.length <= 14){
+    return `<span class="train-number nowrap">${escapeHtml(cleaned)}</span>`;
+  }
+
   const withBreaks = escapeHtml(cleaned).replace(/\//g, '/<wbr>');
   return `<span class="train-number">${withBreaks}</span>`;
 }
@@ -334,7 +344,7 @@ async function loadAllLinks(){
   await renderCombinedDuties();
 }
 
-/* ---------- render duties (uses filename-priority linkId) ---------- */
+/* ---------- render duties ---------- */
 async function renderCombinedDuties(){
   if(!allCrewData.length){ dutyTable.innerHTML = `<tr><td colspan="5" class="no-data">No data available</td></tr>`; setTableWrapPaddingAndHeader(); return; }
   const weekday = selectedDate.toLocaleString('en-US',{weekday:'long'});
@@ -454,7 +464,7 @@ async function renderCombinedDuties(){
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
 
-/* ---------- revisions helpers (kept minimal) ---------- */
+/* ---------- revisions helpers ---------- */
 function normalizeToRevisions(editObj){
   if(!editObj || typeof editObj !== 'object') return {};
   if(editObj._revisions && typeof editObj._revisions === 'object') return Object.assign({}, editObj);
