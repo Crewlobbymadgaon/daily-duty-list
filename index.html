@@ -121,6 +121,33 @@ table th:nth-child(5), table td:nth-child(5){ display: none; }
 
   <button id="adminSignInBtn" title="Admin sign-in">Admin</button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
+  import {
+    getAuth,
+    signInWithEmailAndPassword,
+    signOut,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCc2e8jI7RcWGh6PqKalKT0XdI5jIB1HjY",
+    authDomain: "dutydisplay-da4f6.firebaseapp.com",
+    projectId: "dutydisplay-da4f6",
+    storageBucket: "dutydisplay-da4f6.firebasestorage.app",
+    messagingSenderId: "197392867082",
+    appId: "1:197392867082:web:9c749a406ad8bada5624f3"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // expose globally for your existing script
+  window.firebaseAuth = auth;
+  window.firebaseLogin = signInWithEmailAndPassword;
+  window.firebaseLogout = signOut;
+  window.firebaseOnAuth = onAuthStateChanged;
+</script>
 
 <script>
 /* ---------- CONFIG ---------- */
