@@ -486,6 +486,12 @@ const mayEditALP = isAdmin === true;
   document.querySelectorAll('.editable').forEach(el=>{
     if(el.__bound) return;
     el.__bound = true;
+    el.addEventListener('mousedown', (e)=>{
+    if(!isAdmin){
+      e.preventDefault();
+      showToast('View only');
+    }
+  });
 
     el.addEventListener('focus', (ev)=>{
   if(!isAdmin) return;   // 🔥 rely on admin state, not attribute
@@ -500,22 +506,18 @@ const mayEditALP = isAdmin === true;
       else if(ev.key === 'Enter'){ ev.preventDefault(); el.blur(); }
     });
 
-    el.addEventListener('blur', async (ev)=>{
-      if(el.getAttribute('contenteditable') !== 'true'){ await renderCombinedDuties(); return; }
-      await onEditableCommit(ev);
-    });
-  });
+   el.addEventListener('blur', async (ev)=>{
+  if(!isAdmin){
+    await renderCombinedDuties();
+    return;
+  }
+  await onEditableCommit(ev);
+});
+
 
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
-document.querySelectorAll('.editable').forEach(el=>{
-  el.addEventListener('mousedown', (e)=>{
-    if(!isAdmin){
-      e.preventDefault();
-      showToast('View only');
-    }
-  });
-});
+
 
 /* ---------- revisions helpers (kept minimal) ---------- */
 function normalizeToRevisions(editObj){
@@ -693,7 +695,8 @@ loginConfirmBtn.onclick = async () => {
   }
 };
 
-window.firebaseOnAuth(window.firebaseAuth, (user) => {
+window.firebaseOnAuth(window.firebaseAuth, async (user) => {
+
   if(user){
     isAdmin = true;
     currentUser = { uid:user.uid, email:user.email };
