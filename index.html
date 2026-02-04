@@ -396,8 +396,8 @@ async function renderCombinedDuties(){
 
     const tr = document.createElement('tr');
 
-    const mayEditLP = !!isAdmin || (currentUser && currentUser.uid && r.ownerUid && currentUser.uid === r.ownerUid);
-    const mayEditALP = !!isAdmin || (currentUser && currentUser.uid && r.ownerUid && currentUser.uid === r.ownerUid);
+    const mayEditLP = isAdmin === true;
+const mayEditALP = isAdmin === true;
     const ownerTag = (r.ownerName) ? `<span class="ownerTag">${escapeHtml(r.ownerName)}</span>` : '';
 
     const linkLabel = escapeHtml(getShortLinkLabel(r.link));
@@ -570,11 +570,22 @@ document.addEventListener('DOMContentLoaded', init);
 
 /* ---------- simple UI helpers ---------- */
 async function detectAdmin(){ currentUser = currentUser || loadLocalUser() || createLocalUser(); isAdmin = false; updateLoginStatusUI(); }
-function updateLoginStatusUI(){ const u = currentUser || loadLocalUser(); if(!u){ loginStatus.textContent = ''; adminSignInBtn.style.display = 'inline-block'; return; } loginStatus.textContent = isAdmin ? `Admin — editing enabled (${u.email || u.displayName})` : ''; adminSignInBtn.style.display = 'inline-block'; }
-
+function updateLoginStatusUI(){
+  if(isAdmin){
+    loginStatus.textContent = 'Admin — editing enabled';
+  } else {
+    loginStatus.textContent = '';
+  }
+}
 /* ---------- small helpers reused ---------- */
 function dateOnlyISO(d){ if(!d) return ''; if(d instanceof Date) return d.toISOString().slice(0,10); try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); } }
 
+  adminSignInBtn.addEventListener('click', () => {
+  isAdmin = !isAdmin;
+  showToast(isAdmin ? 'Admin editing enabled' : 'Admin editing disabled');
+  updateLoginStatusUI();
+  renderCombinedDuties();
+});
 </script>
 </body>
 </html>
