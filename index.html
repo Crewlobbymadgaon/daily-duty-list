@@ -488,11 +488,12 @@ const mayEditALP = isAdmin === true;
     el.__bound = true;
 
     el.addEventListener('focus', (ev)=>{
-      if(el.getAttribute('contenteditable') !== 'true'){ el.blur(); return; }
-      const txt = el.textContent.trim();
-      el.dataset._orig = txt;
-      placeCaretAtEnd(el);
-    });
+  if(!isAdmin) return;   // 🔥 rely on admin state, not attribute
+  const txt = el.textContent.trim();
+  el.dataset._orig = txt;
+  placeCaretAtEnd(el);
+});
+
 
     el.addEventListener('keydown', (ev)=>{
       if(ev.key === 'Escape'){ if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); } }
@@ -507,6 +508,14 @@ const mayEditALP = isAdmin === true;
 
   setTimeout(setTableWrapPaddingAndHeader, 20);
 }
+document.querySelectorAll('.editable').forEach(el=>{
+  el.addEventListener('mousedown', (e)=>{
+    if(!isAdmin){
+      e.preventDefault();
+      showToast('View only');
+    }
+  });
+});
 
 /* ---------- revisions helpers (kept minimal) ---------- */
 function normalizeToRevisions(editObj){
@@ -697,7 +706,13 @@ window.firebaseOnAuth(window.firebaseAuth, (user) => {
   }
 
   dutyTable.innerHTML = '';
-  renderCombinedDuties();
+await renderCombinedDuties();   // force fresh DOM
+setTimeout(() => {
+  document.querySelectorAll('.editable').forEach(el => {
+    el.__bound = false;        // 🔥 reset desktop bindings
+  });
+}, 0);
+
   updateLoginStatusUI();
 });
 
