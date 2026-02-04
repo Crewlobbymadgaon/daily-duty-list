@@ -483,35 +483,42 @@ const mayEditALP = isAdmin === true;
     dutyTable.appendChild(tr);
   });
 
-  document.querySelectorAll('.editable').forEach(el=>{
-    if(el.__bound) return;
-    el.__bound = true;
-    el.addEventListener('mousedown', (e)=>{
-    if(!isAdmin){
+  document.querySelectorAll('.editable').forEach(el => {
+  if (el.__bound) return;
+  el.__bound = true;
+
+  el.addEventListener('mousedown', (e) => {
+    if (!isAdmin) {
       e.preventDefault();
       showToast('View only');
     }
   });
 
-    el.addEventListener('focus', (ev)=>{
-  if(!isAdmin) return;   // 🔥 rely on admin state, not attribute
-  const txt = el.textContent.trim();
-  el.dataset._orig = txt;
-  placeCaretAtEnd(el);
-});
+  el.addEventListener('focus', () => {
+    if (!isAdmin) return;
+    el.dataset._orig = el.textContent.trim();
+    placeCaretAtEnd(el);
+  });
 
+  el.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') {
+      if (el.dataset._orig) {
+        el.textContent = el.dataset._orig;
+        el.blur();
+      }
+    } else if (ev.key === 'Enter') {
+      ev.preventDefault();
+      el.blur();
+    }
+  });
 
-    el.addEventListener('keydown', (ev)=>{
-      if(ev.key === 'Escape'){ if(el.dataset._orig){ el.textContent = el.dataset._orig; el.blur(); } }
-      else if(ev.key === 'Enter'){ ev.preventDefault(); el.blur(); }
-    });
-
-   el.addEventListener('blur', async (ev)=>{
-  if(!isAdmin){
-    await renderCombinedDuties();
-    return;
-  }
-  await onEditableCommit(ev);
+  el.addEventListener('blur', async (ev) => {
+    if (!isAdmin) {
+      await renderCombinedDuties();
+      return;
+    }
+    await onEditableCommit(ev);
+  });
 });
 
 
