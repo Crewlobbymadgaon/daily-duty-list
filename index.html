@@ -613,6 +613,46 @@ function dateOnlyISO(d){ if(!d) return ''; if(d instanceof Date) return d.toISOS
   updateLoginStatusUI();
   renderCombinedDuties();
 });
+
+  
+  adminSignInBtn.addEventListener('click', async () => {
+
+  // logout
+  if(isAdmin){
+    await window.firebaseLogout(window.firebaseAuth);
+    showToast('Admin logged out');
+    return;
+  }
+
+  const email = prompt('Admin email');
+  const password = prompt('Admin password');
+
+  if(!email || !password) return;
+
+  try{
+    await window.firebaseLogin(window.firebaseAuth, email, password);
+  }catch(err){
+    console.error(err);
+    showToast('Invalid admin credentials');
+  }
+});
+window.firebaseOnAuth(window.firebaseAuth, (user) => {
+  if(user){
+    isAdmin = true;
+    currentUser = {
+      uid: user.uid,
+      email: user.email
+    };
+    showToast('Admin editing enabled');
+  } else {
+    isAdmin = false;
+    currentUser = null;
+  }
+
+  updateLoginStatusUI();
+  renderCombinedDuties();
+});
+
 </script>
 </body>
 </html>
