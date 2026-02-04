@@ -442,6 +442,8 @@ async function renderCombinedDuties(){
     const outHtml = formatTrainToken(r.outgoing || '');
     const inHtml  = r.incoming ? formatTrainToken(r.incoming) : '';
     let trainInner = '';
+    let authReady = false;
+
     if(inHtml){
       trainInner = `<div class="train-stack"><div class="train-slot">${outHtml}</div><div class="train-divider" aria-hidden="true"></div><div class="train-slot">${inHtml}</div></div>`;
     } else {
@@ -460,7 +462,8 @@ const mayEditALP = isAdmin === true;
       <td class="lp-cell">
         <div class="link-pill">${linkLabel}</div>
         <div class="cell-inner">
-          <div class="editable" contenteditable="${mayEditLP? 'true':'false'}"
+         <div class="editable" contenteditable="true">
+
             data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewLPName"
             title="${mayEditLP? 'Edit LP name':'View only'}">${escapeHtml(r.lpName)}</div>
         </div>
@@ -469,7 +472,8 @@ const mayEditALP = isAdmin === true;
     const alpCell = `
       <td>
         <div class="cell-inner">
-          <div class="editable" contenteditable="${mayEditALP? 'true':'false'}"
+          <div class="editable" contenteditable="true">
+
             data-link="${escapeHtml(r.link)}" data-crew="${r.crewIndex}" data-field="crewALPName"
             title="${mayEditALP? 'Edit ALP name':'View only'}">${escapeHtml(r.alpName)}</div>
         </div>
@@ -637,6 +641,8 @@ async function init(){
   currentUser = null; // Firebase will decide
   localEdits = loadLocalEdits();
   await loadAllLinks();
+if (authReady) await renderCombinedDuties();
+
   window.addEventListener('resize', () => setTimeout(setTableWrapPaddingAndHeader, 60));
   window.addEventListener('orientationchange', () => setTimeout(setTableWrapPaddingAndHeader, 140));
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(setTableWrapPaddingAndHeader, 80));
@@ -704,9 +710,11 @@ loginConfirmBtn.onclick = async () => {
 
 window.firebaseOnAuth(window.firebaseAuth, async (user) => {
 
-  if(user){
+  authReady = true;
+
+  if (user) {
     isAdmin = true;
-    currentUser = { uid:user.uid, email:user.email };
+    currentUser = { uid: user.uid, email: user.email };
     adminSignInBtn.textContent = 'Logout';
     showToast('Admin editing enabled');
   } else {
@@ -716,15 +724,10 @@ window.firebaseOnAuth(window.firebaseAuth, async (user) => {
   }
 
   dutyTable.innerHTML = '';
-await renderCombinedDuties();   // force fresh DOM
-setTimeout(() => {
-  document.querySelectorAll('.editable').forEach(el => {
-    el.__bound = false;        // 🔥 reset desktop bindings
-  });
-}, 0);
-
+  await renderCombinedDuties();
   updateLoginStatusUI();
 });
+
 
 </script>
 </body>
