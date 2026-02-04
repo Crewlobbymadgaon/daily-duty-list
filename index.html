@@ -545,7 +545,9 @@ async function onEditableCommit(e){
   const field = el.dataset.field;
   const newVal = sanitizeName(el.textContent);
 
-  const userUid = (currentUser && currentUser.uid) ? currentUser.uid : (loadLocalUser()?.uid || createLocalUser().uid);
+ const userUid = currentUser?.uid || 'admin';
+const userReadable = currentUser?.email || 'Admin';
+
   const userReadable = (currentUser && (currentUser.email || currentUser.displayName)) || userUid;
 
   if(!localEdits[linkId]) localEdits[linkId] = {};
@@ -594,8 +596,7 @@ async function onEditableCommit(e){
 /* ---------- init ---------- */
 async function init(){
   setSelectedDate(new Date());
-  currentUser = loadLocalUser() || createLocalUser();
-  saveLocalUser(currentUser);
+  currentUser = null; // Firebase will decide
   localEdits = loadLocalEdits();
   await loadAllLinks();
   window.addEventListener('resize', () => setTimeout(setTableWrapPaddingAndHeader, 60));
@@ -608,12 +609,13 @@ document.addEventListener('DOMContentLoaded', init);
 /* ---------- simple UI helpers ---------- */
 async function detectAdmin(){ currentUser = currentUser || loadLocalUser() || createLocalUser(); isAdmin = false; updateLoginStatusUI(); }
 function updateLoginStatusUI(){
-  if(isAdmin){
-    loginStatus.textContent = 'Admin — editing enabled';
+  if(isAdmin && currentUser){
+    loginStatus.textContent = `Admin — ${currentUser.email}`;
   } else {
-    loginStatus.textContent = '';
+    loginStatus.textContent = 'View only';
   }
 }
+
 /* ---------- small helpers reused ---------- */
 function dateOnlyISO(d){ if(!d) return ''; if(d instanceof Date) return d.toISOString().slice(0,10); try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); } }
 
