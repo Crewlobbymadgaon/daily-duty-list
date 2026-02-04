@@ -185,9 +185,6 @@ const loginStatus = document.getElementById('loginStatus');
 function showToast(msg, t=1400){ toast.textContent = msg; toast.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>toast.classList.remove('show'), t); }
 function loadLocalEdits(){ try{ return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); }catch(e){ return {}; } }
 function saveLocalEdits(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(localEdits)); }catch(e){} }
-function loadLocalUser(){ try{ return JSON.parse(localStorage.getItem('lp_user_v_owner')||'null'); }catch(e){return null} }
-function saveLocalUser(u){ try{ localStorage.setItem('lp_user_v_owner',JSON.stringify(u)); }catch(e){} }
-function createLocalUser(){ const uid = 'local-'+Math.random().toString(36).slice(2,9); const u = { uid, displayName: `Viewer-${uid.slice(-4)}`, local:true }; saveLocalUser(u); return u; }
 function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c])); }
 function placeCaretAtEnd(el){ try{ el.focus(); const range=document.createRange(); range.selectNodeContents(el); range.collapse(false); const sel=window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}catch(e){} }
 function sanitizeName(s){ const x = (s||"").replace(/\s+/g," ").trim(); return x.slice(0, 40); }
@@ -544,11 +541,8 @@ async function onEditableCommit(e){
   const crewIndex = Number(el.dataset.crew);
   const field = el.dataset.field;
   const newVal = sanitizeName(el.textContent);
-
- const userUid = currentUser?.uid || 'admin';
+const userUid = currentUser?.uid || 'admin';
 const userReadable = currentUser?.email || 'Admin';
-
-  const userReadable = (currentUser && (currentUser.email || currentUser.displayName)) || userUid;
 
   if(!localEdits[linkId]) localEdits[linkId] = {};
   if(!localEdits[linkId][crewIndex]) localEdits[linkId][crewIndex] = {};
