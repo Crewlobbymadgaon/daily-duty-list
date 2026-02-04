@@ -607,12 +607,7 @@ function updateLoginStatusUI(){
 /* ---------- small helpers reused ---------- */
 function dateOnlyISO(d){ if(!d) return ''; if(d instanceof Date) return d.toISOString().slice(0,10); try { return (new Date(d)).toISOString().slice(0,10); } catch(e){ return String(d).slice(0,10); } }
 
-  adminSignInBtn.addEventListener('click', () => {
-  isAdmin = !isAdmin;
-  showToast(isAdmin ? 'Admin editing enabled' : 'Admin editing disabled');
-  updateLoginStatusUI();
-  renderCombinedDuties();
-});
+ 
 
   
   adminSignInBtn.addEventListener('click', async () => {
