@@ -125,6 +125,32 @@ table th:nth-child(5), table td:nth-child(5){ display: none; }
 
   <button id="adminSignInBtn" title="Admin sign-in">Admin</button>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- Admin Login Modal -->
+<div id="loginModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:500; align-items:center; justify-content:center;">
+  <div style="background:#fff; width:320px; border-radius:12px; padding:18px; box-shadow:0 20px 40px rgba(0,0,0,.2)">
+    <h3 style="margin:0 0 10px 0">Admin Login</h3>
+
+    <input id="adminEmail" type="email" placeholder="Email"
+      style="width:100%; padding:10px; margin-bottom:8px; border-radius:8px; border:1px solid #ccc">
+
+    <input id="adminPassword" type="password" placeholder="Password"
+      style="width:100%; padding:10px; margin-bottom:12px; border-radius:8px; border:1px solid #ccc">
+
+    <div style="display:flex; gap:8px;">
+      <button id="loginConfirmBtn"
+        style="flex:1; background:#2563eb; color:#fff; border:none; padding:10px; border-radius:8px; cursor:pointer">
+        Login
+      </button>
+
+      <button id="loginCancelBtn"
+        style="flex:1; background:#eee; border:none; padding:10px; border-radius:8px; cursor:pointer">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
   import {
@@ -616,46 +642,64 @@ function dateOnlyISO(d){ if(!d) return ''; if(d instanceof Date) return d.toISOS
  
 
   
-  adminSignInBtn.addEventListener('click', async () => {
+  const loginModal = document.getElementById('loginModal');
+const adminEmail = document.getElementById('adminEmail');
+const adminPassword = document.getElementById('adminPassword');
+const loginConfirmBtn = document.getElementById('loginConfirmBtn');
+const loginCancelBtn = document.getElementById('loginCancelBtn');
 
-  // logout
+adminSignInBtn.addEventListener('click', async () => {
   if(isAdmin){
     await window.firebaseLogout(window.firebaseAuth);
     showToast('Admin logged out');
     return;
   }
+  loginModal.style.display = 'flex';
+  adminEmail.focus();
+});
 
-  const email = prompt('Admin email');
-  const password = prompt('Admin password');
+loginCancelBtn.onclick = () => {
+  loginModal.style.display = 'none';
+  adminEmail.value = '';
+  adminPassword.value = '';
+};
 
-  if(!email || !password) return;
+loginConfirmBtn.onclick = async () => {
+  const email = adminEmail.value.trim();
+  const password = adminPassword.value;
+
+  if(!email || !password){
+    showToast('Enter email & password');
+    return;
+  }
 
   try{
     await window.firebaseLogin(window.firebaseAuth, email, password);
+    loginModal.style.display = 'none';
+    adminEmail.value = '';
+    adminPassword.value = '';
   }catch(err){
     console.error(err);
     showToast('Invalid admin credentials');
   }
-});
+};
+
 window.firebaseOnAuth(window.firebaseAuth, (user) => {
   if(user){
     isAdmin = true;
-    currentUser = {
-      uid: user.uid,
-      email: user.email
-    };
+    currentUser = { uid:user.uid, email:user.email };
+    adminSignInBtn.textContent = 'Logout';
     showToast('Admin editing enabled');
   } else {
     isAdmin = false;
     currentUser = null;
+    adminSignInBtn.textContent = 'Admin';
   }
 
-  // 🔥 FORCE full rebuild
   dutyTable.innerHTML = '';
   renderCombinedDuties();
   updateLoginStatusUI();
 });
-
 
 </script>
 </body>
